@@ -40,7 +40,7 @@ namespace TriadBuddyPlugin
         private void CacheLocalization()
         {
             locStatus = Localization.Localize("ST_Status", "Status:");
-            locStatusNotActive = Localization.Localize("ST_StatusNotActive", "Minigame not active");
+            locStatusNotActive = Localization.Localize("ST_StatusNotActive", "Not active");
             locStatusActive = Localization.Localize("ST_StatusActive", "Active");
         }
 
@@ -57,7 +57,6 @@ namespace TriadBuddyPlugin
             var statusColor = uiReader.HasErrors ? colorErr : colorOk;
 
             ImGui.TextColored(statusColor, statusDesc);
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 20);
         }
     }
 }

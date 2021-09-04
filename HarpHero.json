@@ -11,6 +11,6 @@
   ],
   "RepoUrl": "https://github.com/MgAl2O4/HarpHeroDalamud",
   "ApplicableVersion": "any",
-  "Tags": [ "bard", "music", "performance", "midi", "harp" ]
+  "Tags": [ "bard", "music", "performance", "midi", "harp" ],
   "DalamudApiLevel": 4
 }

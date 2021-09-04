@@ -80,7 +80,7 @@ namespace TriadBuddyPlugin
 
         public void Dispose()
         {
-            commandManager.RemoveHandler("/triadbuddy");
+            commandManager.RemoveHandler("/harphero");
             windowSystem.RemoveAllWindows();
             framework.Update -= Framework_OnUpdateEvent;
             pluginInterface.Dispose();
