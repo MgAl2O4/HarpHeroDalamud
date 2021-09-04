@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31624.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarpHero", "HarpHero.csproj", "{8F1BDDC2-28F2-4CE2-8FB0-8FC58B4F6D9F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F1BDDC2-28F2-4CE2-8FB0-8FC58B4F6D9F}.Debug|x64.ActiveCfg = Debug|x64
+		{8F1BDDC2-28F2-4CE2-8FB0-8FC58B4F6D9F}.Debug|x64.Build.0 = Debug|x64
+		{8F1BDDC2-28F2-4CE2-8FB0-8FC58B4F6D9F}.Release|x64.ActiveCfg = Release|x64
+		{8F1BDDC2-28F2-4CE2-8FB0-8FC58B4F6D9F}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8C1CD108-3B08-43AC-9FD6-A37A6E06CD4B}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,6 @@
+{
+	"Cmd_Status": { "message": "Show state of {0} plugin" },
+	"ST_Status": { "message": "Status:" },
+	"ST_StatusNotActive": { "message": "Not active" },
+	"ST_StatusActive": { "message": "Active" }
+}
