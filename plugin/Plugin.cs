@@ -7,7 +7,7 @@ using Dalamud.Logging;
 using Dalamud.Plugin;
 using System;
 
-namespace TriadBuddyPlugin
+namespace HarpHero
 {
     public class Plugin : IDalamudPlugin
     {
@@ -23,6 +23,7 @@ namespace TriadBuddyPlugin
         private readonly CommandInfo statusCommand;
 
         private readonly UIReaderBardPerformance uiReaderPerformance;
+        private readonly TrackAssistant trackAssistant;
         private readonly Localization locManager;
 
         public static Localization CurrentLocManager;
@@ -39,12 +40,21 @@ namespace TriadBuddyPlugin
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
+            trackAssistant = new TrackAssistant();
+            trackAssistant.DebugLoadTrack();
+
             // prep data scrapers
             uiReaderPerformance = new UIReaderBardPerformance(gameGui);
 
             // prep UI
-            statusWindow = new PluginWindowStatus(uiReaderPerformance);
+            statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant);
             windowSystem.AddWindow(statusWindow);
+
+            var assistantWindow = new PluginWindowAssistant(uiReaderPerformance, trackAssistant);
+            windowSystem.AddWindow(assistantWindow);
+
+            uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
+            uiReaderPerformance.OnVisibilityChanged += (active) => assistantWindow.OnPerformanceActive(active);
 
             // prep plugin hooks
             statusCommand = new(OnCommand);
@@ -80,6 +90,7 @@ namespace TriadBuddyPlugin
 
         public void Dispose()
         {
+            trackAssistant.Dispose();
             commandManager.RemoveHandler("/harphero");
             windowSystem.RemoveAllWindows();
             framework.Update -= Framework_OnUpdateEvent;
