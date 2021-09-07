@@ -19,7 +19,6 @@ namespace HarpHero
 
         private string locStatus;
         private string locStatusNotActive;
-        private string locStatusWideMode;
         private string locStatusActive;
 
         public PluginWindowStatus(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant) : base("Harp Hero")
@@ -46,7 +45,6 @@ namespace HarpHero
         {
             locStatus = Localization.Localize("ST_Status", "Status:");
             locStatusNotActive = Localization.Localize("ST_StatusNotActive", "Not active");
-            locStatusWideMode = Localization.Localize("ST_StatusWideMode", "Wide mode not supported");
             locStatusActive = Localization.Localize("ST_StatusActive", "Active");
         }
 
@@ -55,16 +53,13 @@ namespace HarpHero
             ImGui.Text(locStatus);
             ImGui.SameLine();
 
-            bool isWideMode = uiReader.status == UIReaderBardPerformance.Status.WideMode;
             var statusDesc =
                 uiReader.HasErrors ? uiReader.status.ToString() :
-                isWideMode ? locStatusWideMode :
                 !uiReader.IsVisible ? locStatusNotActive :
                 locStatusActive;
 
             var statusColor =
                 uiReader.HasErrors ? colorErr :
-                isWideMode ? colorYellow :
                 colorOk;
 
             ImGui.TextColored(statusColor, statusDesc);

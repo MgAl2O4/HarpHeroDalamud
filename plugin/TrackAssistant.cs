@@ -1,5 +1,6 @@
 ﻿using Dalamud.Logging;
 using Melanchall.DryWetMidi.Core;
+using Melanchall.DryWetMidi.Interaction;
 using System;
 using System.Linq;
 
@@ -77,12 +78,14 @@ namespace HarpHero
 
             try
             {
-                var midiFile = MidiFile.Read(@"D:\temp\test.mid");
+                var midiFile = MidiFile.Read(@"D:\temp\test3.mid");
 
                 var tracks = MidiTrackWrapper.GenerateTracks(midiFile);
                 if (tracks != null && tracks.Count > 0)
                 {
                     musicTrack = tracks.Last();
+                    musicTrack.SetSection(new BarBeatTicksTimeSpan(0, 0, 0), new BarBeatTicksTimeSpan(10, 0, 0));
+
                     if (musicTrack.IsOctaveRangeValid(out midOctaveIdx))
                     {
                         trackDurationUs = musicTrack.GetDurationUs();

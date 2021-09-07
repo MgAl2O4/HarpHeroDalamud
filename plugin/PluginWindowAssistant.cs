@@ -26,31 +26,41 @@ namespace HarpHero
 
         // UI keys are ordered: C+1, B, A, G, F, E, D, C, A#, G#, F#, D#, C#
         // maps are indexed with notes from music track: low C -> high C
-        struct NoteMap
+        struct NoteInfo
         {
             public int uiIndex;
             public bool isHalfStep;
             public string name;
         }
-        private readonly NoteMap[] mapNotes = {
-            new NoteMap() { name = "C", isHalfStep = false, uiIndex = 7 },
-            new NoteMap() { name = "C#", isHalfStep = true, uiIndex = 12 },
-            new NoteMap() { name = "D", isHalfStep = false, uiIndex = 6 },
-            new NoteMap() { name = "D#", isHalfStep = true, uiIndex = 11 },
-            new NoteMap() { name = "E", isHalfStep = false, uiIndex = 5 },
-            new NoteMap() { name = "F", isHalfStep = false, uiIndex = 4 },
-            new NoteMap() { name = "F#", isHalfStep = true, uiIndex = 10 },
-            new NoteMap() { name = "G", isHalfStep = false, uiIndex = 3 },
-            new NoteMap() { name = "G#", isHalfStep = true, uiIndex = 9 },
-            new NoteMap() { name = "A", isHalfStep = false, uiIndex = 2 },
-            new NoteMap() { name = "A#", isHalfStep = true, uiIndex = 8 },
-            new NoteMap() { name = "B", isHalfStep = false, uiIndex = 1 },
-            new NoteMap() { name = "C", isHalfStep = false, uiIndex = 0 },
+        struct NoteMap
+        {
+            public int uiIndex;
+            public int octaveIdx;
+        }
+
+        private readonly NoteInfo[] mapOctaveNotes = {
+            new NoteInfo() { name = "C", isHalfStep = false, uiIndex = 6 },
+            new NoteInfo() { name = "C#", isHalfStep = true, uiIndex = 11 },
+            new NoteInfo() { name = "D", isHalfStep = false, uiIndex = 5 },
+            new NoteInfo() { name = "D#", isHalfStep = true, uiIndex = 10 },
+            new NoteInfo() { name = "E", isHalfStep = false, uiIndex = 4 },
+            new NoteInfo() { name = "F", isHalfStep = false, uiIndex = 3 },
+            new NoteInfo() { name = "F#", isHalfStep = true, uiIndex = 9 },
+            new NoteInfo() { name = "G", isHalfStep = false, uiIndex = 2 },
+            new NoteInfo() { name = "G#", isHalfStep = true, uiIndex = 8 },
+            new NoteInfo() { name = "A", isHalfStep = false, uiIndex = 1 },
+            new NoteInfo() { name = "A#", isHalfStep = true, uiIndex = 7 },
+            new NoteInfo() { name = "B", isHalfStep = false, uiIndex = 0 },
         };
+        private const int numNotesWide = 12 + 12 + 12 + 1;
+        private const int numNotesShort = 12 + 1;
+        private int midOctaveLowC = 0;
+        private NoteMap[] mapNotes = null;
 
         private float cachedNoteActivationPosY;
         private float cachedNoteAppearPosY;
         private float[] cachedNotePosX = null;
+        private bool isWideMode = false;
 
         public PluginWindowAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant) : base("Harp Hero Assistant")
         {
@@ -85,10 +95,13 @@ namespace HarpHero
 
         public override void PreDraw()
         {
-            if (uiReader != null && uiReader.cachedState != null && uiReader.cachedState.keys.Count == mapNotes.Length)
+            if (uiReader != null && uiReader.cachedState != null && (uiReader.cachedState.keys.Count == numNotesShort || uiReader.cachedState.keys.Count == numNotesWide))
             {
+                isWideMode = uiReader.cachedState.keys.Count == numNotesWide;
+                GenerateNoteMappings();
+
                 var uiLowC = uiReader.cachedState.keys[mapNotes[0].uiIndex];
-                var uiHighC = uiReader.cachedState.keys[mapNotes[12].uiIndex];
+                var uiHighC = uiReader.cachedState.keys[mapNotes[mapNotes.Length - 1].uiIndex];
 
                 Position = new Vector2(uiLowC.pos.X, uiLowC.pos.Y - TrackAssistSizeY - TrackAssistOffsetY);
                 Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, TrackAssistSizeY + TrackAssistOffsetY);
@@ -96,10 +109,11 @@ namespace HarpHero
                 cachedNoteAppearPosY = Position.Value.Y + 10;
                 cachedNoteActivationPosY = Position.Value.Y + Size.Value.Y - 20;
 
-                if (cachedNotePosX == null)
+                if (cachedNotePosX == null || cachedNotePosX.Length != mapNotes.Length)
                 {
                     cachedNotePosX = new float[mapNotes.Length];
                 }
+
                 for (int idx = 0; idx < mapNotes.Length; idx++)
                 {
                     var uiKey = uiReader.cachedState.keys[mapNotes[idx].uiIndex];
@@ -110,6 +124,42 @@ namespace HarpHero
             {
                 cachedNotePosX = null;
             }
+        }
+
+        private void GenerateNoteMappings()
+        {
+            int expectedNumNotes = isWideMode ? numNotesWide : numNotesShort;
+            if (mapNotes != null && mapNotes.Length == expectedNumNotes)
+            {
+                return;
+            }
+
+            // iter from high to low, mapNotes is indexes from low to high
+            mapNotes = new NoteMap[expectedNumNotes];
+
+            // higest C
+            int writeIdx = expectedNumNotes - 1;
+            mapNotes[writeIdx] = new NoteMap() { octaveIdx = 0, uiIndex = 0 };
+            writeIdx--;
+
+            PluginLog.Log($"[{expectedNumNotes - 1}] = ui:0, note:0");
+
+            // octave(s)
+            int noteIdx = 1;
+            while (noteIdx < expectedNumNotes)
+            {
+                for (int idx = mapOctaveNotes.Length - 1; idx >= 0; idx--)
+                {
+                    PluginLog.Log($"[{writeIdx}] = ui:{noteIdx + mapOctaveNotes[idx].uiIndex}, note:{idx}");
+
+                    mapNotes[writeIdx] = new NoteMap() { octaveIdx = idx, uiIndex = noteIdx + mapOctaveNotes[idx].uiIndex };
+                    writeIdx--;
+                }
+
+                noteIdx += mapOctaveNotes.Length;
+            }
+
+            midOctaveLowC = isWideMode ? 12 : 0;
         }
 
         public override void Draw()
@@ -123,7 +173,7 @@ namespace HarpHero
                     trackAssistant.isPlaying)
                 {
                     trackAssistant.Tick(ImGui.GetIO().DeltaTime);
-                    
+
                     DrawBars();
                     DrawNotes();
                 }
@@ -136,7 +186,7 @@ namespace HarpHero
 
             for (int idx = 0; idx < mapNotes.Length; idx++)
             {
-                uint drawColor = mapNotes[idx].isHalfStep ? colorGuideLineHalfStep : colorGuideLineTone;
+                uint drawColor = mapOctaveNotes[mapNotes[idx].octaveIdx].isHalfStep ? colorGuideLineHalfStep : colorGuideLineTone;
 
                 drawList.AddLine(new Vector2(cachedNotePosX[idx], cachedNoteAppearPosY), new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY), drawColor);
                 drawList.AddCircle(new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY), 10, drawColor);
@@ -190,24 +240,39 @@ namespace HarpHero
 
             foreach (var noteInfo in trackAssistant.musicViewer.shownNotes)
             {
+                int noteOctaveIdx = noteInfo.note.Octave;
+                int noteName = (int)noteInfo.note.NoteName;
+
+                int octaveOffset = 0;
+                int mappedNoteIdx = noteName + midOctaveLowC + (12 * (noteOctaveIdx - trackAssistant.midOctaveIdx));
+                if (mappedNoteIdx < 0)
+                {
+                    octaveOffset = -1;
+                    mappedNoteIdx += 12;
+                }
+                else if (mappedNoteIdx >= mapNotes.Length)
+                {
+                    octaveOffset = 1;
+                    mappedNoteIdx -= 12;
+                }
+
+                if (mappedNoteIdx < 0 || mappedNoteIdx >= mapNotes.Length)
+                {
+                    // this should be happening...
+                    continue;
+                }
+
                 float t0 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteInfo.startUs - timeRangeStartUs) / timeRangeUs));
                 float t1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteInfo.endUs - timeRangeStartUs) / timeRangeUs));
 
                 var posY0 = GetTimeCoordY(t0);
                 var posY1 = GetTimeCoordY(t1);
 
-                int noteIdx = (int)noteInfo.note.NoteName;
-                int relativeOctave = noteInfo.note.Octave - trackAssistant.midOctaveIdx;
-                if (relativeOctave == 2)
-                {
-                    noteIdx = mapNotes.Length - 1;
-                    relativeOctave = 1;
-                }
+                var posX = cachedNotePosX[mappedNoteIdx];
+                var noteColor = (octaveOffset == 0) ? colorNoteThisOctave : (octaveOffset < 0) ? colorNoteLowerOctave : colorNoteHigherOctave;
+                var noteColorFar = noteColor & 0x40ffffff;
 
-                var posX = cachedNotePosX[mapNotes[noteIdx].uiIndex];
-                var noteColor = (relativeOctave == 0) ? colorNoteThisOctave : (relativeOctave < 0) ? colorNoteLowerOctave : colorNoteHigherOctave;
-
-                drawList.AddRectFilled(new Vector2(posX - noteHelfWidth, posY0), new Vector2(posX + noteHelfWidth, posY1), noteColor);
+                drawList.AddRectFilledMultiColor(new Vector2(posX - noteHelfWidth, posY0), new Vector2(posX + noteHelfWidth, posY1), noteColor, noteColor, noteColorFar, noteColorFar);
             }
         }
     }

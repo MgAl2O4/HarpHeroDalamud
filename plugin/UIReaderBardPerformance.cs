@@ -12,17 +12,17 @@ namespace HarpHero
         public enum Status
         {
             NoErrors,
+            NoErrorsWide,
             AddonNotFound,
             AddonNotVisible,
             NodesNotReady,
-            WideMode,
         }
 
         public UIStateBardPerformance cachedState = new();
         public Action<bool> OnVisibilityChanged;
 
         public Status status = Status.AddonNotFound;
-        public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible) && (status != Status.WideMode);
+        public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
         public bool HasErrors => false;
 
         private GameGui gameGui;
@@ -35,31 +35,30 @@ namespace HarpHero
 
         public unsafe void Update()
         {
-            IntPtr addonPtr = gameGui.GetAddonByName("PerformanceMode", 1);
-            if (cachedAddonPtr != addonPtr)
+            IntPtr shortAddonPtr = gameGui.GetAddonByName("PerformanceMode", 1);
+            IntPtr wideAddonPtr = IntPtr.Zero;
+            IntPtr useAddonPtr = shortAddonPtr;
+
+            if (useAddonPtr == IntPtr.Zero)
             {
-                cachedAddonPtr = addonPtr;
+                wideAddonPtr = gameGui.GetAddonByName("PerformanceModeWide", 1);
+                useAddonPtr = wideAddonPtr;
+            }
+
+            if (cachedAddonPtr != useAddonPtr)
+            {
+                cachedAddonPtr = useAddonPtr;
                 cachedState.keys.Clear();
             }
 
             bool canScanNodes = false;
-            if (addonPtr == IntPtr.Zero)
+            if (useAddonPtr == IntPtr.Zero)
             {
-                bool hasWideMode = false;
-
-                IntPtr wideAddonPtr = gameGui.GetAddonByName("PerformanceModeWide", 1);
-                if (wideAddonPtr != IntPtr.Zero)
-                {
-                    var wideBaseNode = (AtkUnitBase*)wideAddonPtr;
-                    if (wideBaseNode->RootNode != null && wideBaseNode->RootNode->IsVisible)
-                    {
-                        hasWideMode = true;
-                    }
-                }
-
 #if DEBUG
-                bool forceReproState = false;
-                if (forceReproState)
+                bool forceReproStateShort = false;
+                bool forceReproStateWide = false;
+
+                if (forceReproStateShort)
                 {
                     cachedState.keys.Clear();
                     cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1037, 684), size = new Vector2(63, 167) });
@@ -80,11 +79,11 @@ namespace HarpHero
                 }
 #endif // DEBUG
 
-                SetStatus(hasWideMode ? Status.WideMode : Status.AddonNotFound);
+                SetStatus(Status.AddonNotFound);
             }
             else
             {
-                var baseNode = (AtkUnitBase*)addonPtr;
+                var baseNode = (AtkUnitBase*)useAddonPtr;
                 if (baseNode->RootNode == null || !baseNode->RootNode->IsVisible)
                 {
                     SetStatus(Status.AddonNotVisible);
@@ -111,7 +110,19 @@ namespace HarpHero
                     (keyOb.pos, keyOb.size) = GUINodeUtils.GetNodePosAndSize(keyNode);
                 }
 
-                SetStatus(Status.NoErrors);
+                SetStatus((useAddonPtr == shortAddonPtr) ? Status.NoErrors : Status.NoErrorsWide);
+            }
+        }
+
+        private unsafe void AddKeyNodeAddresses(AtkResNode* containerNode, int numKeys = 13)
+        {
+            var nodeArrKeys = GUINodeUtils.GetImmediateChildNodes(containerNode);
+            if (nodeArrKeys != null && nodeArrKeys.Length == numKeys)
+            {
+                foreach (var node in nodeArrKeys)
+                {
+                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { addr = (ulong)node });
+                }
             }
         }
 
@@ -120,16 +131,32 @@ namespace HarpHero
             // root, 7 children (sibling scan)
             //     [1] res node, 13 piano key buttons
             //         [x] Button components
+            //
+            //
+            // wide mode is very similar, with 3 containers for each octave
+            //
+            // root, 9 children (sibling scan)
+            //     [1] res node, 13 piano key buttons
+            //         [x] Button components
+            //     [2] res node, 12 piano key buttons
+            //         [x] Button components
+            //     [3] res node, 12 piano key buttons
+            //         [x] Button components
 
             var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
-            var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 7);
-            var nodeArrKeys = GUINodeUtils.GetImmediateChildNodes(nodeA);
-            if (nodeArrKeys != null && nodeArrKeys.Length == 13)
+            if (nodeArrL0.Length == 7)
             {
-                foreach (var nodeB in nodeArrKeys)
-                {
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { addr = (ulong)nodeB });
-                }
+                var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 7);
+                AddKeyNodeAddresses(nodeA);
+            }
+            else
+            {
+                var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 9);
+                var nodeB = GUINodeUtils.PickNode(nodeArrL0, 2, 9);
+                var nodeC = GUINodeUtils.PickNode(nodeArrL0, 3, 9);
+                AddKeyNodeAddresses(nodeA);
+                AddKeyNodeAddresses(nodeB, 12);
+                AddKeyNodeAddresses(nodeC, 12);
             }
 
             return cachedState.keys.Count > 0;
