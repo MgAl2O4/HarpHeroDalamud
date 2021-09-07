@@ -18,8 +18,10 @@ namespace HarpHero
         private const uint colorNoteThisOctave = 0xff00ff00;
         private const uint colorNoteHigherOctave = 0xff0000ff;
 
-        private const uint colorGuideLineTone = 0xffffffff;
-        private const uint colorGuideLineHalfStep = 0xff808080;
+        private const uint colorGuideInactive = 0x04ffffff;
+        private const uint colorGuideFar = 0x10ffffff;
+        private const uint colorGuideMed = 0x40ffffff;
+        private const uint colorGuideNear = 0xffffffff;
 
         private readonly UIReaderBardPerformance uiReader;
         private readonly TrackAssistant trackAssistant;
@@ -56,6 +58,7 @@ namespace HarpHero
         private const int numNotesShort = 12 + 1;
         private int midOctaveLowC = 0;
         private NoteMap[] mapNotes = null;
+        private float[] minNoteTime = null;
 
         private float cachedNoteActivationPosY;
         private float cachedNoteAppearPosY;
@@ -136,13 +139,12 @@ namespace HarpHero
 
             // iter from high to low, mapNotes is indexes from low to high
             mapNotes = new NoteMap[expectedNumNotes];
-
+            
             // higest C
             int writeIdx = expectedNumNotes - 1;
             mapNotes[writeIdx] = new NoteMap() { octaveIdx = 0, uiIndex = 0 };
             writeIdx--;
-
-            PluginLog.Log($"[{expectedNumNotes - 1}] = ui:0, note:0");
+            //PluginLog.Log($"[{expectedNumNotes - 1}] = ui:0, note:0");
 
             // octave(s)
             int noteIdx = 1;
@@ -150,8 +152,7 @@ namespace HarpHero
             {
                 for (int idx = mapOctaveNotes.Length - 1; idx >= 0; idx--)
                 {
-                    PluginLog.Log($"[{writeIdx}] = ui:{noteIdx + mapOctaveNotes[idx].uiIndex}, note:{idx}");
-
+                    //PluginLog.Log($"[{writeIdx}] = ui:{noteIdx + mapOctaveNotes[idx].uiIndex}, note:{idx}");
                     mapNotes[writeIdx] = new NoteMap() { octaveIdx = idx, uiIndex = noteIdx + mapOctaveNotes[idx].uiIndex };
                     writeIdx--;
                 }
@@ -160,6 +161,12 @@ namespace HarpHero
             }
 
             midOctaveLowC = isWideMode ? 12 : 0;
+
+            minNoteTime = new float[expectedNumNotes];
+            for (int idx = 0; idx < minNoteTime.Length; idx++)
+            {
+                minNoteTime[idx] = 100.0f;
+            }
         }
 
         public override void Draw()
@@ -186,9 +193,26 @@ namespace HarpHero
 
             for (int idx = 0; idx < mapNotes.Length; idx++)
             {
-                uint drawColor = mapOctaveNotes[mapNotes[idx].octaveIdx].isHalfStep ? colorGuideLineHalfStep : colorGuideLineTone;
+                uint drawColor = colorGuideInactive;
+                if (minNoteTime[idx] < 0.33f)
+                {
+                    drawColor = colorGuideNear;
+                }
+                else if (minNoteTime[idx] < 0.66f)
+                {
+                    drawColor = colorGuideMed;
+                }
+                else if (minNoteTime[idx] < 1.0f)
+                {
+                    drawColor = colorGuideFar;
+                }
 
                 drawList.AddLine(new Vector2(cachedNotePosX[idx], cachedNoteAppearPosY), new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY), drawColor);
+
+                if (mapOctaveNotes[mapNotes[idx].octaveIdx].isHalfStep)
+                {
+                    drawColor &= 0xff808080;
+                }
                 drawList.AddCircle(new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY), 10, drawColor);
             }
         }
@@ -238,6 +262,11 @@ namespace HarpHero
 
             float noteHelfWidth = 5.0f;
 
+            for (int idx = 0; idx < minNoteTime.Length; idx++)
+            {
+                minNoteTime[idx] = 100.0f;
+            }
+
             foreach (var noteInfo in trackAssistant.musicViewer.shownNotes)
             {
                 int noteOctaveIdx = noteInfo.note.Octave;
@@ -273,6 +302,11 @@ namespace HarpHero
                 var noteColorFar = noteColor & 0x40ffffff;
 
                 drawList.AddRectFilledMultiColor(new Vector2(posX - noteHelfWidth, posY0), new Vector2(posX + noteHelfWidth, posY1), noteColor, noteColor, noteColorFar, noteColorFar);
+
+                if (minNoteTime[mappedNoteIdx] > t0)
+                {
+                    minNoteTime[mappedNoteIdx] = t0;
+                }
             }
         }
     }
