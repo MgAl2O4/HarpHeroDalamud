@@ -21,6 +21,9 @@ namespace HarpHero
         public long startTick;
         public long endTick;
 
+        public TimeSignature timeSignature;
+        public int numTimeSignatures;
+
         public MetricTimeSpan duration;
         public long DurationTicks => endTick - startTick;
 
@@ -32,9 +35,7 @@ namespace HarpHero
                 CalcDuration(track, tempoMap, sectionStart, sectionEnd);
                 CalcNoteRange(track);
                 CalcNotePerBeat(track, tempoMap);
-
-                var tempo = tempoMap.GetTempoAtTime(new MidiTimeSpan(0));
-                beatsPerMinute = (int)tempo.BeatsPerMinute;
+                CalcTempoAndTimeSignature(tempoMap);
             }
         }
 
@@ -133,6 +134,11 @@ namespace HarpHero
 
                 foreach (var note in track.GetNotes())
                 {
+                    if (note.Time >= endTick)
+                    {
+                        break;
+                    }
+
                     if (note.Time >= currentBeatEnd && currentBeatIdx < beatTimes.Count)
                     {
                         if (maxNotesPerBeat < currentBeatNotes)
@@ -161,6 +167,32 @@ namespace HarpHero
             {
                 notesPerBeat = track.GetNotes().Count();
             }
+        }
+
+        private void CalcTempoAndTimeSignature(TempoMap tempoMap)
+        {
+            var startTimeTS = new MidiTimeSpan(0);
+            var tempo = tempoMap.GetTempoAtTime(startTimeTS);
+            beatsPerMinute = (int)tempo.BeatsPerMinute;
+
+            timeSignature = tempoMap.GetTimeSignatureAtTime(startTimeTS);
+
+            // look only at compatibility with game metronome ticks, e.g. 6/8 and 3/4 can kind of coexist
+            // (ik it's not the same number of strong beats, but meh, it's salvagable)
+            float orgSigProportion = 1.0f * timeSignature.Numerator / timeSignature.Denominator;
+            var listUniqueSigs = new List<float>();
+            listUniqueSigs.Add(orgSigProportion);
+
+            foreach (var timeSig in tempoMap.GetTimeSignatureChanges())
+            {
+                float timeSigProportion = 1.0f * timeSig.Value.Numerator / timeSig.Value.Denominator;
+                if (!listUniqueSigs.Contains(timeSigProportion))
+                {
+                    listUniqueSigs.Add(timeSigProportion);
+                }
+            }
+
+            numTimeSignatures = listUniqueSigs.Count;
         }
     }
 }

@@ -12,7 +12,6 @@ namespace HarpHero
         public event Action OnFinished;
         public bool IsPlaying => midiPlayback?.IsRunning ?? false;
 
-        public float timeScale = 1.0f;
         public bool autoDispose = true;
 
         public MidiTrackPlayer(MidiTrackWrapper track)
@@ -33,7 +32,6 @@ namespace HarpHero
         {
             if (midiPlayback != null)
             {
-                midiPlayback.Speed = timeScale;
                 midiPlayback.Start();
                 return true;
             }
@@ -57,9 +55,17 @@ namespace HarpHero
             midiPlayback?.Stop();
         }
 
+        public void SetTimeScaling(float timeScaling)
+        {
+            if (midiPlayback != null)
+            {
+                midiPlayback.Speed = timeScaling;
+            }
+        }
+
         public long GetMidiTime()
         {
-            return midiPlayback.GetCurrentTime<MidiTimeSpan>().TimeSpan;
+            return (midiPlayback != null) ? midiPlayback.GetCurrentTime<MidiTimeSpan>().TimeSpan : 0;
         }
 
         public void Dispose()

@@ -42,11 +42,24 @@ namespace HarpHero
 
             trackAssistant = new TrackAssistant();
 
+            var fileManager = new MidiFileManager();
+            fileManager.OnImported += (_) => trackAssistant.OnTracksImported(fileManager.tracks);
+
+#if DEBUG
+            // temp debug stuff
+            fileManager.ImportFile(@"D:\temp\test3.mid");
+            if (fileManager.tracks.Count > 0)
+            {
+                trackAssistant.SetTrackSection(0, 10);
+                trackAssistant.SetTargetBPM(30);
+            }
+#endif
+
             // prep data scrapers
             uiReaderPerformance = new UIReaderBardPerformance(gameGui);
 
             // prep UI
-            statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant);
+            statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager);
             windowSystem.AddWindow(statusWindow);
 
             var assistantWindow = new PluginWindowAssistant(uiReaderPerformance, trackAssistant);

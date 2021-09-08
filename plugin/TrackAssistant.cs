@@ -1,8 +1,6 @@
-﻿using Dalamud.Logging;
-using Melanchall.DryWetMidi.Core;
-using Melanchall.DryWetMidi.Interaction;
+﻿using Melanchall.DryWetMidi.Interaction;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace HarpHero
 {
@@ -10,34 +8,83 @@ namespace HarpHero
     {
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
-        public int NumWarmupBars = 2;
+        public int NumWarmupBars = 1;
 
         public MidiTrackWrapper musicTrack;
         public MidiTrackViewer musicViewer;
         public MidiTrackPlayer musicPlayer;
 
+        public bool CanPlay => (musicViewer != null) && (musicTrack != null);
+        public int TargetBPM => targetBPM;
+
         public int midOctaveIdx;
         public float timeScaling = 1.0f;
+        private int targetBPM;
 
         private long trackDurationUs;
         public long currentTimeUs;
         public bool isPlaying;
         private bool isPlayingSound;
 
+        public void SetTrack(MidiTrackWrapper track)
+        {
+            Stop();
+
+            musicTrack = track;
+            musicViewer = null;
+            OnTrackUpdated();
+
+            // refresh time scaling
+            SetTargetBPM(targetBPM);
+        }
+
+        public void SetTrackSection(int startBar, int endBar)
+        {
+            Stop();
+
+            musicTrack.SetSection(new BarBeatTicksTimeSpan(startBar), new BarBeatTicksTimeSpan(endBar));
+            musicViewer = null;
+            OnTrackUpdated();
+        }
+
+        public void SetTargetBPM(int targetBPM)
+        {
+            this.targetBPM = targetBPM;
+            timeScaling = (musicTrack != null && targetBPM > 0) ? musicTrack.GetScalingForBPM(targetBPM) : 1.0f;
+
+            if (musicPlayer != null)
+            {
+                musicPlayer.SetTimeScaling(timeScaling);
+            }
+        }
+
+        public void OnTracksImported(List<MidiTrackWrapper> tracks)
+        {
+            if (tracks != null && tracks.Count > 0)
+            {
+                SetTrack(null);
+                SetTargetBPM(0);
+
+                // auto select first track with notes
+                foreach (var track in tracks)
+                {
+                    if (track.stats.numNotes > 0)
+                    {
+                        SetTrack(track);
+                        break;
+                    }
+                }
+            }
+        }
+
         public bool Start()
         {
-#if DEBUG
-            if (musicTrack == null)
-            {
-                DebugLoadTrack();
-            }
-#endif // DEBUG
-
-            if (musicTrack != null)
+            if (musicTrack != null && CanPlay)
             {
                 isPlaying = true;
 
-                musicPlayer = new MidiTrackPlayer(musicTrack) { timeScale = timeScaling };
+                musicPlayer = new MidiTrackPlayer(musicTrack);
+                musicPlayer.SetTimeScaling(timeScaling);
                 isPlayingSound = false;
 
                 currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
@@ -87,41 +134,24 @@ namespace HarpHero
             }
         }
 
-        public void DebugLoadTrack()
+        private void OnTrackUpdated()
         {
-            // temporary until i'll make some proper ui
             musicViewer = null;
-            musicTrack = null;
 
-            try
+            if (musicTrack != null)
             {
-                var midiFile = MidiFile.Read(@"D:\temp\test3.mid");
+                trackDurationUs = musicTrack.GetDurationUs();
 
-                var tracks = MidiTrackWrapper.GenerateTracks(midiFile);
-                if (tracks != null && tracks.Count > 0)
+                if (musicTrack.IsOctaveRangeValid(out midOctaveIdx))
                 {
-                    musicTrack = tracks.Last();
-                    musicTrack.SetSection(new BarBeatTicksTimeSpan(0, 0, 0), new BarBeatTicksTimeSpan(10, 0, 0));
-
-                    if (musicTrack.IsOctaveRangeValid(out midOctaveIdx))
-                    {
-                        trackDurationUs = musicTrack.GetDurationUs();
-
-                        musicViewer = new MidiTrackViewer(musicTrack);
-                        musicViewer.timeWindowSecondsAhead = NumSecondsFuture;
-                        musicViewer.timeWindowSecondsBehind = NumSecondsPast;
-
-                        timeScaling = musicTrack.GetScalingForBPM(60);
-                    }
-                    else
-                    {
-                        musicTrack = null;
-                    }
+                    musicViewer = new MidiTrackViewer(musicTrack);
+                    musicViewer.timeWindowSecondsAhead = NumSecondsFuture;
+                    musicViewer.timeWindowSecondsBehind = NumSecondsPast;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                PluginLog.Error(ex, "failed to load midi");
+                trackDurationUs = 0;
             }
         }
 
@@ -134,7 +164,7 @@ namespace HarpHero
             }
         }
 
-        public float GetScaledKeyPerSecond()
+        public float GetScaledKeysPerSecond()
         {
             return (musicTrack != null && musicTrack.stats != null) ? musicTrack.stats.GetKeysPerSecond(timeScaling) : 0.0f;
         }
