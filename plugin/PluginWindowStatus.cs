@@ -73,7 +73,7 @@ namespace HarpHero
                 }
 
                 ImGui.SameLine();
-                ImGui.Text($"Playing stuff, time: {trackAssistant.currentTimeUs / 1000000.0f:0.00}s");
+                ImGui.Text($"Playing stuff, {trackAssistant.GetScaledKeyPerSecond():0.0} key/s, time: {trackAssistant.currentTimeUs / 1000000.0f:0.00}s");
             }
             else
             {

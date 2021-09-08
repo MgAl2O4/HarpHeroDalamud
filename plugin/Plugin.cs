@@ -41,7 +41,6 @@ namespace HarpHero
             CurrentLocManager = locManager;
 
             trackAssistant = new TrackAssistant();
-            trackAssistant.DebugLoadTrack();
 
             // prep data scrapers
             uiReaderPerformance = new UIReaderBardPerformance(gameGui);

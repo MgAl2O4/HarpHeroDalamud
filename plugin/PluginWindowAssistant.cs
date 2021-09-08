@@ -1,5 +1,4 @@
 ﻿using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -139,7 +138,7 @@ namespace HarpHero
 
             // iter from high to low, mapNotes is indexes from low to high
             mapNotes = new NoteMap[expectedNumNotes];
-            
+
             // higest C
             int writeIdx = expectedNumNotes - 1;
             mapNotes[writeIdx] = new NoteMap() { octaveIdx = 0, uiIndex = 0 };

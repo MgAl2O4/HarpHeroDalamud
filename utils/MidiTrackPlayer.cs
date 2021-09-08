@@ -41,9 +41,20 @@ namespace HarpHero
             return false;
         }
 
+        public bool StartAt(long timeUs)
+        {
+            bool started = Start();
+            if (started)
+            {
+                midiPlayback.MoveToTime(new MetricTimeSpan(timeUs));
+            }
+
+            return started;
+        }
+
         public void Stop()
         {
-            midiPlayback.Stop();
+            midiPlayback?.Stop();
         }
 
         public long GetMidiTime()

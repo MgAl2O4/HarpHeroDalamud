@@ -10,28 +10,38 @@ namespace HarpHero
     {
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
+        public int NumWarmupBars = 2;
 
         public MidiTrackWrapper musicTrack;
         public MidiTrackViewer musicViewer;
         public MidiTrackPlayer musicPlayer;
 
         public int midOctaveIdx;
-        public float timeScaling = 0.25f;
+        public float timeScaling = 1.0f;
 
         private long trackDurationUs;
         public long currentTimeUs;
         public bool isPlaying;
+        private bool isPlayingSound;
 
         public bool Start()
         {
+#if DEBUG
+            if (musicTrack == null)
+            {
+                DebugLoadTrack();
+            }
+#endif // DEBUG
+
             if (musicTrack != null)
             {
                 isPlaying = true;
-                currentTimeUs = 0;
 
-                musicPlayer = new MidiTrackPlayer(musicTrack);
-                musicPlayer.timeScale = timeScaling;
-                musicPlayer.Start();
+                musicPlayer = new MidiTrackPlayer(musicTrack) { timeScale = timeScaling };
+                isPlayingSound = false;
+
+                currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
+                Tick(0);
             }
 
             return isPlaying;
@@ -40,6 +50,7 @@ namespace HarpHero
         public void Stop()
         {
             isPlaying = false;
+            isPlayingSound = false;
 
             if (musicPlayer != null)
             {
@@ -58,6 +69,12 @@ namespace HarpHero
 
                 long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
                 currentTimeUs += deltaUs;
+
+                if (!isPlayingSound && currentTimeUs >= 0)
+                {
+                    isPlayingSound = true;
+                    musicPlayer.StartAt(currentTimeUs);
+                }
 
                 if (currentTimeUs < trackDurationUs)
                 {
@@ -93,6 +110,8 @@ namespace HarpHero
                         musicViewer = new MidiTrackViewer(musicTrack);
                         musicViewer.timeWindowSecondsAhead = NumSecondsFuture;
                         musicViewer.timeWindowSecondsBehind = NumSecondsPast;
+
+                        timeScaling = musicTrack.GetScalingForBPM(60);
                     }
                     else
                     {
@@ -110,9 +129,14 @@ namespace HarpHero
         {
             if (musicPlayer != null)
             {
-                musicPlayer.autoDispose = true;
                 musicPlayer.Stop();
+                musicPlayer = null;
             }
+        }
+
+        public float GetScaledKeyPerSecond()
+        {
+            return (musicTrack != null && musicTrack.stats != null) ? musicTrack.stats.GetKeysPerSecond(timeScaling) : 0.0f;
         }
     }
 }

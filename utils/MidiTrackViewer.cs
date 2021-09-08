@@ -113,7 +113,32 @@ namespace HarpHero
             if (cachedNotes != null && generateBarData)
             {
                 var startTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(new MetricTimeSpan(Math.Max(0, TimeRangeStartUs)), tempoMap);
-                var endTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(new MetricTimeSpan(TimeRangeEndUs), tempoMap);
+                var endTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(new MetricTimeSpan(Math.Max(0, TimeRangeEndUs)), tempoMap);
+
+                if (TimeRangeStartUs < 0)
+                {
+                    // midi refuses to acknoledge negative numbers, snapshot initial beat time + num per bar and extrapolate
+                    var numBeatsPerBar = tempoMap.GetTimeSignatureAtTime(startTimeBar).Numerator;
+                    var oneBeatTimeUs = TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(0, 1), tempoMap).TotalMicroseconds;
+
+                    int numWarmupBeats = (int)(Math.Min(0, TimeRangeEndUs) % oneBeatTimeUs);
+                    long warmupEndTimeUs = -Math.Max(numWarmupBeats, 1) * oneBeatTimeUs;
+
+                    long warmupStartTimeUs = TimeRangeStartUs;
+                    for (long itTimeUs = warmupEndTimeUs; itTimeUs > warmupStartTimeUs; itTimeUs -= oneBeatTimeUs)
+                    {
+                        int totalBeatIdx = (int)(itTimeUs / oneBeatTimeUs);
+                        int beatInBar = -totalBeatIdx % numBeatsPerBar;
+                        if (beatInBar == 0)
+                        {
+                            shownBarLines.Add(itTimeUs);
+                        }
+                        else
+                        {
+                            shownBeatLines.Add(itTimeUs);
+                        }
+                    }
+                }
 
                 var itTimeInc = new BarBeatTicksTimeSpan(0, 1);
                 for (var itTimeBar = new BarBeatTicksTimeSpan(startTimeBar.Bars, startTimeBar.Beats); itTimeBar < endTimeBar; itTimeBar += itTimeInc)

@@ -1,8 +1,8 @@
 ﻿using Dalamud.Logging;
-using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.MusicTheory;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,32 +11,30 @@ namespace HarpHero
     public class MidiTrackWrapper
     {
         public const float MinNoteDurationSeconds = 0.100f;
+        public const int MaxBarsToCalculateTempo = 10;
 
-        public readonly TempoMap tempoMap;
         public string name;
 
         public readonly TrackChunk midiTrackOrg;
+        public readonly TempoMap tempoMapOrg;
+
         public TrackChunk midiTrack;
+        public TempoMap tempoMap;
 
         public ITimeSpan sectionStart;
         public ITimeSpan sectionEnd;
 
-        private long duration;
-        private long trackStartTick;
-        private long trackEndTick;
+        public MidiTrackStats stats = new MidiTrackStats();
+        public MidiTrackStats statsOrg = new MidiTrackStats();
 
-        public SevenBitNumber noteNumberMin;
-        public SevenBitNumber noteNumberMax;
-        public SevenBitNumber noteNumberMinOrg;
-        public SevenBitNumber noteNumberMaxOrg;
-
-        public MidiTrackWrapper(TrackChunk midiTrack, TempoMap midiTempo)
+        public MidiTrackWrapper(TrackChunk midiTrack, TempoMap tempoMap)
         {
-            tempoMap = midiTempo;
+            tempoMapOrg = tempoMap;
             midiTrackOrg = midiTrack;
+            statsOrg.Update(midiTrackOrg, tempoMapOrg);
 
             TransformTrack();
-            CacheTrackInfo();
+            stats.Update(this.midiTrack, this.tempoMap);
 
             var nameEvent = midiTrack.Events.Where(trackEvent => trackEvent.EventType == MidiEventType.SequenceTrackName).FirstOrDefault() as SequenceTrackNameEvent;
             if (nameEvent != null)
@@ -48,11 +46,11 @@ namespace HarpHero
         public static List<MidiTrackWrapper> GenerateTracks(MidiFile midiFile)
         {
             var list = new List<MidiTrackWrapper>();
-            var midiTempo = midiFile.GetTempoMap();
 
+            var tempoMap = midiFile.GetTempoMap();
             foreach (var track in midiFile.Chunks.OfType<TrackChunk>())
             {
-                var trackOb = new MidiTrackWrapper(track, midiTempo);
+                var trackOb = new MidiTrackWrapper(track, tempoMap);
                 if (string.IsNullOrEmpty(trackOb.name))
                 {
                     trackOb.name = $"#{list.Count + 1}";
@@ -82,28 +80,13 @@ namespace HarpHero
             this.sectionStart = sectionStart;
             this.sectionEnd = sectionEnd;
 
-            CacheTrackInfo();
-        }
-
-        public bool IsOctaveRangeValid(out int midOctaveId)
-        {
-            int minOctave = NoteUtilities.GetNoteOctave(noteNumberMin);
-            int maxOctave = NoteUtilities.GetNoteOctave(noteNumberMax);
-            int octaveDiff = maxOctave - minOctave;
-
-            midOctaveId = minOctave + (octaveDiff / 2);
-            bool isValid = (octaveDiff < 3) || (octaveDiff == 3 && NoteUtilities.GetNoteName(noteNumberMax) == NoteName.C);
-
-#if DEBUG
-            PluginLog.Log($"{NoteUtilities.GetNoteName(noteNumberMin)} [oct {minOctave}] .. {NoteUtilities.GetNoteName(noteNumberMax)} [oct {maxOctave}] ==> valid:{isValid}, midOct:{midOctaveId}");
-#endif // DEBUG
-
-            return isValid;
+            stats.Update(midiTrack, tempoMap, sectionStart, sectionEnd);
         }
 
         public void ResetTrackChanges()
         {
             midiTrack = midiTrackOrg.Clone() as TrackChunk;
+            tempoMap = tempoMapOrg;
         }
 
         private void SimplifyChords()
@@ -199,92 +182,93 @@ namespace HarpHero
             });
         }
 
+        private void UnifyTempo()
+        {
+            int numTempoChanges = tempoMap.GetTempoChanges().Count();
+            if (numTempoChanges > 1)
+            {
+                // look at first few bars sharing same time signature
+                // calc average quarter note length and apply it on entire track
+
+                int testEndBar = 1;
+                var startTimeSig = tempoMap.GetTimeSignatureAtTime(new BarBeatTicksTimeSpan(0));
+
+                int numTimeSignatureChanges = tempoMap.GetTimeSignatureChanges().Count();
+                if (numTimeSignatureChanges > 0)
+                {
+                    while (testEndBar < MaxBarsToCalculateTempo)
+                    {
+                        var testTimeSig = tempoMap.GetTimeSignatureAtTime(new BarBeatTicksTimeSpan(testEndBar));
+                        if (testTimeSig != startTimeSig)
+                        {
+                            testEndBar--;
+                            break;
+                        }
+
+                        testEndBar++;
+                    }
+                }
+                else
+                {
+                    testEndBar = MaxBarsToCalculateTempo;
+                }
+
+                testEndBar = (testEndBar <= 0) ? 1 : testEndBar;
+                var endTimeUs = TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(testEndBar), tempoMap);
+                int numQuarterNotes = testEndBar * 4 * startTimeSig.Numerator / startTimeSig.Denominator;
+
+                long newQuarterNoteTimeUs = endTimeUs.TotalMicroseconds / numQuarterNotes;
+                int roundedBPM = (int)Math.Round(60000000.0 / newQuarterNoteTimeUs);
+                long roundedQuarterNoteTimeUs = 60000000 / roundedBPM;
+
+                var lastNote = midiTrack.GetNotes().Last();
+                var trackDuration = lastNote.EndTimeAs<MidiTimeSpan>(tempoMap).TimeSpan;
+
+                var tracksToUpdate = new TrackChunk[] { midiTrack };
+                using (var tempoManager = TempoMapManagingUtilities.ManageTempoMap(tracksToUpdate, tempoMap.TimeDivision))
+                {
+                    tempoManager.ClearTempo(0, trackDuration);
+                    tempoManager.SetTempo(0, new Tempo(roundedQuarterNoteTimeUs));
+                    tempoMap = tempoManager.TempoMap;
+                }
+
+                PluginLog.Log($"Unified tempo: {roundedBPM} BPM");
+            }
+        }
+
         private void TransformTrack()
         {
             ResetTrackChanges();
-            SimplifyChords();
-            SimplifyOverlaps();
-            FilterTooShort();
-        }
 
-        private void CacheDuration()
-        {
-            var lastNote = midiTrack.GetNotes().Last();
-            duration = lastNote.EndTimeAs<MidiTimeSpan>(tempoMap).TimeSpan;
+            int numNotes = midiTrack.GetNotes().Count;
+            if (numNotes > 0)
+            {
+                SimplifyChords();
+                SimplifyOverlaps();
+                FilterTooShort();
 
-            if (sectionStart != null && sectionEnd != null)
-            {
-                trackStartTick = TimeConverter.ConvertFrom(sectionStart, tempoMap);
-                trackEndTick = TimeConverter.ConvertFrom(sectionEnd, tempoMap);
-            }
-            else
-            {
-                trackStartTick = 0;
-                trackEndTick = duration;
+                UnifyTempo();
             }
         }
 
-        private void FindNoteRange(TrackChunk trackChunk, out SevenBitNumber minNoteNum, out SevenBitNumber maxNoteNum)
+        public float GetScalingForBPM(int targetBPM)
         {
-            minNoteNum = SevenBitNumber.MaxValue;
-            maxNoteNum = SevenBitNumber.MinValue;
-
-            if (sectionStart != null && sectionEnd != null)
-            {
-                foreach (var note in trackChunk.GetNotes())
-                {
-                    if ((note.Time + note.Length) >= trackStartTick && note.Time < trackEndTick)
-                    {
-                        if (minNoteNum > note.NoteNumber)
-                        {
-                            minNoteNum = note.NoteNumber;
-                        }
-                        if (maxNoteNum < note.NoteNumber)
-                        {
-                            maxNoteNum = note.NoteNumber;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                foreach (var note in trackChunk.GetNotes())
-                {
-                    if (minNoteNum > note.NoteNumber)
-                    {
-                        minNoteNum = note.NoteNumber;
-                    }
-                    if (maxNoteNum < note.NoteNumber)
-                    {
-                        maxNoteNum = note.NoteNumber;
-                    }
-                }
-            }
-        }
-
-        private void CacheNoteRange()
-        {
-            FindNoteRange(midiTrack, out noteNumberMin, out noteNumberMax);
-            FindNoteRange(midiTrackOrg, out noteNumberMinOrg, out noteNumberMaxOrg);
-        }
-
-        private void CacheTrackInfo()
-        {
-            CacheDuration();
-            CacheNoteRange();
+            return 1.0f * targetBPM / stats.beatsPerMinute;
         }
 
         public TTimeSpan GetDurationIgnoringSection<TTimeSpan>() where TTimeSpan : ITimeSpan
         {
-            return TimeConverter.ConvertTo<TTimeSpan>(duration, tempoMap);
+            return TimeConverter.ConvertTo<TTimeSpan>(statsOrg.DurationTicks, tempoMap);
         }
 
         public TTimeSpan GetDuration<TTimeSpan>() where TTimeSpan : ITimeSpan
         {
-            return TimeConverter.ConvertTo<TTimeSpan>(trackEndTick - trackStartTick, tempoMap);
+            return TimeConverter.ConvertTo<TTimeSpan>(stats.endTick - stats.startTick, tempoMap);
         }
 
         public long GetDurationMidi() => GetDuration<MidiTimeSpan>().TimeSpan;
         public long GetDurationUs() => GetDuration<MetricTimeSpan>().TotalMicroseconds;
+
+        public bool IsOctaveRangeValid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId);
     }
 }
