@@ -7,7 +7,6 @@
   "AssemblyVersion": "1.0.0.0",
   "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/HarpHeroDalamud/main/assets/icon.png",
   "ImageUrls": [
-    "https://raw.githubusercontent.com/MgAl2O4/HarpHeroDalamud/main/assets/image1.png",
   ],
   "RepoUrl": "https://github.com/MgAl2O4/HarpHeroDalamud",
   "ApplicableVersion": "any",
