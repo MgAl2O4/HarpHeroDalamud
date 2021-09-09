@@ -6,6 +6,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using System;
+using System.Collections.Generic;
 
 namespace HarpHero
 {
@@ -29,6 +30,8 @@ namespace HarpHero
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "en" };
 
+        private List<ITickable> tickableStuff = new List<ITickable>();
+
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui)
         {
             this.pluginInterface = pluginInterface;
@@ -41,6 +44,7 @@ namespace HarpHero
             CurrentLocManager = locManager;
 
             trackAssistant = new TrackAssistant();
+            tickableStuff.Add(trackAssistant);
 
             var fileManager = new MidiFileManager();
             fileManager.OnImported += (_) => trackAssistant.OnTracksImported(fileManager.tracks);
@@ -64,9 +68,11 @@ namespace HarpHero
 
             var assistantWindow = new PluginWindowAssistant(uiReaderPerformance, trackAssistant);
             windowSystem.AddWindow(assistantWindow);
+            tickableStuff.Add(assistantWindow);
 
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
             uiReaderPerformance.OnVisibilityChanged += (active) => assistantWindow.OnPerformanceActive(active);
+            trackAssistant.OnPlayChanged += (active) => assistantWindow.OnPlayChanged(active);
 
             // prep plugin hooks
             statusCommand = new(OnCommand);
@@ -124,6 +130,12 @@ namespace HarpHero
             try
             {
                 uiReaderPerformance.Update();
+
+                float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
+                foreach (var tickOb in tickableStuff)
+                {
+                    tickOb.Tick(deltaSeconds);
+                }
             }
             catch (Exception ex)
             {

@@ -5,11 +5,13 @@ using System.Numerics;
 
 namespace HarpHero
 {
-    public class PluginWindowAssistant : Window, IDisposable
+    public class PluginWindowAssistant : Window, IDisposable, ITickable
     {
-        // TODO: scale from viewport? expose?
-        private const float TrackAssistSizeY = 500.0f;
+        // TODO: expose
+        private const float TrackAssistSizeViewportPctY = 0.5f;
+        private const float TrackAssistSizeMinY = 500.0f;
         private const float TrackAssistOffsetY = 20.0f;
+        private const float NoMusicUpkeepTime = 5.0f;
 
         private const uint colorTimeLineBeat = 0x80404040;
         private const uint colorTimeLineBar = 0x80808080;
@@ -64,6 +66,8 @@ namespace HarpHero
         private float[] cachedNotePosX = null;
         private bool isWideMode = false;
 
+        private float noMusicUpkeepRemaining = 0.0f;
+
         public PluginWindowAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant) : base("Harp Hero Assistant")
         {
             this.uiReader = uiReader;
@@ -92,7 +96,20 @@ namespace HarpHero
 
         public void OnPerformanceActive(bool active)
         {
-            IsOpen = active;
+            if (!active)
+            {
+                IsOpen = false;
+                noMusicUpkeepRemaining = 0.0f;
+            }
+        }
+
+        public void OnPlayChanged(bool active)
+        {
+            if (active)
+            {
+                IsOpen = true;
+                noMusicUpkeepRemaining = NoMusicUpkeepTime;
+            }
         }
 
         public override void PreDraw()
@@ -105,8 +122,14 @@ namespace HarpHero
                 var uiLowC = uiReader.cachedState.keys[mapNotes[0].uiIndex];
                 var uiHighC = uiReader.cachedState.keys[mapNotes[mapNotes.Length - 1].uiIndex];
 
-                Position = new Vector2(uiLowC.pos.X, uiLowC.pos.Y - TrackAssistSizeY - TrackAssistOffsetY);
-                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, TrackAssistSizeY + TrackAssistOffsetY);
+                float upkeepPct = (noMusicUpkeepRemaining / NoMusicUpkeepTime);
+                float upkeepAlpha = upkeepPct * upkeepPct;
+                float TrackAssistSizeY = Math.Min(TrackAssistSizeViewportPctY * ImGui.GetWindowViewport().Size.Y, TrackAssistSizeMinY) * upkeepAlpha;
+                float NewWindowPosY = Math.Max(50, uiLowC.pos.Y - TrackAssistSizeY - TrackAssistOffsetY);
+
+                Position = new Vector2(uiLowC.pos.X, NewWindowPosY);
+                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, uiLowC.pos.Y - NewWindowPosY);
+                BgAlpha = upkeepAlpha;
 
                 cachedNoteAppearPosY = Position.Value.Y + 10;
                 cachedNoteActivationPosY = Position.Value.Y + Size.Value.Y - 20;
@@ -168,20 +191,33 @@ namespace HarpHero
             }
         }
 
+        public void Tick(float deltaSeconds)
+        {
+            if (IsOpen && (trackAssistant == null || !trackAssistant.isPlaying))
+            {
+                noMusicUpkeepRemaining -= deltaSeconds;
+                if (noMusicUpkeepRemaining <= 0.0f)
+                {
+                    IsOpen = false;
+                }
+            }
+        }
+
         public override void Draw()
         {
             if (cachedNotePosX != null)
             {
                 DrawKeyGuides();
 
-                if (trackAssistant != null &&
-                    trackAssistant.musicViewer != null &&
-                    trackAssistant.isPlaying)
+                if (trackAssistant != null && trackAssistant.musicViewer != null)
                 {
-                    trackAssistant.Tick(ImGui.GetIO().DeltaTime);
+                    if (trackAssistant.isPlaying)
+                    {
+                        noMusicUpkeepRemaining = NoMusicUpkeepTime;
 
-                    DrawBars();
-                    DrawNotes();
+                        DrawBars();
+                        DrawNotes();
+                    }
                 }
             }
         }

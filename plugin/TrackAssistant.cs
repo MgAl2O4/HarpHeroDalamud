@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace HarpHero
 {
-    public class TrackAssistant : IDisposable
+    public class TrackAssistant : IDisposable, ITickable
     {
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
@@ -25,6 +25,8 @@ namespace HarpHero
         public long currentTimeUs;
         public bool isPlaying;
         private bool isPlayingSound;
+
+        public Action<bool> OnPlayChanged;
 
         public void SetTrack(MidiTrackWrapper track)
         {
@@ -89,6 +91,8 @@ namespace HarpHero
 
                 currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
                 Tick(0);
+
+                OnPlayChanged?.Invoke(true);
             }
 
             return isPlaying;
@@ -96,6 +100,7 @@ namespace HarpHero
 
         public void Stop()
         {
+            bool wasPlaying = isPlaying;
             isPlaying = false;
             isPlayingSound = false;
 
@@ -103,6 +108,11 @@ namespace HarpHero
             {
                 musicPlayer.Stop();
                 musicPlayer = null;
+            }
+
+            if (wasPlaying)
+            {
+                OnPlayChanged?.Invoke(false);
             }
         }
 
