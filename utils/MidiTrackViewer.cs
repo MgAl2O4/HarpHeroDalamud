@@ -1,4 +1,5 @@
-﻿using Melanchall.DryWetMidi.Core;
+﻿using Melanchall.DryWetMidi.Common;
+using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,29 @@ namespace HarpHero
             public long endUs;
         }
 
+        public class BindingInfo
+        {
+            public SevenBitNumber noteNumber;
+            public int pressIdx;
+            public int showIdx;
+        }
+
+        public struct NoteBindingInfo
+        {
+            public NoteInfo noteInfo;
+            public int pressIdx;
+            public int bindingIdx;
+            public bool showHint;
+        }
+
         public float timeWindowSecondsAhead = 9.0f;
         public float timeWindowSecondsBehind = 1.0f;
+
+        public int maxBindingsToShow = 3;
+        public int maxNotesToHint = 5;
+
         public bool generateBarData = true;
+        public bool generateBindingData = true;
 
         private NoteInfo[] cachedNotes;
         private TempoMap tempoMap;
@@ -26,12 +47,13 @@ namespace HarpHero
         public long TimeUs => timeUs;
         public long TimeRangeStartUs => timeUs - (long)(timeWindowSecondsBehind * 1000 * 1000);
         public long TimeRangeEndUs => timeUs + (long)(timeWindowSecondsAhead * 1000 * 1000);
-        public long TimeRangeExactUs => (long)(timeWindowSecondsBehind * 1000 * 1000);
+        public long TimeRangeNowOffset => (long)(timeWindowSecondsBehind * 1000 * 1000);
         public long TimeRangeUs => (long)((timeWindowSecondsBehind + timeWindowSecondsAhead) * 1000 * 1000);
 
         public List<NoteInfo> shownNotes = new List<NoteInfo>();
         public List<long> shownBarLines = new List<long>();
         public List<long> shownBeatLines = new List<long>();
+        public List<BindingInfo> shownBindings = new List<BindingInfo>();
 
         public MidiTrackViewer(MidiTrackWrapper track)
         {
@@ -58,6 +80,7 @@ namespace HarpHero
 
             UpdateShownNotes();
             UpdateShownBarData();
+            UpdateShownBindings();
         }
 
         private bool GenerateCachedData(TrackChunk trackChunk, TempoMap tempoMap)
@@ -155,6 +178,106 @@ namespace HarpHero
                         shownBeatLines.Add(itTimeMetric.TotalMicroseconds);
                     }
                 }
+            }
+        }
+
+        private void UpdateShownBindings()
+        {
+            if (generateBindingData)
+            {
+                // find next set of bindings
+                var nearestBindings = new List<BindingInfo>();
+                int pressIdx = 0;
+                for (int idx = 0; idx < shownNotes.Count; idx++)
+                {
+                    var noteInfo = shownNotes[idx];
+                    if (noteInfo.startUs >= timeUs || noteInfo.endUs > timeUs)
+                    {
+                        if (nearestBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber) < 0)
+                        {
+                            var newBinding = new BindingInfo() { noteNumber = noteInfo.note.NoteNumber, pressIdx = pressIdx };
+                            newBinding.showIdx = shownBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber);
+
+                            nearestBindings.Add(newBinding);
+                            if (nearestBindings.Count == maxBindingsToShow)
+                            {
+                                break;
+                            }
+                        }
+
+                        pressIdx++;
+                    }
+                }
+
+                int newNumToShow = Math.Max(nearestBindings.Count, shownBindings.Count);
+                if (newNumToShow > 0)
+                {
+                    var freeShowSlots = new List<int>();
+                    for (int idx = 0; idx < newNumToShow; idx++)
+                    {
+                        bool isUsed = nearestBindings.FindIndex(x => x.showIdx == idx) >= 0;
+                        if (!isUsed)
+                        {
+                            freeShowSlots.Add(idx);
+
+                            if (idx < shownBindings.Count)
+                            {
+                                shownBindings[idx].pressIdx = -1;
+                            }
+                        }
+
+                        if (shownBindings.Count <= idx)
+                        {
+                            shownBindings.Add(new BindingInfo());
+                        }
+                    }
+
+                    for (int idx = 0; idx < nearestBindings.Count; idx++)
+                    {
+                        var bindingInfo = nearestBindings[idx];
+
+                        if (bindingInfo.showIdx < 0 && freeShowSlots.Count > 0)
+                        {
+                            bindingInfo.showIdx = freeShowSlots[0];
+                            freeShowSlots.RemoveAt(0);
+                        }
+
+                        shownBindings[bindingInfo.showIdx] = bindingInfo;
+                    }
+                }
+            }
+            else
+            {
+                shownBindings.Clear();
+            }
+        }
+
+        public IEnumerable<NoteBindingInfo> GetShownNotesBindings()
+        {
+            int pressIdx = 0;
+            for (int idx = 0; idx < shownNotes.Count; idx++)
+            {
+                var noteInfo = shownNotes[idx];
+                if (noteInfo.startUs < timeUs && noteInfo.endUs <= timeUs)
+                {
+                    continue;
+                }
+
+                int bindingIdx = shownBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber);
+                if (bindingIdx < 0)
+                {
+                    break;
+                }
+
+                yield return new NoteBindingInfo()
+                {
+                    noteInfo = noteInfo,
+                    pressIdx = pressIdx,
+                    bindingIdx = bindingIdx,
+                    showHint = (pressIdx >= 0) && (pressIdx < maxNotesToHint),
+                };
+
+                pressIdx++;
             }
         }
     }

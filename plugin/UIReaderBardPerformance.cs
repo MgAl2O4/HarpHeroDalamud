@@ -48,81 +48,12 @@ namespace HarpHero
             if (cachedAddonPtr != useAddonPtr)
             {
                 cachedAddonPtr = useAddonPtr;
-                cachedState.keys.Clear();
+                cachedState.ResetCachedAddr();
             }
 
             bool canScanNodes = false;
             if (useAddonPtr == IntPtr.Zero)
             {
-#if DEBUG
-                bool forceReproStateShort = false;
-                bool forceReproStateWide = false;
-
-                if (forceReproStateShort)
-                {
-                    cachedState.keys.Clear();
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1037, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(975, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(913, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(851, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(789, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(727, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(665, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(603, 684), size = new Vector2(63, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(951, 684), size = new Vector2(49, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(889, 684), size = new Vector2(49, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(827, 684), size = new Vector2(49, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(703, 684), size = new Vector2(49, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(641, 684), size = new Vector2(49, 100) });
-                    SetStatus(Status.NoErrors);
-                    return;
-                }
-                else if (forceReproStateWide)
-                {
-                    cachedState.keys.Clear();
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1358, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1304, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1250, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1196, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1142, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1088, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1034, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(980, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1283, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1229, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1175, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1067, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(1013, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(926, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(872, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(818, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(764, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(710, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(656, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(602, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(905, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(851, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(797, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(689, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(635, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(548, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(494, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(440, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(386, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(332, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(278, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(224, 684), size = new Vector2(55, 167) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(527, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(473, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(419, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(311, 684), size = new Vector2(43, 100) });
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { pos = new Vector2(257, 684), size = new Vector2(43, 100) });
-
-                    SetStatus(Status.NoErrorsWide);
-                    return;
-                }
-#endif // DEBUG
-
                 SetStatus(Status.AddonNotFound);
             }
             else
@@ -136,7 +67,7 @@ namespace HarpHero
                 {
                     if (cachedState.keys.Count == 0)
                     {
-                        if (!FindKeyNodeAddresses(baseNode))
+                        if (!ProcessKeyNodes(baseNode))
                         {
                             SetStatus(Status.NodesNotReady);
                         }
@@ -152,8 +83,20 @@ namespace HarpHero
                 {
                     var keyNode = (AtkResNode*)keyOb.addr;
                     (keyOb.pos, keyOb.size) = GUINodeUtils.GetNodePosAndSize(keyNode);
+
+                    var bindDescNode = (AtkResNode*)keyOb.bindTextAddr;
+                    keyOb.bindDesc = GUINodeUtils.GetNodeText(bindDescNode);
                 }
 
+                {
+                    var bindOctaveUpNode = (AtkResNode*)cachedState.octaveUpAddr;
+                    cachedState.octaveUpDesc = GUINodeUtils.GetNodeText(bindOctaveUpNode);
+
+                    var bindOctaveDownNode = (AtkResNode*)cachedState.octaveDownAddr;
+                    cachedState.octaveDownDesc = GUINodeUtils.GetNodeText(bindOctaveDownNode);
+                }
+
+                CalcKeysBoundingBox();
                 SetStatus((useAddonPtr == shortAddonPtr) ? Status.NoErrors : Status.NoErrorsWide);
             }
         }
@@ -165,17 +108,72 @@ namespace HarpHero
             {
                 foreach (var node in nodeArrKeys)
                 {
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { addr = (ulong)node });
+                    // button component, 12 nodes
+                    //     [6] component node, 4 children
+                    //         [2] text: note name
+                    //         [3] text: binding
+
+                    // eh... this is super flaky, investigate reading key bindings directly
+                    // short, white key: [6]/12
+                    // short, black key: [5]/11
+                    // wide,  white key: [6]/8
+                    // wide,  black key: [5]/7
+
+                    AtkResNode* nodeA = null;
+                    if (node != null && (int)node->Type >= 1000)
+                    {
+                        var compNode = (AtkComponentNode*)node;
+                        var uldManager = compNode->Component->UldManager;
+                        nodeA =
+                            (uldManager.NodeListCount == 12) ? uldManager.NodeList[6] :
+                            (uldManager.NodeListCount == 11) ? uldManager.NodeList[5] :
+                            (uldManager.NodeListCount == 8) ? uldManager.NodeList[6] :
+                            (uldManager.NodeListCount == 7) ? uldManager.NodeList[5] :
+                            null;
+                    }
+
+                    var nodeB = GUINodeUtils.PickChildNode(nodeA, 3, 4);
+
+                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { addr = (ulong)node, bindTextAddr = (ulong)nodeB });
                 }
             }
         }
 
-        private unsafe bool FindKeyNodeAddresses(AtkUnitBase* baseNode)
+        private unsafe void AddOctaveKeyNodeAddresses(AtkResNode* containerNode)
+        {
+            // root, 2 nodes (sibling scan)
+            //     [1] list container
+            //         [x] 6 list items each with 8 nodes, [0] octave+1, [1] octave-1
+            //             [6] key desc
+
+            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(containerNode);
+            var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 2);
+
+            var nodeB1 = GUINodeUtils.PickChildNode(nodeA, 0, 6);
+            var nodeC1 = GUINodeUtils.PickChildNode(nodeB1, 6, 8);
+            if (nodeC1 == null)
+            {
+                nodeC1 = GUINodeUtils.PickChildNode(nodeB1, 3, 5);
+            }
+            cachedState.octaveUpAddr = (ulong)nodeC1;
+
+            var nodeB2 = GUINodeUtils.PickChildNode(nodeA, 1, 6);
+            var nodeC2 = GUINodeUtils.PickChildNode(nodeB2, 6, 8);
+            if (nodeC2 == null)
+            {
+                nodeC2 = GUINodeUtils.PickChildNode(nodeB1, 3, 5);
+            }
+            cachedState.octaveDownAddr = (ulong)nodeC2;
+        }
+
+        private unsafe bool ProcessKeyNodes(AtkUnitBase* baseNode)
         {
             // root, 7 children (sibling scan)
             //     [1] res node, 13 piano key buttons
             //         [x] Button components
-            //
+            //     [2] res node, 2 nodes (sibling scan)
+            //         [x] 6 list items each with 8 nodes, [0] octave+1, [1] octave-1
+            //             [6] key desc
             //
             // wide mode is very similar, with 3 containers for each octave
             //
@@ -186,12 +184,16 @@ namespace HarpHero
             //         [x] Button components
             //     [3] res node, 12 piano key buttons
             //         [x] Button components
+            //     [4] key maps as above
 
             var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
             if (nodeArrL0.Length == 7)
             {
                 var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 7);
                 AddKeyNodeAddresses(nodeA);
+
+                var nodeD = GUINodeUtils.PickNode(nodeArrL0, 2, 7);
+                AddOctaveKeyNodeAddresses(nodeD);
             }
             else
             {
@@ -201,6 +203,9 @@ namespace HarpHero
                 AddKeyNodeAddresses(nodeA);
                 AddKeyNodeAddresses(nodeB, 12);
                 AddKeyNodeAddresses(nodeC, 12);
+
+                var nodeD = GUINodeUtils.PickNode(nodeArrL0, 4, 9);
+                AddOctaveKeyNodeAddresses(nodeD);
             }
 
             return cachedState.keys.Count > 0;
@@ -224,6 +229,36 @@ namespace HarpHero
                 }
             }
         }
+
+        private void CalcKeysBoundingBox()
+        {
+            if (cachedState.keys.Count > 0)
+            {
+                var key0 = cachedState.keys[0];
+                float bbMinX = key0.pos.X;
+                float bbMinY = key0.pos.Y;
+                float bbMaxX = key0.pos.X + key0.size.X;
+                float bbMaxY = key0.pos.Y + key0.size.Y;
+
+                for (int idx = 1; idx < cachedState.keys.Count; idx++)
+                {
+                    var keyIt = cachedState.keys[idx];
+
+                    bbMinX = Math.Min(bbMinX, keyIt.pos.X);
+                    bbMinY = Math.Min(bbMinY, keyIt.pos.Y);
+                    bbMaxX = Math.Max(bbMaxX, keyIt.pos.X + keyIt.size.X);
+                    bbMaxY = Math.Max(bbMaxY, keyIt.pos.Y + keyIt.size.Y);
+                }
+
+                cachedState.keysPos = new Vector2(bbMinX, bbMinY);
+                cachedState.keysSize = new Vector2(bbMaxX - bbMinX, bbMaxY - bbMinY);
+            }
+            else
+            {
+                cachedState.keysPos = Vector2.Zero;
+                cachedState.keysSize = Vector2.Zero;
+            }
+        }
     }
 
     public class UIStateBardPerformance
@@ -233,8 +268,26 @@ namespace HarpHero
             public ulong addr;
             public Vector2 pos;
             public Vector2 size;
+
+            public ulong bindTextAddr;
+            public string bindDesc;
         }
 
+        public ulong octaveUpAddr;
+        public ulong octaveDownAddr;
+        public string octaveUpDesc;
+        public string octaveDownDesc;
+
+        public Vector2 keysPos;
+        public Vector2 keysSize;
+
         public List<KeyNode> keys = new();
+
+        public void ResetCachedAddr()
+        {
+            octaveUpAddr = 0;
+            octaveDownAddr = 0;
+            keys.Clear();
+        }
     }
 }

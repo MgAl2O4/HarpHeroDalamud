@@ -63,7 +63,12 @@ namespace HarpHero
             }
         }
 
-        public long GetMidiTime()
+        public long GetCurrentTimeUs()
+        {
+            return (midiPlayback != null) ? midiPlayback.GetCurrentTime<MetricTimeSpan>().TotalMicroseconds : 0;
+        }
+
+        public long GetCurrentTimeMidi()
         {
             return (midiPlayback != null) ? midiPlayback.GetCurrentTime<MidiTimeSpan>().TimeSpan : 0;
         }

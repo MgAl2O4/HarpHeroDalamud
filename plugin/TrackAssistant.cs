@@ -6,6 +6,7 @@ namespace HarpHero
 {
     public class TrackAssistant : IDisposable, ITickable
     {
+        // TODO: expose
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
         public int NumWarmupBars = 1;
@@ -17,6 +18,11 @@ namespace HarpHero
         public bool CanPlay => (musicViewer != null) && (musicTrack != null);
         public int TargetBPM => targetBPM;
 
+        // TODO: expose
+        public bool CanShowNoteAssistant => isNoteAssistant;
+        public bool CanShowBindAssistant => !isNoteAssistant;
+        public bool isNoteAssistant = false;
+
         public int midOctaveIdx;
         public float timeScaling = 1.0f;
         private int targetBPM;
@@ -27,6 +33,7 @@ namespace HarpHero
         private bool isPlayingSound;
 
         public Action<bool> OnPlayChanged;
+        public Action<bool> OnTrackChanged;
 
         public void SetTrack(MidiTrackWrapper track)
         {
@@ -172,6 +179,13 @@ namespace HarpHero
             {
                 trackDurationUs = 0;
             }
+
+            OnTrackChanged?.Invoke(musicViewer != null);
+        }
+
+        public void OnAssistModeChanged()
+        {
+            OnPlayChanged.Invoke(isPlaying);
         }
 
         public void Dispose()

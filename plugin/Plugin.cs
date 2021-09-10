@@ -43,7 +43,10 @@ namespace HarpHero
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
+            var noteMapper = new UINoteMapper();
+
             trackAssistant = new TrackAssistant();
+            trackAssistant.OnTrackChanged += (valid) => noteMapper.OnTrackChanged(trackAssistant);
             tickableStuff.Add(trackAssistant);
 
             var fileManager = new MidiFileManager();
@@ -66,13 +69,17 @@ namespace HarpHero
             statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager);
             windowSystem.AddWindow(statusWindow);
 
-            var assistantWindow = new PluginWindowAssistant(uiReaderPerformance, trackAssistant);
-            windowSystem.AddWindow(assistantWindow);
-            tickableStuff.Add(assistantWindow);
+            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper);
+            windowSystem.AddWindow(noteAssistantWindow);
+            tickableStuff.Add(noteAssistantWindow);
+
+            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteMapper);
+            windowSystem.AddWindow(bindAssistantWindow);
+            tickableStuff.Add(bindAssistantWindow);
 
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
-            uiReaderPerformance.OnVisibilityChanged += (active) => assistantWindow.OnPerformanceActive(active);
-            trackAssistant.OnPlayChanged += (active) => assistantWindow.OnPlayChanged(active);
+            uiReaderPerformance.OnVisibilityChanged += (active) => { noteAssistantWindow.OnPerformanceActive(active); bindAssistantWindow.OnPerformanceActive(active); };
+            trackAssistant.OnPlayChanged += (active) => { noteAssistantWindow.OnPlayChanged(active); bindAssistantWindow.OnPlayChanged(active); };
 
             // prep plugin hooks
             statusCommand = new(OnCommand);

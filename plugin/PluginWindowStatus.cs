@@ -25,7 +25,7 @@ namespace HarpHero
 
             IsOpen = false;
 
-            Size = new Vector2(350, ImGui.GetTextLineHeight() * 8);
+            Size = new Vector2(350, ImGui.GetTextLineHeight() * 11.0f);
             SizeConstraints = new WindowSizeConstraints() { MinimumSize = this.Size.Value, MaximumSize = new Vector2(3000, 3000) };
             SizeCondition = ImGuiCond.FirstUseEver;
 
@@ -104,6 +104,11 @@ namespace HarpHero
                 {
                     ImGui.SetTooltip("Play");
                 }
+            }
+
+            if (ImGui.Checkbox("Mode: note assistant", ref trackAssistant.isNoteAssistant))
+            {
+                trackAssistant.OnAssistModeChanged();
             }
         }
     }
