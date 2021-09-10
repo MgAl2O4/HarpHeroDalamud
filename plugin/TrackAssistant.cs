@@ -124,13 +124,22 @@ namespace HarpHero
                 // prob overkill since most midis won't last longer than 10 minutes
                 // ~7 significant digits, 600s.0000 - accurate up to 100 us?
 
-                long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
-                currentTimeUs += deltaUs;
-
-                if (!isPlayingSound && currentTimeUs >= 0)
+                // once it starts playing sound, sync time from playback
+                // TODO: what about in game metronome?
+                if (!isPlayingSound)
                 {
-                    isPlayingSound = true;
-                    musicPlayer.StartAt(currentTimeUs);
+                    long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
+                    currentTimeUs += deltaUs;
+
+                    if (currentTimeUs >= 0)
+                    {
+                        isPlayingSound = true;
+                        musicPlayer.StartAt(currentTimeUs);
+                    }
+                }
+                else
+                {
+                    currentTimeUs = musicPlayer.GetCurrentTimeUs();
                 }
 
                 if (currentTimeUs < trackDurationUs)
