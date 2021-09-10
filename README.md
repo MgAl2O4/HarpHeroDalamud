@@ -7,7 +7,6 @@ Under construction. This will one day become a music performance assist plugin f
 Currently it's a working proof of concept with fair amount of hardcoded logic, nowhere near being ready for end users.  
 
 To do:
-* key bind centric track assist, current one is super hard to follow
 * sync play with ingame metronome
 * figure out what group play is about
 * proper setup UI with all important params exposed (section, target bpm, etc)
@@ -18,6 +17,7 @@ Done:
 * importing tracks from midi file
 * transforming midi tracks to fit game limitations (octave range, chords & overlapping notes, etc..)
 * basic UI for import, stat display & play controls
-* basic UI for note assistance
+* note assistance mode
+* keybind assistance mode
 
 Contact: MgAl2O4@protonmail.com
