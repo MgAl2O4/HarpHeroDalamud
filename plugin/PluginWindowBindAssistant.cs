@@ -10,7 +10,7 @@ namespace HarpHero
         // TODO: expose
         private const float TrackAssistSizeMinY = 100.0f;
         private const float TrackAssistOffsetY = 20.0f;
-        private const float NoMusicUpkeepTime = 5.0f;
+        private const float NoMusicUpkeepTime = 3.0f;
 
         private readonly uint[] colorBinds = { 0xff5c5b4c, 0xff09edbc, 0xff40cbf9, 0xff5b71ff };
         private readonly uint[] colorBindsDark = { 0xff5c5b4c, 0xff069d7d, 0xff07b4ed, 0xff0a2bff };

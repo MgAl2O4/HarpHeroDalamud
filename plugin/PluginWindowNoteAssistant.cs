@@ -11,7 +11,8 @@ namespace HarpHero
         private const float TrackAssistSizeViewportPctY = 0.5f;
         private const float TrackAssistSizeMinY = 500.0f;
         private const float TrackAssistOffsetY = 20.0f;
-        private const float NoMusicUpkeepTime = 5.0f;
+        private const float TrackAssistOctaveShiftX = 100.0f;
+        private const float NoMusicUpkeepTime = 3.0f;
 
         private const uint colorTimeLineBeat = 0x80404040;
         private const uint colorTimeLineBar = 0x80808080;
@@ -19,15 +20,19 @@ namespace HarpHero
         private const uint colorNoteThisOctave = 0xff00ff00;
         private const uint colorNoteHigherOctave = 0xff0000ff;
 
-        private const uint colorGuideInactive = 0x04ffffff;
-        private const uint colorGuideFar = 0x10ffffff;
-        private const uint colorGuideMed = 0x40ffffff;
-        private const uint colorGuideNear = 0xffffffff;
+        private const uint colorGuideNextRGB = 0x40cbf9;
+        private const float alphaGuideInactive = 0.05f;
+        private const float alphaGuideFar = 0.25f;
+        private const float alphaGuideMed = 0.5f;
+        private const float alphaGuideNear = 1.0f;
 
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
         private readonly NoteInputWatcher noteInput;
         private readonly TrackAssistant trackAssistant;
+
+        public bool showOctaveShiftHints = true;
+        public bool showBars = false;
 
         private float[] minNoteTime = null;
 
@@ -111,7 +116,7 @@ namespace HarpHero
                 float newWindowPosY = Math.Max(50, uiLowC.pos.Y - trackAssistSizeY - TrackAssistOffsetY);
 
                 Position = new Vector2(uiLowC.pos.X, newWindowPosY);
-                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, uiLowC.pos.Y - newWindowPosY);
+                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X + TrackAssistOctaveShiftX, uiLowC.pos.Y - newWindowPosY);
                 BgAlpha = upkeepAlpha;
 
                 cachedNoteAppearPosY = Position.Value.Y + 10;
@@ -172,7 +177,11 @@ namespace HarpHero
                     {
                         noMusicUpkeepRemaining = NoMusicUpkeepTime;
 
-                        DrawBars();
+                        if (showBars)
+                        {
+                            DrawBars();
+                        }
+
                         DrawNotes();
                     }
                 }
@@ -183,29 +192,55 @@ namespace HarpHero
         {
             var drawList = ImGui.GetWindowDrawList();
 
+            const float keyHalfWidth = 8.0f;
+            const float halfStepFrame = 2.0f;
+            const float markerHeight = 15.0f;
+            float bgAlpha = BgAlpha.GetValueOrDefault();
+
+            int nextPlayIdx = -1;
+            float nextPlayTime = minNoteTime[0];
+            for (int idx = 0; idx < minNoteTime.Length; idx++)
+            {
+                if (nextPlayTime >= minNoteTime[idx] && minNoteTime[idx] <= 1.0f)
+                {
+                    nextPlayTime = minNoteTime[idx];
+                    nextPlayIdx = idx;
+                }
+            }
+
             for (int idx = 0; idx < noteMapper.notes.Length; idx++)
             {
-                uint drawColor = colorGuideInactive;
+                float lineAlpha = alphaGuideInactive;
                 if (minNoteTime[idx] < 0.33f)
                 {
-                    drawColor = colorGuideNear;
+                    lineAlpha = alphaGuideNear;
                 }
                 else if (minNoteTime[idx] < 0.66f)
                 {
-                    drawColor = colorGuideMed;
+                    lineAlpha = alphaGuideMed;
                 }
                 else if (minNoteTime[idx] < 1.0f)
                 {
-                    drawColor = colorGuideFar;
+                    lineAlpha = alphaGuideFar;
                 }
 
-                drawList.AddLine(new Vector2(cachedNotePosX[idx], cachedNoteAppearPosY), new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY), drawColor);
+                uint drawAlpha = (uint)(0xff * bgAlpha * lineAlpha);
+                uint drawColor = (nextPlayIdx == idx ? colorGuideNextRGB : 0xffffff) | (drawAlpha << 24);
 
-                if (noteMapper.octaveNotes[noteMapper.notes[idx].octaveIdx].isHalfStep)
+                bool isHalfStep = noteMapper.octaveNotes[noteMapper.notes[idx].octaveIdx].isHalfStep;
+                drawList.AddTriangleFilled(
+                    new Vector2(cachedNotePosX[idx] - keyHalfWidth, cachedNoteActivationPosY + 1),
+                    new Vector2(cachedNotePosX[idx] + keyHalfWidth, cachedNoteActivationPosY + 1),
+                    new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY + markerHeight), drawColor);
+
+                if (isHalfStep)
                 {
-                    drawColor &= 0xff808080;
+                    uint drawColorHalfStep = 0x000000 | (drawAlpha << 24);
+                    drawList.AddTriangleFilled(
+                        new Vector2(cachedNotePosX[idx] - keyHalfWidth + halfStepFrame, cachedNoteActivationPosY + 1 + halfStepFrame),
+                        new Vector2(cachedNotePosX[idx] + keyHalfWidth - halfStepFrame, cachedNoteActivationPosY + 1 + halfStepFrame),
+                        new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY + markerHeight - halfStepFrame), drawColorHalfStep);
                 }
-                drawList.AddCircle(new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY), 10, drawColor);
             }
         }
 
@@ -259,6 +294,11 @@ namespace HarpHero
                 minNoteTime[idx] = 100.0f;
             }
 
+            int activeOctaveOffset = noteInput.GetActiveOctaveOffset();
+            int shownOctaveOffset = 100;
+            int numShownOffsets = 0;
+            bool canShowOctaveOffsetKey = showOctaveShiftHints;
+
             foreach (var noteInfo in trackAssistant.musicViewer.shownNotes)
             {
                 if (!noteMapper.GetMappedNoteIdx(noteInfo.note, out int mappedNoteIdx, out int octaveOffset))
@@ -277,7 +317,48 @@ namespace HarpHero
                 var noteColor = (octaveOffset == 0) ? colorNoteThisOctave : (octaveOffset < 0) ? colorNoteLowerOctave : colorNoteHigherOctave;
                 var noteColorFar = noteColor & 0x40ffffff;
 
-                drawList.AddRectFilledMultiColor(new Vector2(posX - noteHalfWidth, posY0), new Vector2(posX + noteHalfWidth, posY1), noteColor, noteColor, noteColorFar, noteColorFar);
+                var useNoteHalfWidth = noteHalfWidth;
+                if (activeOctaveOffset != octaveOffset)
+                {
+                    noteColor &= 0x80ffffff;
+                    useNoteHalfWidth -= 1;
+                }
+
+                if (shownOctaveOffset != octaveOffset)
+                {
+                    shownOctaveOffset = octaveOffset;
+                    if (numShownOffsets <= 3)
+                    {
+                        uint octaveShiftColor = (noteColor & 0x00ffffff) | 0xc0000000;
+                        uint octaveShiftColorFaded = (noteColor & 0x00ffffff) | 0x10000000;
+                        uint octaveShiftColorWide = (noteColor & 0x00ffffff) | 0x0f000000;
+
+                        var lineBEndX = Position.Value.X + Size.Value.X - 10;
+                        var lineBStartX = lineBEndX - TrackAssistOctaveShiftX;
+
+                        bool hideActiveShift = (activeOctaveOffset == octaveOffset) && (numShownOffsets == 0) && (t0 < 0.2f);
+                        if (!hideActiveShift)
+                        {
+                            drawList.AddRectFilledMultiColor(new Vector2(lineBStartX, posY0), new Vector2(lineBEndX, posY0 + 1), octaveShiftColorFaded, octaveShiftColor, octaveShiftColor, octaveShiftColorFaded);
+                        }
+
+                        var lineAStartX = Position.Value.X + 10;
+                        var lineAEndX = hideActiveShift ? lineBEndX : lineBStartX;
+                        drawList.AddRectFilled(new Vector2(lineAStartX, posY0), new Vector2(lineAEndX, posY0 + 1), octaveShiftColorWide);
+
+                        if (canShowOctaveOffsetKey && (octaveOffset != 0) && !hideActiveShift)
+                        {
+                            //canShowOctaveOffsetKey = false;
+                            var octaveShiftHint = noteInput.GeOctaveKeyBinding(octaveOffset);
+                            var octaveShiftSize = ImGui.CalcTextSize(octaveShiftHint);
+                            drawList.AddText(new Vector2(lineBEndX - octaveShiftSize.X, posY0 - octaveShiftSize.Y), octaveShiftColor, octaveShiftHint);
+                        }
+                    }
+
+                    numShownOffsets++;
+                }
+
+                drawList.AddRectFilledMultiColor(new Vector2(posX - useNoteHalfWidth, posY0), new Vector2(posX + useNoteHalfWidth, posY1), noteColor, noteColor, noteColorFar, noteColorFar);
 
                 if (minNoteTime[mappedNoteIdx] > t0)
                 {

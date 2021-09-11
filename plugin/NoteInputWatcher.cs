@@ -30,6 +30,28 @@ namespace HarpHero
             isWideModeCached = noteMapper.isWideMode;
         }
 
+        public int GetActiveOctaveOffset()
+        {
+            int offset = 0;
+
+            if (keyBinds.HasValue)
+            {
+                bool isOctaveUpPressed = keyState[noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveUp : keyBinds.Value.singleOctave.octaveUp];
+                bool isOctaveDownPressed = keyState[noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveDown : keyBinds.Value.singleOctave.octaveDown];
+
+                if (isOctaveUpPressed && !isOctaveDownPressed)
+                {
+                    offset = 1;
+                }
+                else if (isOctaveDownPressed && !isOctaveUpPressed)
+                {
+                    offset = -1;
+                }
+            }
+
+            return offset;
+        }
+
         public string GetNoteKeyBinding(Note note)
         {
             if (isWideModeCached != noteMapper.isWideMode)
@@ -105,6 +127,20 @@ namespace HarpHero
 
             mapNoteBindingDesc.Add(noteNumber, desc);
             return desc;
+        }
+
+        public string GeOctaveKeyBinding(int octaveOffset)
+        {
+            if (!keyBinds.HasValue || octaveOffset == 0)
+            {
+                return null;
+            }
+
+            var octaveKey = noteMapper.isWideMode ?
+                ((octaveOffset > 0) ? keyBinds.Value.threeOctaves.octaveUp : keyBinds.Value.threeOctaves.octaveDown) :
+                ((octaveOffset > 0) ? keyBinds.Value.singleOctave.octaveUp : keyBinds.Value.singleOctave.octaveDown);
+
+            return (octaveKey == VirtualKey.NO_KEY) ? null : GetVirtualKeyDesc(octaveKey);
         }
 
         private string GetVirtualKeyDesc(VirtualKey key)
