@@ -25,7 +25,8 @@ namespace HarpHero
         private const uint colorGuideNear = 0xffffffff;
 
         private readonly UIReaderBardPerformance uiReader;
-        private readonly UINoteMapper noteMapper;
+        private readonly NoteUIMapper noteMapper;
+        private readonly NoteInputWatcher noteInput;
         private readonly TrackAssistant trackAssistant;
 
         private float[] minNoteTime = null;
@@ -36,10 +37,11 @@ namespace HarpHero
 
         private float noMusicUpkeepRemaining = 0.0f;
 
-        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, UINoteMapper noteMapper) : base("Note Assistant")
+        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputWatcher noteInput) : base("Note Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
+            this.noteInput = noteInput;
             this.trackAssistant = trackAssistant;
 
             IsOpen = false;

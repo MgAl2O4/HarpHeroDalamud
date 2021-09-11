@@ -1,12 +1,8 @@
-﻿using Dalamud.Game.ClientState.Keys;
-using Melanchall.DryWetMidi.Interaction;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using Melanchall.DryWetMidi.Interaction;
 
 namespace HarpHero
 {
-    public class UINoteMapper
+    public class NoteUIMapper
     {
         // UI keys are ordered: C+1, B, A, G, F, E, D, C, A#, G#, F#, D#, C#
         // maps are indexed with notes from music track: low C -> high C
@@ -43,10 +39,6 @@ namespace HarpHero
         private int midOctaveLowC = 0;
         public NoteMap[] notes = null;
         public bool isWideMode = false;
-
-        private PerformanceBindingInfo? keyBinds;
-        private Dictionary<int, string> mapNoteBindingDesc = new();
-        private Dictionary<VirtualKey, string> mapBindingDesc = new();
 
         public void Update(UIStateBardPerformance uiState)
         {
@@ -100,12 +92,6 @@ namespace HarpHero
             midOctaveIdx = trackAssistant.midOctaveIdx;
         }
 
-        public void OnKeyBindsSet(PerformanceBindingInfo? keyBinds)
-        {
-            this.keyBinds = keyBinds;
-            mapNoteBindingDesc.Clear();
-        }
-
         public bool GetMappedNoteIdx(Note note, out int mappedNoteIdx, out int octaveOffset)
         {
             if (notes == null || note == null)
@@ -133,100 +119,5 @@ namespace HarpHero
 
             return mappedNoteIdx >= 0 && mappedNoteIdx < notes.Length;
         }
-
-        public string GetNoteKeyBinding(Note note)
-        {
-            int noteNumber = note.NoteNumber;
-            if (mapNoteBindingDesc.TryGetValue(noteNumber, out string noteBindingDesc))
-            {
-                return noteBindingDesc;
-            }
-
-            if (!keyBinds.HasValue || !GetMappedNoteIdx(note, out int mappedNoteIdx, out int octaveOffset))
-            {
-                return null;
-            }
-
-            string GetNoteOctaveBindingDesc(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset)
-            {
-                var noteKey = modeBindings.notes[useNoteIdx];
-                bool hasBindings = noteKey != VirtualKey.NO_KEY;
-
-                var octaveKey = VirtualKey.NO_KEY;
-                if (useOctaveOffset > 0)
-                {
-                    octaveKey = modeBindings.octaveUp;
-                    hasBindings = hasBindings && (octaveKey != VirtualKey.NO_KEY);
-                }
-                else if (useOctaveOffset < 0)
-                {
-                    octaveKey = modeBindings.octaveDown;
-                    hasBindings = hasBindings && (octaveKey != VirtualKey.NO_KEY);
-                }
-
-                if (hasBindings)
-                {
-                    string desc = "";
-                    if (octaveKey != VirtualKey.NO_KEY)
-                    {
-                        desc += GetVirtualKeyDesc(octaveKey) + " ";
-                    }
-
-                    desc += GetVirtualKeyDesc(noteKey);
-                    return desc;
-                }
-
-                return null;
-            }
-
-            string desc = null;
-            if (isWideMode)
-            {
-                desc = GetNoteOctaveBindingDesc(keyBinds.Value.threeOctaves, mappedNoteIdx, octaveOffset);
-                if (desc == null && octaveOffset == 0)
-                {
-                    // no binds: lower/higher octave? try using center + offset
-                    if (mappedNoteIdx < 12)
-                    {
-                        desc = GetNoteOctaveBindingDesc(keyBinds.Value.threeOctaves, mappedNoteIdx + 12, -1);
-                    }
-                    else if (mappedNoteIdx >= 12 + 12)
-                    {
-                        desc = GetNoteOctaveBindingDesc(keyBinds.Value.threeOctaves, mappedNoteIdx - 12, 1);
-                    }
-                }
-            }
-            else
-            {
-                desc = GetNoteOctaveBindingDesc(keyBinds.Value.singleOctave, mappedNoteIdx, octaveOffset);
-            }
-
-            mapNoteBindingDesc.Add(noteNumber, desc);
-            return desc;
-        }
-
-        private string GetVirtualKeyDesc(VirtualKey key)
-        {
-            if (mapBindingDesc.TryGetValue(key, out string desc))
-            {
-                return desc;
-            }
-
-            var resultDesc = new StringBuilder();
-            uint scanCode = MapVirtualKey((uint)key, 0);
-            int lParam = (int)(scanCode << 16);
-
-            GetKeyNameText(lParam, resultDesc, 260);
-            desc = resultDesc.ToString();
-
-            mapBindingDesc.Add(key, desc);
-            return desc;
-        }
-
-        [DllImport("user32.dll")]
-        static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-        [DllImport("user32.dll")]
-        static extern int GetKeyNameText(int lParam, [Out] StringBuilder lpString, int nSize);
     }
 }

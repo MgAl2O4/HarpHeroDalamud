@@ -16,15 +16,17 @@ namespace HarpHero
         private readonly uint[] colorBindsDark = { 0xff5c5b4c, 0xff069d7d, 0xff07b4ed, 0xff0a2bff };
 
         private readonly UIReaderBardPerformance uiReader;
-        private readonly UINoteMapper noteMapper;
+        private readonly NoteUIMapper noteMapper;
+        private readonly NoteInputWatcher noteInput;
         private readonly TrackAssistant trackAssistant;
 
         private float noMusicUpkeepRemaining;
 
-        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, UINoteMapper noteMapper) : base("Bind Assistant")
+        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputWatcher noteInput) : base("Bind Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
+            this.noteInput = noteInput;
             this.trackAssistant = trackAssistant;
 
             IsOpen = false;
@@ -165,7 +167,7 @@ namespace HarpHero
                 drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight), noteColor, noteColorFar, noteColorFar, noteColor);
                 if (noteBinding.showHint)
                 {
-                    var noteDesc = noteMapper.GetNoteKeyBinding(noteBinding.noteInfo.note);
+                    var noteDesc = noteInput.GetNoteKeyBinding(noteBinding.noteInfo.note);
                     if (!string.IsNullOrEmpty(noteDesc))
                     {
                         drawList.AddText(new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorBindsDark[hintColorIdx], noteDesc);

@@ -1,5 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
@@ -33,7 +34,7 @@ namespace HarpHero
 
         private List<ITickable> tickableStuff = new List<ITickable>();
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner)
+        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState)
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
@@ -44,7 +45,8 @@ namespace HarpHero
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
-            var noteMapper = new UINoteMapper();
+            var noteMapper = new NoteUIMapper();
+            var noteInputWatch = new NoteInputWatcher(noteMapper, keyState);
 
             trackAssistant = new TrackAssistant();
             trackAssistant.OnTrackChanged += (valid) => noteMapper.OnTrackChanged(trackAssistant);
@@ -71,11 +73,11 @@ namespace HarpHero
             statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager);
             windowSystem.AddWindow(statusWindow);
 
-            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper);
+            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
             windowSystem.AddWindow(noteAssistantWindow);
             tickableStuff.Add(noteAssistantWindow);
 
-            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteMapper);
+            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
             windowSystem.AddWindow(bindAssistantWindow);
             tickableStuff.Add(bindAssistantWindow);
 
@@ -83,7 +85,7 @@ namespace HarpHero
             uiReaderPerformance.OnVisibilityChanged += (active) => { noteAssistantWindow.OnPerformanceActive(active); bindAssistantWindow.OnPerformanceActive(active); };
             trackAssistant.OnPlayChanged += (active) =>
             {
-                noteMapper.OnKeyBindsSet(keybindReader.ReadBindings());
+                noteInputWatch.OnKeyBindsSet(keybindReader.ReadBindings());
                 noteAssistantWindow.OnPlayChanged(active);
                 bindAssistantWindow.OnPlayChanged(active);
             };
