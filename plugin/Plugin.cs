@@ -24,6 +24,7 @@ namespace HarpHero
         private readonly CommandInfo statusCommand;
 
         private readonly UIReaderBardPerformance uiReaderPerformance;
+        private readonly UnsafeReaderPerformanceKeybinds keybindReader;
         private readonly TrackAssistant trackAssistant;
         private readonly Localization locManager;
 
@@ -32,7 +33,7 @@ namespace HarpHero
 
         private List<ITickable> tickableStuff = new List<ITickable>();
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui)
+        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner)
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
@@ -64,6 +65,7 @@ namespace HarpHero
 
             // prep data scrapers
             uiReaderPerformance = new UIReaderBardPerformance(gameGui);
+            keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
 
             // prep UI
             statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager);
@@ -79,7 +81,12 @@ namespace HarpHero
 
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
             uiReaderPerformance.OnVisibilityChanged += (active) => { noteAssistantWindow.OnPerformanceActive(active); bindAssistantWindow.OnPerformanceActive(active); };
-            trackAssistant.OnPlayChanged += (active) => { noteAssistantWindow.OnPlayChanged(active); bindAssistantWindow.OnPlayChanged(active); };
+            trackAssistant.OnPlayChanged += (active) =>
+            {
+                noteMapper.OnKeyBindsSet(keybindReader.ReadBindings());
+                noteAssistantWindow.OnPlayChanged(active);
+                bindAssistantWindow.OnPlayChanged(active);
+            };
 
             // prep plugin hooks
             statusCommand = new(OnCommand);

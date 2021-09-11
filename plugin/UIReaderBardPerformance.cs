@@ -83,17 +83,6 @@ namespace HarpHero
                 {
                     var keyNode = (AtkResNode*)keyOb.addr;
                     (keyOb.pos, keyOb.size) = GUINodeUtils.GetNodePosAndSize(keyNode);
-
-                    var bindDescNode = (AtkResNode*)keyOb.bindTextAddr;
-                    keyOb.bindDesc = GUINodeUtils.GetNodeText(bindDescNode);
-                }
-
-                {
-                    var bindOctaveUpNode = (AtkResNode*)cachedState.octaveUpAddr;
-                    cachedState.octaveUpDesc = GUINodeUtils.GetNodeText(bindOctaveUpNode);
-
-                    var bindOctaveDownNode = (AtkResNode*)cachedState.octaveDownAddr;
-                    cachedState.octaveDownDesc = GUINodeUtils.GetNodeText(bindOctaveDownNode);
                 }
 
                 CalcKeysBoundingBox();
@@ -113,57 +102,15 @@ namespace HarpHero
                     //         [2] text: note name
                     //         [3] text: binding
 
-                    // eh... this is super flaky, investigate reading key bindings directly
+                    // this is super flaky, use real bindings instead
                     // short, white key: [6]/12
                     // short, black key: [5]/11
                     // wide,  white key: [6]/8
                     // wide,  black key: [5]/7
 
-                    AtkResNode* nodeA = null;
-                    if (node != null && (int)node->Type >= 1000)
-                    {
-                        var compNode = (AtkComponentNode*)node;
-                        var uldManager = compNode->Component->UldManager;
-                        nodeA =
-                            (uldManager.NodeListCount == 12) ? uldManager.NodeList[6] :
-                            (uldManager.NodeListCount == 11) ? uldManager.NodeList[5] :
-                            (uldManager.NodeListCount == 8) ? uldManager.NodeList[6] :
-                            (uldManager.NodeListCount == 7) ? uldManager.NodeList[5] :
-                            null;
-                    }
-
-                    var nodeB = GUINodeUtils.PickChildNode(nodeA, 3, 4);
-
-                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { addr = (ulong)node, bindTextAddr = (ulong)nodeB });
+                    cachedState.keys.Add(new UIStateBardPerformance.KeyNode() { addr = (ulong)node });
                 }
             }
-        }
-
-        private unsafe void AddOctaveKeyNodeAddresses(AtkResNode* containerNode)
-        {
-            // root, 2 nodes (sibling scan)
-            //     [1] list container
-            //         [x] 6 list items each with 8 nodes, [0] octave+1, [1] octave-1
-            //             [6] key desc
-
-            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(containerNode);
-            var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 2);
-
-            var nodeB1 = GUINodeUtils.PickChildNode(nodeA, 0, 6);
-            var nodeC1 = GUINodeUtils.PickChildNode(nodeB1, 6, 8);
-            if (nodeC1 == null)
-            {
-                nodeC1 = GUINodeUtils.PickChildNode(nodeB1, 3, 5);
-            }
-            cachedState.octaveUpAddr = (ulong)nodeC1;
-
-            var nodeB2 = GUINodeUtils.PickChildNode(nodeA, 1, 6);
-            var nodeC2 = GUINodeUtils.PickChildNode(nodeB2, 6, 8);
-            if (nodeC2 == null)
-            {
-                nodeC2 = GUINodeUtils.PickChildNode(nodeB1, 3, 5);
-            }
-            cachedState.octaveDownAddr = (ulong)nodeC2;
         }
 
         private unsafe bool ProcessKeyNodes(AtkUnitBase* baseNode)
@@ -191,9 +138,6 @@ namespace HarpHero
             {
                 var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 7);
                 AddKeyNodeAddresses(nodeA);
-
-                var nodeD = GUINodeUtils.PickNode(nodeArrL0, 2, 7);
-                AddOctaveKeyNodeAddresses(nodeD);
             }
             else
             {
@@ -203,9 +147,6 @@ namespace HarpHero
                 AddKeyNodeAddresses(nodeA);
                 AddKeyNodeAddresses(nodeB, 12);
                 AddKeyNodeAddresses(nodeC, 12);
-
-                var nodeD = GUINodeUtils.PickNode(nodeArrL0, 4, 9);
-                AddOctaveKeyNodeAddresses(nodeD);
             }
 
             return cachedState.keys.Count > 0;
@@ -268,15 +209,7 @@ namespace HarpHero
             public ulong addr;
             public Vector2 pos;
             public Vector2 size;
-
-            public ulong bindTextAddr;
-            public string bindDesc;
         }
-
-        public ulong octaveUpAddr;
-        public ulong octaveDownAddr;
-        public string octaveUpDesc;
-        public string octaveDownDesc;
 
         public Vector2 keysPos;
         public Vector2 keysSize;
@@ -285,8 +218,6 @@ namespace HarpHero
 
         public void ResetCachedAddr()
         {
-            octaveUpAddr = 0;
-            octaveDownAddr = 0;
             keys.Clear();
         }
     }

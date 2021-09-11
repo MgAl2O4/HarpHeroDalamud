@@ -1,6 +1,5 @@
 ﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
-using Melanchall.DryWetMidi.Interaction;
 using System;
 using System.Numerics;
 
@@ -166,47 +165,17 @@ namespace HarpHero
                 drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight), noteColor, noteColorFar, noteColorFar, noteColor);
                 if (noteBinding.showHint)
                 {
-                    var noteDesc = GetNoteKeyBinding(noteBinding.noteInfo.note);
-                    drawList.AddText(new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorBindsDark[hintColorIdx], noteDesc);
+                    var noteDesc = noteMapper.GetNoteKeyBinding(noteBinding.noteInfo.note);
+                    if (!string.IsNullOrEmpty(noteDesc))
+                    {
+                        drawList.AddText(new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorBindsDark[hintColorIdx], noteDesc);
+                    }
                 }
             }
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
             var posLineX = Position.Value.X + 10 + Size.Value.X * tLX;
             drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + Size.Value.Y - 10), colorBindsDark[playingColorIdx]);
-        }
-
-        private string GetNoteKeyBinding(Note note)
-        {
-            if (uiReader != null &&
-                uiReader.cachedState != null &&
-                noteMapper.GetMappedNoteIdx(note, out int mappedNoteIdx, out int octaveOffset))
-            {
-                int uiIdx = noteMapper.notes[mappedNoteIdx].uiIndex;
-                if (uiIdx >= 0 && uiIdx < uiReader.cachedState.keys.Count)
-                {
-                    string keyDesc = uiReader.cachedState.keys[uiIdx].bindDesc;
-                    if (string.IsNullOrEmpty(keyDesc))
-                    {
-                        // TODO: check different combinations in wide mode if needed
-                        keyDesc = "?";
-                    }
-
-                    if (octaveOffset < 0)
-                    {
-                        return $"[{uiReader.cachedState.octaveDownDesc} {keyDesc}]";
-                    }
-                    else if (octaveOffset > 0)
-                    {
-                        return $"[{uiReader.cachedState.octaveDownDesc} {keyDesc}]";
-                    }
-
-                    return $"[{keyDesc}]";
-                }
-            }
-
-            //return note.ToString();
-            return "[?]";
         }
     }
 }
