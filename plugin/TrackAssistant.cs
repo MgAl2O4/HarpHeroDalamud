@@ -6,40 +6,48 @@ namespace HarpHero
 {
     public class TrackAssistant : IDisposable, ITickable
     {
-        // TODO: expose
-        public float NumSecondsFuture = 4.0f;
-        public float NumSecondsPast = 0.0f;
-        public int NumWarmupBars = 1;
-
         public readonly UnsafeMetronomeLink metronomeLink;
+        private readonly NoteInputWatcher noteInput;
+
         public MidiTrackWrapper musicTrack;
         public MidiTrackViewer musicViewer;
         public MidiTrackPlayer musicPlayer;
 
         public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null);
+        public bool CanShowNoteAssistant => useNoteAssistant;
+        public bool CanShowBindAssistant => !useNoteAssistant;
         public int TargetBPM => targetBPM;
+        public bool IsPlaying => isPlaying;
+        public bool IsPausedForInput => notePausedForInput != null;
+        public float CurrentTime => currentTimeUs * timeScaling / 1000000.0f;
 
         // TODO: expose
-        public bool CanShowNoteAssistant => isNoteAssistant;
-        public bool CanShowBindAssistant => !isNoteAssistant;
-        public bool isNoteAssistant = false;
+        public float NumSecondsFuture = 4.0f;
+        public float NumSecondsPast = 0.0f;
+        public int NumWarmupBars = 1;
+        public bool useNoteAssistant = false;
+        public bool useWaitingForInput = true;
+        public bool usePlayback = false;
 
         public int midOctaveIdx;
         public float timeScaling = 1.0f;
         private int targetBPM;
 
         private long trackDurationUs;
-        public long currentTimeUs;
-        public bool isPlaying;
+        private long currentTimeUs;
+        private bool isPlaying;
         private bool isPlayingSound;
+        private Note notePausedForInput;
 
         public Action<bool> OnPlayChanged;
         public Action<bool> OnTrackChanged;
 
-        public TrackAssistant(UnsafeMetronomeLink metronomeLink)
+        public TrackAssistant(UnsafeMetronomeLink metronomeLink, NoteInputWatcher noteInput)
         {
             this.metronomeLink = metronomeLink;
+            this.noteInput = noteInput;
+
             if (metronomeLink != null)
             {
                 metronomeLink.OnVisibilityChanged += (active) => { if (active) { SetMetronomeParams(); } };
@@ -107,13 +115,21 @@ namespace HarpHero
             if (musicTrack != null && CanPlay)
             {
                 isPlaying = true;
+                isPlayingSound = false;
+                notePausedForInput = null;
 
                 musicPlayer = new MidiTrackPlayer(musicTrack);
                 musicPlayer.SetTimeScaling(timeScaling);
-                isPlayingSound = false;
+                
+                musicViewer.generateBindingData = CanShowBindAssistant;
+                musicViewer.generateBarData = false; // TODO: expose?
+                musicViewer.OnPlayStart();
 
-                currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
-                Tick(0);
+                if (!HasMetronomeLink)
+                {
+                    currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
+                    Tick(0);
+                }
 
                 OnPlayChanged?.Invoke(true);
             }
@@ -126,6 +142,7 @@ namespace HarpHero
             bool wasPlaying = isPlaying;
             isPlaying = false;
             isPlayingSound = false;
+            notePausedForInput = null;
 
             if (musicPlayer != null)
             {
@@ -148,44 +165,46 @@ namespace HarpHero
         {
             if (isPlaying)
             {
-                // keep int64 for accuracy, floats will gradually degrade
-                // prob overkill since most midis won't last longer than 10 minutes
-                // ~7 significant digits, 600s.0000 - accurate up to 100 us?
+                // time source priorities:
+                // - active playback
+                // - metronome link
+                // - training pause
+                // - tick's accumulator
 
-                // once it starts playing sound, sync time from playback
-                // unless metronome sync is available, then use it
-                if (HasMetronomeLink && metronomeLink.IsPlaying)
+                if (isPlayingSound)
+                {
+                    // time scaling already applied through musiPlayer's speed
+                    currentTimeUs = musicPlayer.GetCurrentTimeUs();
+                }
+                else if (HasMetronomeLink && metronomeLink.IsPlaying)
                 {
                     currentTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
-
-                    if (!isPlayingSound && currentTimeUs >= 0)
-                    {
-                        isPlayingSound = true;
-                        musicPlayer.StartAt(currentTimeUs);
-                    }
-                    else if (isPlayingSound)
-                    {
-                        // TOOD: how to sync? will set time skip over note events?
-                        // set to playback time for eyeballing diffs
-                        currentTimeUs = musicPlayer.GetCurrentTimeUs();
-                    }
                 }
-                else if (!isPlayingSound)
+                else if (IsPausedForInput)
                 {
-                    long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
-                    currentTimeUs += deltaUs;
-
-                    if (currentTimeUs >= 0)
+                    bool isPressed = noteInput.IsNoteKeyPressed(notePausedForInput);
+                    if (isPressed)
                     {
-                        isPlayingSound = true;
-                        musicPlayer.StartAt(currentTimeUs);
+                        notePausedForInput = null;
                     }
                 }
                 else
                 {
-                    currentTimeUs = musicPlayer.GetCurrentTimeUs();
+                    // keep int64 for accuracy, floats will gradually degrade
+                    // prob overkill since most midis won't last longer than 10 minutes
+                    // ~7 significant digits, 600s.0000 - accurate up to 100 us?
+
+                    long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
+                    currentTimeUs += deltaUs;
                 }
 
+                // try starting playback 
+                if (usePlayback && !isPlayingSound && currentTimeUs >= 0)
+                {
+                    isPlayingSound = musicPlayer.StartAt(currentTimeUs);
+                }
+
+                // update viewer & look for end of track
                 if (currentTimeUs < trackDurationUs)
                 {
                     musicViewer.SetTimeUs(currentTimeUs);
@@ -210,6 +229,7 @@ namespace HarpHero
                     musicViewer = new MidiTrackViewer(musicTrack);
                     musicViewer.timeWindowSecondsAhead = NumSecondsFuture;
                     musicViewer.timeWindowSecondsBehind = NumSecondsPast;
+                    musicViewer.OnNoteNotify += OnMusicViewerNote;
 
                     SetMetronomeParams();
                 }
@@ -224,7 +244,7 @@ namespace HarpHero
 
         public void OnAssistModeChanged()
         {
-            OnPlayChanged.Invoke(isPlaying);
+            OnPlayChanged.Invoke(IsPlaying);
         }
 
         public void Dispose()
@@ -263,6 +283,15 @@ namespace HarpHero
             else
             {
                 Stop();
+            }
+        }
+
+        private void OnMusicViewerNote(MidiTrackViewer.NoteInfo noteInfo)
+        {
+            if (useWaitingForInput && !noteInput.IsNoteKeyPressed(noteInfo.note))
+            {
+                notePausedForInput = noteInfo.note;
+                currentTimeUs = noteInfo.startUs;
             }
         }
     }

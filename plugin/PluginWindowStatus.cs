@@ -97,11 +97,11 @@ namespace HarpHero
                     if (trackAssistant.metronomeLink.IsPlaying)
                     {
                         trackAssistant.metronomeLink.GetCurrentTime(out int metronomeBar, out int metronomeBeat, out long metronomeTimeUs);
-                        float metronomeScaledSeconds = metronomeTimeUs * trackAssistant.timeScaling / 1000.0f;
-                        float trackScaledSeconds = trackAssistant.currentTimeUs / 1000.0f;
+                        float metronomeScaledMs = metronomeTimeUs * trackAssistant.timeScaling / 1000.0f;
+                        float trackScaledMs = trackAssistant.CurrentTime * 1000.0f;
 
                         ImGui.SameLine();
-                        ImGui.Text($"bar {metronomeBar}:{metronomeBeat} (err: {Math.Abs(metronomeScaledSeconds - trackScaledSeconds):0.#}ms)");
+                        ImGui.Text($"bar {metronomeBar}:{metronomeBeat} (err: {Math.Abs(metronomeScaledMs - trackScaledMs):0.#}ms)");
                     }
                     else
                     {
@@ -114,7 +114,7 @@ namespace HarpHero
                     ImGui.Text($"Metronome: not visible");
                 }
             }
-            else if (trackAssistant.isPlaying)
+            else if (trackAssistant.IsPlaying)
             {
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Stop))
                 {
@@ -126,7 +126,7 @@ namespace HarpHero
                 }
 
                 ImGui.SameLine();
-                ImGui.Text($"Playing stuff, time: {trackAssistant.currentTimeUs / 1000000.0f:0.00}s");
+                ImGui.Text($"Playing stuff, time: {trackAssistant.CurrentTime:0.00}s");
             }
             else if (trackAssistant.CanPlay)
             {
@@ -140,7 +140,7 @@ namespace HarpHero
                 }
             }
 
-            if (ImGui.Checkbox("Mode: note assistant", ref trackAssistant.isNoteAssistant))
+            if (ImGui.Checkbox("Mode: note assistant", ref trackAssistant.useNoteAssistant))
             {
                 trackAssistant.OnAssistModeChanged();
             }

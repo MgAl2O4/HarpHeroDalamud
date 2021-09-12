@@ -58,7 +58,7 @@ namespace HarpHero
                 IsOpen = false;
                 noMusicUpkeepRemaining = 0.0f;
             }
-            else if (trackAssistant?.isPlaying ?? false)
+            else if (trackAssistant?.IsPlaying ?? false)
             {
                 OnPlayChanged(true);
             }
@@ -104,7 +104,7 @@ namespace HarpHero
 
         public void Tick(float deltaSeconds)
         {
-            if (IsOpen && (trackAssistant == null || !trackAssistant.isPlaying))
+            if (IsOpen && (trackAssistant == null || !trackAssistant.IsPlaying))
             {
                 noMusicUpkeepRemaining -= deltaSeconds;
                 if (noMusicUpkeepRemaining <= 0.0f)
@@ -123,7 +123,7 @@ namespace HarpHero
         {
             if (trackAssistant != null && trackAssistant.musicViewer != null)
             {
-                if (trackAssistant.isPlaying)
+                if (trackAssistant.IsPlaying)
                 {
                     noMusicUpkeepRemaining = NoMusicUpkeepTime;
 

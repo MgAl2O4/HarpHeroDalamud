@@ -33,7 +33,6 @@ namespace HarpHero
         public int GetActiveOctaveOffset()
         {
             int offset = 0;
-
             if (keyBinds.HasValue)
             {
                 bool isOctaveUpPressed = keyState[noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveUp : keyBinds.Value.singleOctave.octaveUp];
@@ -50,6 +49,68 @@ namespace HarpHero
             }
 
             return offset;
+        }
+
+        private bool FindNoteKeyOctaveBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset, out VirtualKey noteKey, out VirtualKey octaveKey)
+        {
+            noteKey = modeBindings.notes[useNoteIdx];
+            bool hasBindings = noteKey != VirtualKey.NO_KEY;
+
+            octaveKey = VirtualKey.NO_KEY;
+            if (useOctaveOffset > 0)
+            {
+                octaveKey = modeBindings.octaveUp;
+                hasBindings = hasBindings && (octaveKey != VirtualKey.NO_KEY);
+            }
+            else if (useOctaveOffset < 0)
+            {
+                octaveKey = modeBindings.octaveDown;
+                hasBindings = hasBindings && (octaveKey != VirtualKey.NO_KEY);
+            }
+
+            return hasBindings;
+        }
+
+        public bool IsNoteKeyPressed(Note note)
+        {
+            bool isPressed = false;
+            if (keyBinds.HasValue && noteMapper.GetMappedNoteIdx(note, out int mappedNoteIdx, out int octaveOffset))
+            {
+                if (isWideModeCached)
+                {
+                    bool foundBinding = FindNoteOctaveKeyBindingsState(keyBinds.Value.threeOctaves, mappedNoteIdx, octaveOffset, out isPressed);
+                    if (!foundBinding && octaveOffset == 0)
+                    {
+                        // no binds: lower/higher octave? try using center + offset
+                        if (mappedNoteIdx < 12)
+                        {
+                            FindNoteOctaveKeyBindingsState(keyBinds.Value.threeOctaves, mappedNoteIdx + 12, -1, out isPressed);
+                        }
+                        else if (mappedNoteIdx >= 12 + 12)
+                        {
+                            FindNoteOctaveKeyBindingsState(keyBinds.Value.threeOctaves, mappedNoteIdx - 12, 1, out isPressed);
+                        }
+                    }
+                }
+                else
+                {
+                    FindNoteOctaveKeyBindingsState(keyBinds.Value.singleOctave, mappedNoteIdx, octaveOffset, out isPressed);
+                }
+
+                bool FindNoteOctaveKeyBindingsState(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset, out bool isPressed)
+                {
+                    if (FindNoteKeyOctaveBindings(modeBindings, useNoteIdx, useOctaveOffset, out VirtualKey keyA, out VirtualKey keyB))
+                    {
+                        isPressed = (keyA == VirtualKey.NO_KEY || keyState[keyA]) && (useOctaveOffset == GetActiveOctaveOffset());
+                        return true;
+                    }
+
+                    isPressed = false;
+                    return false;
+                }
+            }
+
+            return isPressed;
         }
 
         public string GetNoteKeyBinding(Note note)
@@ -73,22 +134,7 @@ namespace HarpHero
 
             string GetNoteOctaveBindingDesc(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset)
             {
-                var noteKey = modeBindings.notes[useNoteIdx];
-                bool hasBindings = noteKey != VirtualKey.NO_KEY;
-
-                var octaveKey = VirtualKey.NO_KEY;
-                if (useOctaveOffset > 0)
-                {
-                    octaveKey = modeBindings.octaveUp;
-                    hasBindings = hasBindings && (octaveKey != VirtualKey.NO_KEY);
-                }
-                else if (useOctaveOffset < 0)
-                {
-                    octaveKey = modeBindings.octaveDown;
-                    hasBindings = hasBindings && (octaveKey != VirtualKey.NO_KEY);
-                }
-
-                if (hasBindings)
+                if (FindNoteKeyOctaveBindings(modeBindings, useNoteIdx, useOctaveOffset, out VirtualKey noteKey, out VirtualKey octaveKey))
                 {
                     string desc = "";
                     if (octaveKey != VirtualKey.NO_KEY)

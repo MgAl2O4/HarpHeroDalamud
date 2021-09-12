@@ -32,7 +32,6 @@ namespace HarpHero
 
         public float timeWindowSecondsAhead = 9.0f;
         public float timeWindowSecondsBehind = 1.0f;
-
         public int maxBindingsToShow = 3;
         public int maxNotesToHint = 5;
 
@@ -55,6 +54,9 @@ namespace HarpHero
         public List<long> shownBeatLines = new List<long>();
         public List<BindingInfo> shownBindings = new List<BindingInfo>();
 
+        public Action<NoteInfo> OnNoteNotify;
+        private long lastNotifyStartUs;
+
         public MidiTrackViewer(MidiTrackWrapper track)
         {
             if (track != null)
@@ -66,6 +68,11 @@ namespace HarpHero
         public MidiTrackViewer(TrackChunk trackChunk, TempoMap tempoMap)
         {
             GenerateCachedData(trackChunk, tempoMap);
+        }
+
+        public void OnPlayStart()
+        {
+            lastNotifyStartUs = -1;
         }
 
         public void SetTime(long time)
@@ -118,11 +125,22 @@ namespace HarpHero
                 var startTimeUs = TimeRangeStartUs;
                 var endTimeUs = TimeRangeEndUs;
 
+                bool foundPlayingNote = false;
                 for (int idx = 0; idx < cachedNotes.Length; idx++)
                 {
                     if (cachedNotes[idx].startUs < endTimeUs && cachedNotes[idx].endUs >= startTimeUs)
                     {
                         shownNotes.Add(cachedNotes[idx]);
+
+                        if (!foundPlayingNote && cachedNotes[idx].startUs <= timeUs && cachedNotes[idx].endUs > timeUs)
+                        {
+                            foundPlayingNote = true;
+                            if (lastNotifyStartUs != cachedNotes[idx].startUs)
+                            {
+                                lastNotifyStartUs = cachedNotes[idx].startUs;
+                                OnNoteNotify?.Invoke(cachedNotes[idx]);
+                            }
+                        }
                     }
                 }
             }
