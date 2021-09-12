@@ -22,6 +22,10 @@ namespace HarpHero
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate IntPtr GetMetronomeManagerDelegate(IntPtr uiObject);
 
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        private delegate IntPtr StopMetronomeDelegate(IntPtr agentPtr);
+        private StopMetronomeDelegate StopMetronomeFn;
+
         public readonly UIReaderBardMetronome uiReader;
         private readonly GameGui gameGui;
 
@@ -60,6 +64,8 @@ namespace HarpHero
             var ptrSetBPMFunc = IntPtr.Zero;
             var ptrGetMeasureFunc = IntPtr.Zero;
             var ptrGetBPMFunc = IntPtr.Zero;
+            var ptrMetronomeStopFunc = IntPtr.Zero;
+            bool hasException = false;
 
             if (sigScanner != null)
             {
@@ -68,19 +74,30 @@ namespace HarpHero
                 // 
                 // measure header = .text: 48 89 5C 24 18 48 89 74 24 20 89 54 24 10 57 48 83 EC 20 48 8B D9 C7 44 24 30 07
                 // bpm header: .text: 48 89 5C 24 18 48 89 74 24 20 89 54 24 10 57 48 83 EC 20 48 8B F1 C7 44 24 30 C8
-
+                //
                 // (both accessed in some init func, use sigs for their calls instead because why not)
                 // boh contain setters in some manager, source of value for reads
                 //
+                // stop metronome: break on play write to 0 
 
-                ptrSetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 48 63 06 48 8d 54 24 30 48 69 c8 e8 03");
-                ptrSetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 48 8b 43 48 48 8b 48 10 48 8b 01 ff 90 d0");
+                try
+                {
+                    ptrSetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 48 63 06 48 8d 54 24 30 48 69 c8 e8 03");
+                    ptrSetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 48 8b 43 48 48 8b 48 10 48 8b 01 ff 90 d0");
 
-                ptrGetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? f3 0f 10 4e 04 0f b7 c0 66 0f 6e c0");
-                ptrGetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
+                    ptrGetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? f3 0f 10 4e 04 0f b7 c0 66 0f 6e c0");
+                    ptrGetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
+
+                    ptrMetronomeStopFunc = sigScanner.ScanText("40 53 48 83 EC 20 48 8B 01 48 8B D9 FF 50 20 84 C0 74 ?? 48 8B CB C6 43 73 00");
+                    //PluginLog.Log($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)sigScanner.Module.BaseAddress):X}");
+                }
+                catch (Exception)
+                {
+                    hasException = true;
+                }
             }
 
-            HasErrors = (ptrSetMeasureFunc == IntPtr.Zero) || (ptrSetBPMFunc == IntPtr.Zero) || (ptrGetBPMFunc == IntPtr.Zero) || (ptrGetMeasureFunc == IntPtr.Zero);
+            HasErrors = hasException || (ptrSetMeasureFunc == IntPtr.Zero) || (ptrSetBPMFunc == IntPtr.Zero) || (ptrGetBPMFunc == IntPtr.Zero) || (ptrGetMeasureFunc == IntPtr.Zero) || (ptrMetronomeStopFunc == IntPtr.Zero);
             if (!HasErrors)
             {
                 SetMetronomeMeasureFn = Marshal.GetDelegateForFunctionPointer<SetMetronomeValueDelegate>(ptrSetMeasureFunc);
@@ -88,6 +105,8 @@ namespace HarpHero
 
                 GetMetronomeBPMFn = Marshal.GetDelegateForFunctionPointer<GetMetronomeValueDelegate>(ptrGetBPMFunc);
                 GetMetronomeMeasureFn = Marshal.GetDelegateForFunctionPointer<GetMetronomeValueDelegate>(ptrGetMeasureFunc);
+
+                StopMetronomeFn = Marshal.GetDelegateForFunctionPointer<StopMetronomeDelegate>(ptrMetronomeStopFunc);
             }
             else
             {
@@ -164,6 +183,14 @@ namespace HarpHero
                 bar = 0;
                 beat = 0;
                 timeUs = 0;
+            }
+        }
+
+        public void Stop()
+        {
+            if (uiReader.AgentPtr != IntPtr.Zero)
+            {
+                StopMetronomeFn(uiReader.AgentPtr);
             }
         }
 

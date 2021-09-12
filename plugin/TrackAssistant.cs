@@ -137,6 +137,11 @@ namespace HarpHero
             {
                 OnPlayChanged?.Invoke(false);
             }
+
+            if (HasMetronomeLink && metronomeLink.IsPlaying)
+            {
+                metronomeLink.Stop();
+            }
         }
 
         public void Tick(float deltaSeconds)
