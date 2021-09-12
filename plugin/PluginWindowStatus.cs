@@ -25,7 +25,7 @@ namespace HarpHero
 
             IsOpen = false;
 
-            Size = new Vector2(350, ImGui.GetTextLineHeight() * 11.0f);
+            Size = new Vector2(350, ImGui.GetTextLineHeight() * 15.0f);
             SizeConstraints = new WindowSizeConstraints() { MinimumSize = this.Size.Value, MaximumSize = new Vector2(3000, 3000) };
             SizeCondition = ImGuiCond.FirstUseEver;
 
@@ -80,7 +80,41 @@ namespace HarpHero
 
             // debug stuff: play & more stats
             ImGui.AlignTextToFramePadding();
-            if (trackAssistant.isPlaying)
+            if (trackAssistant.HasMetronomeLink)
+            {
+                ImGui.AlignTextToFramePadding();
+                ImGuiComponents.DisabledButton(FontAwesomeIcon.Link);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Use game metronome for play control");
+                }
+
+                ImGui.SameLine();
+                if (trackAssistant.metronomeLink.IsActive)
+                {
+                    var playingDesc = trackAssistant.metronomeLink.IsPlaying ? "playing" : "stopped";
+                    ImGui.Text($"Metronome: {playingDesc}");
+                    if (trackAssistant.metronomeLink.IsPlaying)
+                    {
+                        trackAssistant.metronomeLink.GetCurrentTime(out int metronomeBar, out int metronomeBeat, out long metronomeTimeUs);
+                        float metronomeScaledSeconds = metronomeTimeUs * trackAssistant.timeScaling / 1000.0f;
+                        float trackScaledSeconds = trackAssistant.currentTimeUs / 1000.0f;
+
+                        ImGui.SameLine();
+                        ImGui.Text($"bar {metronomeBar}:{metronomeBeat} (err: {Math.Abs(metronomeScaledSeconds - trackScaledSeconds):0.#}ms)");
+                    }
+                    else
+                    {
+                        ImGui.SameLine();
+                        ImGui.Text($"BPM:{trackAssistant.metronomeLink.BPM}, measure:{trackAssistant.metronomeLink.Measure}");
+                    }
+                }
+                else
+                {
+                    ImGui.Text($"Metronome: not visible");
+                }
+            }
+            else if (trackAssistant.isPlaying)
             {
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Stop))
                 {

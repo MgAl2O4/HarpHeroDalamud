@@ -11,10 +11,12 @@ namespace HarpHero
         public float NumSecondsPast = 0.0f;
         public int NumWarmupBars = 1;
 
+        public readonly UnsafeMetronomeLink metronomeLink;
         public MidiTrackWrapper musicTrack;
         public MidiTrackViewer musicViewer;
         public MidiTrackPlayer musicPlayer;
 
+        public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null);
         public int TargetBPM => targetBPM;
 
@@ -34,6 +36,18 @@ namespace HarpHero
 
         public Action<bool> OnPlayChanged;
         public Action<bool> OnTrackChanged;
+
+        public TrackAssistant(UnsafeMetronomeLink metronomeLink)
+        {
+            this.metronomeLink = metronomeLink;
+            if (metronomeLink != null)
+            {
+                metronomeLink.OnVisibilityChanged += (active) => { if (active) { SetMetronomeParams(); } };
+                metronomeLink.OnBPMChanged += (newBPM) => SetTargetBPM(newBPM);
+                metronomeLink.OnPlayingChanged += (newIsPlaying) => OnMetronomePlaying(newIsPlaying);
+                // TODO: waht about messing with measure? this should be driven by track - reset on play?
+            }
+        }
 
         public void SetTrack(MidiTrackWrapper track)
         {
@@ -65,6 +79,8 @@ namespace HarpHero
             {
                 musicPlayer.SetTimeScaling(timeScaling);
             }
+
+            SetMetronomeParams();
         }
 
         public void OnTracksImported(List<MidiTrackWrapper> tracks)
@@ -132,8 +148,24 @@ namespace HarpHero
                 // ~7 significant digits, 600s.0000 - accurate up to 100 us?
 
                 // once it starts playing sound, sync time from playback
-                // TODO: what about in game metronome?
-                if (!isPlayingSound)
+                // unless metronome sync is available, then use it
+                if (HasMetronomeLink && metronomeLink.IsPlaying)
+                {
+                    currentTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
+
+                    if (!isPlayingSound && currentTimeUs >= 0)
+                    {
+                        isPlayingSound = true;
+                        musicPlayer.StartAt(currentTimeUs);
+                    }
+                    else if (isPlayingSound)
+                    {
+                        // TOOD: how to sync? will set time skip over note events?
+                        // set to playback time for eyeballing diffs
+                        currentTimeUs = musicPlayer.GetCurrentTimeUs();
+                    }
+                }
+                else if (!isPlayingSound)
                 {
                     long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
                     currentTimeUs += deltaUs;
@@ -173,6 +205,8 @@ namespace HarpHero
                     musicViewer = new MidiTrackViewer(musicTrack);
                     musicViewer.timeWindowSecondsAhead = NumSecondsFuture;
                     musicViewer.timeWindowSecondsBehind = NumSecondsPast;
+
+                    SetMetronomeParams();
                 }
             }
             else
@@ -200,6 +234,31 @@ namespace HarpHero
         public float GetScaledKeysPerSecond()
         {
             return (musicTrack != null && musicTrack.stats != null) ? musicTrack.stats.GetKeysPerSecond(timeScaling) : 0.0f;
+        }
+
+        private void SetMetronomeParams()
+        {
+            if (HasMetronomeLink && musicTrack != null)
+            {
+                int newBPMValue = (targetBPM != 0) ? targetBPM : musicTrack.stats.beatsPerMinute;
+                metronomeLink.BPM = newBPMValue;
+                metronomeLink.Measure = musicTrack.stats.timeSignature.Numerator;
+            }
+        }
+
+        private void OnMetronomePlaying(bool isMetronomePlaying)
+        {
+            if (isMetronomePlaying)
+            {
+                // make sure thaht time signature is matching current track
+                metronomeLink.Measure = musicTrack.stats.timeSignature.Numerator;
+
+                Start();
+            }
+            else
+            {
+                Stop();
+            }
         }
     }
 }

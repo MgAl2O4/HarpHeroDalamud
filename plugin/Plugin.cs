@@ -27,12 +27,15 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReaderPerformance;
         private readonly UnsafeReaderPerformanceKeybinds keybindReader;
         private readonly TrackAssistant trackAssistant;
+        private readonly UnsafeMetronomeLink metronome;
         private readonly Localization locManager;
 
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "en" };
 
         private List<ITickable> tickableStuff = new List<ITickable>();
+
+        private bool useMetronomeLink = true;
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState)
         {
@@ -48,7 +51,13 @@ namespace HarpHero
             var noteMapper = new NoteUIMapper();
             var noteInputWatch = new NoteInputWatcher(noteMapper, keyState);
 
-            trackAssistant = new TrackAssistant();
+            // prep data scrapers
+            uiReaderPerformance = new UIReaderBardPerformance(gameGui);
+            keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
+            metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
+
+            // more utils
+            trackAssistant = new TrackAssistant(useMetronomeLink ? metronome : null);
             trackAssistant.OnTrackChanged += (valid) => noteMapper.OnTrackChanged(trackAssistant);
             tickableStuff.Add(trackAssistant);
 
@@ -64,10 +73,6 @@ namespace HarpHero
                 trackAssistant.SetTargetBPM(30);
             }
 #endif
-
-            // prep data scrapers
-            uiReaderPerformance = new UIReaderBardPerformance(gameGui);
-            keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
 
             // prep UI
             statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager);
@@ -146,6 +151,7 @@ namespace HarpHero
             try
             {
                 uiReaderPerformance.Update();
+                metronome.Update();
 
                 float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
                 foreach (var tickOb in tickableStuff)
