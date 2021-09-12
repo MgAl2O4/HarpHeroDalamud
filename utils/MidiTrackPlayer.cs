@@ -19,15 +19,18 @@ namespace HarpHero
             if (track != null && track.midiTrack != null && track.tempoMap != null)
             {
                 midiDevice = OutputDevice.GetById(0);
-                midiPlayback = track.midiTrack.GetPlayback(track.tempoMap, midiDevice);
+                if (midiDevice != null)
+                {
+                    midiPlayback = track.midiTrack.GetPlayback(track.tempoMap, midiDevice);
 
-                midiPlayback.PlaybackStart = track.sectionStart;
-                midiPlayback.PlaybackEnd = track.sectionEnd;
-                midiPlayback.Finished += MidiPlayback_Finished;
-                midiPlayback.Stopped += MidiPlayback_Finished;
+                    midiPlayback.PlaybackStart = track.sectionStart;
+                    midiPlayback.PlaybackEnd = track.sectionEnd;
+                    midiPlayback.Finished += MidiPlayback_Finished;
+                    midiPlayback.Stopped += MidiPlayback_Finished;
 
-                // warmup device immediately
-                midiDevice.PrepareForEventsSending();
+                    // warmup device immediately
+                    midiDevice.PrepareForEventsSending();
+                }
             }
         }
 
