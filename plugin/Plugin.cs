@@ -72,7 +72,7 @@ namespace HarpHero
 #endif
 
             // prep UI
-            statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager, configuration);
+            statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration);
             windowSystem.AddWindow(statusWindow);
 
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
