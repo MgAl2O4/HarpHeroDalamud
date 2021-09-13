@@ -88,7 +88,7 @@ namespace HarpHero
         {
             if (trackAssistant.CanShowNoteAssistant)
             {
-                if (active)
+                if (active && uiReader.IsVisible)
                 {
                     IsOpen = true;
                     noMusicUpkeepRemaining = NoMusicUpkeepTime;
@@ -167,7 +167,7 @@ namespace HarpHero
 
         public override void Draw()
         {
-            if (cachedNotePosX != null)
+            if (cachedNotePosX != null && Size.HasValue)
             {
                 DrawKeyGuides();
 

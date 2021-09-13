@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using Melanchall.DryWetMidi.Common;
+﻿using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.MusicTheory;
@@ -17,9 +16,12 @@ namespace HarpHero
 
         public int numNotes;
         public int numBars;
+        public int numBarsTotal;
 
         public long startTick;
         public long endTick;
+        public int startBar;
+        public int endBar;
 
         public TimeSignature timeSignature;
         public int numTimeSignatures;
@@ -41,6 +43,13 @@ namespace HarpHero
 
         public void Update(TrackChunk track, TempoMap tempoMap) => Update(track, tempoMap, null, null);
 
+        public int GetOctaveRange()
+        {
+            int minOctave = NoteUtilities.GetNoteOctave(minNote);
+            int maxOctave = NoteUtilities.GetNoteOctave(maxNote);
+            return maxOctave - minOctave + 1;
+        }
+
         public bool IsOctaveRangeValid(out int midOctaveId)
         {
             bool isValid = false;
@@ -52,9 +61,6 @@ namespace HarpHero
 
             midOctaveId = minOctave + (octaveDiff / 2);
             isValid = (octaveDiff < 3) || (octaveDiff == 3 && NoteUtilities.GetNoteName(maxNote) == NoteName.C);
-#if DEBUG
-            PluginLog.Log($"{NoteUtilities.GetNoteName(minNote)} [oct {minOctave}] .. {NoteUtilities.GetNoteName(maxNote)} [oct {maxOctave}] ==> valid:{isValid}, midOct:{midOctaveId}");
-#endif // DEBUG
 
             return isValid;
         }
@@ -67,6 +73,9 @@ namespace HarpHero
 
         private void CalcDuration(TrackChunk track, TempoMap tempoMap, ITimeSpan sectionStart, ITimeSpan sectionEnd)
         {
+            var lastNote = track.GetNotes().Last();
+            var lastNoteEndTick = lastNote.Time + lastNote.Length;
+
             if (sectionStart != null && sectionEnd != null)
             {
                 startTick = TimeConverter.ConvertFrom(sectionStart, tempoMap);
@@ -74,15 +83,14 @@ namespace HarpHero
             }
             else
             {
-                var lastNote = track.GetNotes().Last();
-
                 startTick = 0;
-                endTick = lastNote.Time + lastNote.Length;
+                endTick = lastNoteEndTick;
             }
 
-            var barStart = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(startTick, tempoMap);
-            var barEnd = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(endTick, tempoMap);
-            numBars = (int)(barEnd.Bars - barStart.Bars + 1);
+            startBar = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(startTick, tempoMap).Bars;
+            endBar = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(endTick, tempoMap).Bars;
+            numBars = endBar - startBar + 1;
+            numBarsTotal = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(lastNoteEndTick, tempoMap).Bars + 1;
 
             duration = TimeConverter.ConvertTo<MetricTimeSpan>(DurationTicks, tempoMap);
         }

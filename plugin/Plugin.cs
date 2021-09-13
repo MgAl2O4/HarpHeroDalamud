@@ -35,7 +35,7 @@ namespace HarpHero
 
         private List<ITickable> tickableStuff = new List<ITickable>();
 
-        private bool useMetronomeLink = false;
+        private bool useMetronomeLink = true;
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState)
         {
@@ -62,7 +62,7 @@ namespace HarpHero
             tickableStuff.Add(trackAssistant);
 
             var fileManager = new MidiFileManager();
-            fileManager.OnImported += (_) => trackAssistant.OnTracksImported(fileManager.tracks);
+            fileManager.OnImported += (_) => { trackAssistant.OnTracksImported(fileManager.tracks); };
 
 #if DEBUG
             // temp debug stuff

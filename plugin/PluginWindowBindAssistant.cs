@@ -68,7 +68,7 @@ namespace HarpHero
         {
             if (trackAssistant.CanShowBindAssistant)
             {
-                if (active)
+                if (active && uiReader.IsVisible)
                 {
                     IsOpen = true;
                     noMusicUpkeepRemaining = NoMusicUpkeepTime;
@@ -121,7 +121,7 @@ namespace HarpHero
 
         public override void Draw()
         {
-            if (trackAssistant != null && trackAssistant.musicViewer != null)
+            if (trackAssistant != null && trackAssistant.musicViewer != null && Size.HasValue)
             {
                 if (trackAssistant.IsPlaying)
                 {

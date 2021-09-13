@@ -27,9 +27,6 @@ namespace HarpHero
                     midiPlayback.PlaybackEnd = track.sectionEnd;
                     midiPlayback.Finished += MidiPlayback_Finished;
                     midiPlayback.Stopped += MidiPlayback_Finished;
-
-                    // warmup device immediately
-                    midiDevice.PrepareForEventsSending();
                 }
             }
         }
@@ -59,6 +56,11 @@ namespace HarpHero
         public void Stop()
         {
             midiPlayback?.Stop();
+        }
+
+        public void WarmupDevice()
+        {
+            midiDevice?.PrepareForEventsSending();
         }
 
         public void SetTimeScaling(float timeScaling)

@@ -15,10 +15,12 @@ namespace HarpHero
 
         public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null);
+        public bool CanUsePlayback => usePlayback && !useWaitingForInput;
         public bool CanShowNoteAssistant => useNoteAssistant;
         public bool CanShowBindAssistant => !useNoteAssistant;
         public int TargetBPM => targetBPM;
         public bool IsPlaying => isPlaying;
+        public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
         public bool IsPausedForInput => notePausedForInput != null;
         public float CurrentTime => currentTimeUs * timeScaling / 1000000.0f;
 
@@ -28,7 +30,7 @@ namespace HarpHero
         public int NumWarmupBars = 1;
         public bool useNoteAssistant = false;
         public bool useWaitingForInput = true;
-        public bool usePlayback = false;
+        public bool usePlayback = true;
 
         public int midOctaveIdx;
         public float timeScaling = 1.0f;
@@ -63,17 +65,24 @@ namespace HarpHero
 
             musicTrack = track;
             musicViewer = null;
-            OnTrackUpdated();
 
-            // refresh time scaling
-            SetTargetBPM(targetBPM);
+            SetTargetBPM(0);
+            OnTrackUpdated();
         }
 
         public void SetTrackSection(int startBar, int endBar)
         {
             Stop();
 
-            musicTrack.SetSection(new BarBeatTicksTimeSpan(startBar), new BarBeatTicksTimeSpan(endBar));
+            if (startBar < 0 || endBar < 0)
+            {
+                musicTrack.SetSection(null, null);
+            }
+            else
+            {
+                musicTrack.SetSection(new BarBeatTicksTimeSpan(startBar), new BarBeatTicksTimeSpan(endBar));
+            }
+
             musicViewer = null;
             OnTrackUpdated();
         }
@@ -114,22 +123,30 @@ namespace HarpHero
         {
             if (musicTrack != null && CanPlay)
             {
-                isPlaying = true;
                 isPlayingSound = false;
                 notePausedForInput = null;
 
-                musicPlayer = new MidiTrackPlayer(musicTrack);
-                musicPlayer.SetTimeScaling(timeScaling);
-                
+                try
+                {
+                    musicPlayer = new MidiTrackPlayer(musicTrack);
+                    musicPlayer.SetTimeScaling(timeScaling);
+
+                    // this can throw exception when device is in use
+                    musicPlayer.WarmupDevice();
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+
+                isPlaying = true;
+
                 musicViewer.generateBindingData = CanShowBindAssistant;
                 musicViewer.generateBarData = false; // TODO: expose?
                 musicViewer.OnPlayStart();
 
-                if (!HasMetronomeLink)
-                {
-                    currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
-                    Tick(0);
-                }
+                currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
+                Tick(0);
 
                 OnPlayChanged?.Invoke(true);
             }
@@ -158,6 +175,27 @@ namespace HarpHero
             if (HasMetronomeLink && metronomeLink.IsPlaying)
             {
                 metronomeLink.Stop();
+            }
+        }
+
+        public void PlayPreview()
+        {
+            Stop();
+
+            if (musicTrack != null)
+            {
+                try
+                {
+                    musicPlayer = new MidiTrackPlayer(musicTrack);
+                    musicPlayer.SetTimeScaling(2.0f);
+                    musicPlayer.Start();
+
+                    isPlayingSound = true;
+                }
+                catch (Exception)
+                {
+                    // it's ok, midi device was busy or sth, ignore
+                }
             }
         }
 
@@ -199,7 +237,7 @@ namespace HarpHero
                 }
 
                 // try starting playback 
-                if (usePlayback && !isPlayingSound && currentTimeUs >= 0)
+                if (CanUsePlayback && !isPlayingSound && currentTimeUs >= 0)
                 {
                     isPlayingSound = musicPlayer.StartAt(currentTimeUs);
                 }
@@ -247,6 +285,11 @@ namespace HarpHero
             OnPlayChanged.Invoke(IsPlaying);
         }
 
+        public void OnTrainingModeChanged()
+        {
+            notePausedForInput = null;
+        }
+
         public void Dispose()
         {
             if (musicPlayer != null)
@@ -267,7 +310,7 @@ namespace HarpHero
             {
                 int newBPMValue = (targetBPM != 0) ? targetBPM : musicTrack.stats.beatsPerMinute;
                 metronomeLink.BPM = newBPMValue;
-                metronomeLink.Measure = musicTrack.stats.timeSignature.Numerator;
+                metronomeLink.Measure = musicTrack.stats.timeSignature?.Numerator ?? 4;
             }
         }
 
@@ -276,7 +319,7 @@ namespace HarpHero
             if (isMetronomePlaying)
             {
                 // make sure thaht time signature is matching current track
-                metronomeLink.Measure = musicTrack.stats.timeSignature.Numerator;
+                metronomeLink.Measure = musicTrack.stats.timeSignature?.Numerator ?? 4;
 
                 Start();
             }
