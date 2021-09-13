@@ -8,16 +8,17 @@ namespace HarpHero
     {
         public readonly UnsafeMetronomeLink metronomeLink;
         private readonly NoteInputWatcher noteInput;
+        private readonly Configuration config;
 
         public MidiTrackWrapper musicTrack;
         public MidiTrackViewer musicViewer;
         public MidiTrackPlayer musicPlayer;
 
-        public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors;
+        public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors && config.UseMetronomeLink;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null);
-        public bool CanUsePlayback => usePlayback && !useWaitingForInput;
-        public bool CanShowNoteAssistant => useNoteAssistant;
-        public bool CanShowBindAssistant => !useNoteAssistant;
+        public bool CanUsePlayback => config.UsePlayback && !useWaitingForInput;
+        public bool CanShowNoteAssistant => config.UseAssistNote();
+        public bool CanShowBindAssistant => config.UseAssistBind();
         public int TargetBPM => targetBPM;
         public bool IsPlaying => isPlaying;
         public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
@@ -28,12 +29,10 @@ namespace HarpHero
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
         public int NumWarmupBars = 1;
-        public bool useNoteAssistant = false;
-        public bool useWaitingForInput = true;
-        public bool usePlayback = true;
 
         public int midOctaveIdx;
         public float timeScaling = 1.0f;
+        public bool useWaitingForInput = true;
         private int targetBPM;
 
         private long trackDurationUs;
@@ -45,10 +44,11 @@ namespace HarpHero
         public Action<bool> OnPlayChanged;
         public Action<bool> OnTrackChanged;
 
-        public TrackAssistant(UnsafeMetronomeLink metronomeLink, NoteInputWatcher noteInput)
+        public TrackAssistant(UnsafeMetronomeLink metronomeLink, NoteInputWatcher noteInput, Configuration config)
         {
             this.metronomeLink = metronomeLink;
             this.noteInput = noteInput;
+            this.config = config;
 
             if (metronomeLink != null)
             {
@@ -67,10 +67,38 @@ namespace HarpHero
             musicViewer = null;
 
             SetTargetBPM(0);
+            if (track != null)
+            {
+                // modify section length first, it will affect notes per beat
+                int initStartBar = -1;
+                int initEndBar = -1;
+
+                if (config.AutoAdjustEndBar)
+                {
+                    int endBarIdx = track.FindValidEndBar();
+                    if (endBarIdx > 0)
+                    {
+                        initStartBar = 0;
+                        initEndBar = endBarIdx;
+                    }
+                }
+                SetTrackSection(initStartBar, initEndBar, false);
+
+                if (config.AutoAdjustBPM)
+                {
+                    float targetBeatsPerSecond = config.AutoAdjustSpeedThreshold / track.stats.notesPerBeat;
+                    int newTargetBPM = (int)(targetBeatsPerSecond * 60);
+                    if (newTargetBPM < track.stats.beatsPerMinute)
+                    {
+                        SetTargetBPM(newTargetBPM);
+                    }
+                }
+            }
+
             OnTrackUpdated();
         }
 
-        public void SetTrackSection(int startBar, int endBar)
+        public void SetTrackSection(int startBar, int endBar, bool sendNotify = true)
         {
             Stop();
 

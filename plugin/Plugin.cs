@@ -21,7 +21,7 @@ namespace HarpHero
 
         private readonly WindowSystem windowSystem = new("HarpHero");
 
-        private readonly Window statusWindow;
+        private readonly PluginWindowStatus statusWindow;
         private readonly CommandInfo statusCommand;
 
         private readonly UIReaderBardPerformance uiReaderPerformance;
@@ -34,14 +34,16 @@ namespace HarpHero
         private string[] supportedLangCodes = { "en" };
 
         private List<ITickable> tickableStuff = new List<ITickable>();
-
-        private bool useMetronomeLink = true;
+        private Configuration configuration { get; init; }
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState)
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
             this.framework = framework;
+
+            configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            configuration.Initialize(pluginInterface);
 
             // prep utils
             locManager = new Localization("assets/loc", "", true);
@@ -57,7 +59,7 @@ namespace HarpHero
             metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
 
             // more utils
-            trackAssistant = new TrackAssistant(useMetronomeLink ? metronome : null, noteInputWatch);
+            trackAssistant = new TrackAssistant(metronome, noteInputWatch, configuration);
             trackAssistant.OnTrackChanged += (valid) => noteMapper.OnTrackChanged(trackAssistant);
             tickableStuff.Add(trackAssistant);
 
@@ -67,15 +69,10 @@ namespace HarpHero
 #if DEBUG
             // temp debug stuff
             fileManager.ImportFile(@"D:\temp\test3.mid");
-            if (fileManager.tracks.Count > 0)
-            {
-                trackAssistant.SetTrackSection(0, 10);
-                trackAssistant.SetTargetBPM(30);
-            }
 #endif
 
             // prep UI
-            statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager);
+            statusWindow = new PluginWindowStatus(uiReaderPerformance, trackAssistant, fileManager, configuration);
             windowSystem.AddWindow(statusWindow);
 
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
@@ -101,6 +98,7 @@ namespace HarpHero
 
             pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
+            pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
             framework.Update += Framework_OnUpdateEvent;
 
@@ -138,6 +136,12 @@ namespace HarpHero
 
         private void OnCommand(string command, string args)
         {
+            statusWindow.IsOpen = true;
+        }
+
+        private void OnOpenConfig()
+        {
+            statusWindow.showConfigs = true;
             statusWindow.IsOpen = true;
         }
 

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Logging;
+using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.MusicTheory;
@@ -249,6 +250,37 @@ namespace HarpHero
 
                 UnifyTempo();
             }
+        }
+
+        public int FindValidEndBar()
+        {
+            var minNote = SevenBitNumber.MaxValue;
+            var maxNote = SevenBitNumber.MinValue;
+            long lastValidTick = 0;
+
+            foreach (var note in midiTrack.GetNotes())
+            {
+                if (minNote > note.NoteNumber)
+                {
+                    minNote = note.NoteNumber;
+                }
+                if (maxNote < note.NoteNumber)
+                {
+                    maxNote = note.NoteNumber;
+                }
+
+                bool isValid = stats.IsOctaveRangeValid(minNote, maxNote, out int dummyId);
+                if (isValid)
+                {
+                    lastValidTick = note.Time;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(lastValidTick, tempoMap).Bars;
         }
 
         public float GetScalingForBPM(int targetBPM)

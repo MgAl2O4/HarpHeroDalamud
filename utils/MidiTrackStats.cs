@@ -50,20 +50,16 @@ namespace HarpHero
             return maxOctave - minOctave + 1;
         }
 
-        public bool IsOctaveRangeValid(out int midOctaveId)
+        public bool IsOctaveRangeValid(SevenBitNumber minNoteNumber, SevenBitNumber maxNoteNumber, out int midOctaveId)
         {
-            bool isValid = false;
-            midOctaveId = 0;
-
-            int minOctave = NoteUtilities.GetNoteOctave(minNote);
-            int maxOctave = NoteUtilities.GetNoteOctave(maxNote);
+            int minOctave = NoteUtilities.GetNoteOctave(minNoteNumber);
+            int maxOctave = NoteUtilities.GetNoteOctave(maxNoteNumber);
             int octaveDiff = maxOctave - minOctave;
-
             midOctaveId = minOctave + (octaveDiff / 2);
-            isValid = (octaveDiff < 3) || (octaveDiff == 3 && NoteUtilities.GetNoteName(maxNote) == NoteName.C);
 
-            return isValid;
+            return (octaveDiff < 3) || (octaveDiff == 3 && NoteUtilities.GetNoteName(maxNoteNumber) == NoteName.C);
         }
+        public bool IsOctaveRangeValid(out int midOctaveId) => IsOctaveRangeValid(minNote, maxNote, out midOctaveId);
 
         public float GetKeysPerSecond(float timeScaling)
         {

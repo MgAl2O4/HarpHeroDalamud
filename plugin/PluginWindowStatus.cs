@@ -12,21 +12,25 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReader;
         private readonly TrackAssistant trackAssistant;
         private readonly MidiFileManager fileManager;
+        private readonly Configuration config;
 
         private Vector4 colorErr = new Vector4(0.9f, 0.2f, 0.2f, 1);
         private Vector4 colorOk = new Vector4(0.2f, 0.9f, 0.2f, 1);
         private Vector4 colorYellow = new Vector4(0.9f, 0.9f, 0.2f, 1);
         private Vector4 colorDetail = new Vector4(0.2f, 0.9f, 0.9f, 1);
 
-        private const int MaxNameLen = 30;
-        private bool isShowingSettings = false;
-        private string[] cachedTrackNames;
+        public bool showConfigs = false;
 
-        public PluginWindowStatus(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, MidiFileManager fileManager) : base("Harp Hero")
+        private const int MaxNameLen = 30;
+        private string[] cachedTrackNames;
+        private string[] cachedAssistNames;
+
+        public PluginWindowStatus(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config) : base("Harp Hero")
         {
             this.uiReader = uiReader;
             this.trackAssistant = trackAssistant;
             this.fileManager = fileManager;
+            this.config = config;
             fileManager.OnImported += (_) => cachedTrackNames = null;
 
             IsOpen = false;
@@ -46,12 +50,12 @@ namespace HarpHero
 
         private void CacheLocalization()
         {
-            // TODO
+            cachedAssistNames = new string[] { "Disabled", "Note", "Key binding" };
         }
 
         public override void Draw()
         {
-            if (isShowingSettings)
+            if (showConfigs)
             {
                 DrawSettings();
             }
@@ -81,7 +85,7 @@ namespace HarpHero
             ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 18);
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
-                isShowingSettings = true;
+                showConfigs = true;
             }
 
             DrawTrackDetails(trackIndentSize);
@@ -335,18 +339,82 @@ namespace HarpHero
             ImGui.AlignTextToFramePadding();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Backward))
             {
-                isShowingSettings = false;
+                showConfigs = false;
             }
             ImGui.SameLine();
             ImGui.Text("Back to status");
+
+            bool needsSave = false;
+            bool hasChanges = false;
+            bool autoAdjustEndBarCopy = config.AutoAdjustEndBar;
+            bool autoAdjustBPMCopy = config.AutoAdjustBPM;
+            float autoAdjustSpeedThresholdCopy = config.AutoAdjustSpeedThreshold;
+
             ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Text("MIDI import:");
+            ImGui.Indent();
 
-            // TODO: everything here is just temp
-            ImGui.Text("Look at this! It's a settings screen! woooooooo....");
+            hasChanges = ImGui.Checkbox("Auto adjust BPM", ref autoAdjustBPMCopy) || hasChanges;
+            ImGuiComponents.HelpMarker("Lowers tempo to fit in desired key press speed");
 
-            if (ImGui.Checkbox("mode note assistant", ref trackAssistant.useNoteAssistant))
+            if (autoAdjustBPMCopy)
             {
-                trackAssistant.OnAssistModeChanged();
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(100);
+                hasChanges = ImGui.InputFloat("##speedThr", ref autoAdjustSpeedThresholdCopy, 0.1f, 1.0f, "%.1f") || hasChanges;
+
+                ImGui.SameLine();
+                ImGui.Text("key/s");
+            }
+
+            hasChanges = ImGui.Checkbox("Auto adjust end bar", ref autoAdjustEndBarCopy) || hasChanges;
+            ImGuiComponents.HelpMarker("Shorten music track to fit in 3 octave range");
+
+            if (hasChanges)
+            {
+                config.AutoAdjustEndBar = autoAdjustEndBarCopy;
+                config.AutoAdjustBPM = autoAdjustBPMCopy;
+                config.AutoAdjustSpeedThreshold = Math.Min(10.0f, Math.Max(0.1f, autoAdjustSpeedThresholdCopy));
+                needsSave = true;
+                hasChanges = false;
+            }
+
+            ImGui.Unindent();
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Text("Assist panel:");
+            ImGui.Indent();
+
+            int assistModeCopy = config.AssistMode;
+            bool useMetronomeLinkCopy = config.UseMetronomeLink;
+            bool usePlaybackCopy = config.UsePlayback;
+
+            hasChanges = ImGui.Checkbox("Use game metronome", ref useMetronomeLinkCopy) || hasChanges;
+            ImGuiComponents.HelpMarker("Gives control over music start/stop to game's metronome");
+
+            hasChanges = ImGui.Checkbox("Use playback", ref usePlaybackCopy) || hasChanges;
+            ImGuiComponents.HelpMarker("Play music track during performance, not available in training mode. This doesn't send any input to game, just makes hitting correct beats easier.");
+
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text("Assist mode:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(150);
+            hasChanges = ImGui.Combo("##assistMode", ref assistModeCopy, cachedAssistNames, cachedAssistNames.Length) || hasChanges;
+            ImGui.Unindent();
+
+            if (hasChanges)
+            {
+                config.AssistMode = assistModeCopy;
+                config.UseMetronomeLink = useMetronomeLinkCopy;
+                config.UsePlayback = usePlaybackCopy;
+                needsSave = true;
+                hasChanges = false;
+            }
+
+            if (needsSave)
+            {
+                config.Save();
             }
         }
 
