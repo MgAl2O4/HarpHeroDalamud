@@ -6,7 +6,7 @@ Dalamud plugin for bard's music performance based on MIDI files.
 * available soon...
 
 Features:
-1. Training mode
+1. Training mode  
 ![](/assets/bindings.gif)  
 2. Assist modes: keybind focused (as above) and note focused
 3. Converts MIDI tracks to fit game limitations
