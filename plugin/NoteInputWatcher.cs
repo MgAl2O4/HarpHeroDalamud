@@ -35,8 +35,11 @@ namespace HarpHero
             int offset = 0;
             if (keyBinds.HasValue)
             {
-                bool isOctaveUpPressed = keyState[noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveUp : keyBinds.Value.singleOctave.octaveUp];
-                bool isOctaveDownPressed = keyState[noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveDown : keyBinds.Value.singleOctave.octaveDown];
+                var vkOctaveUp = noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveUp : keyBinds.Value.singleOctave.octaveUp;
+                var vkOctaveDown = noteMapper.isWideMode ? keyBinds.Value.threeOctaves.octaveDown : keyBinds.Value.singleOctave.octaveDown;
+
+                bool isOctaveUpPressed = (vkOctaveUp != VirtualKey.NO_KEY) && keyState[vkOctaveUp];
+                bool isOctaveDownPressed = (vkOctaveDown != VirtualKey.NO_KEY) && keyState[vkOctaveDown];
 
                 if (isOctaveUpPressed && !isOctaveDownPressed)
                 {
@@ -123,7 +126,8 @@ namespace HarpHero
                 {
                     for (int idx = 0; idx < keyBinds.Value.threeOctaves.notes.Length; idx++)
                     {
-                        if (keyState[keyBinds.Value.threeOctaves.notes[idx]])
+                        var testVk = keyBinds.Value.threeOctaves.notes[idx];
+                        if (testVk != VirtualKey.NO_KEY && keyState[testVk])
                         {
                             activeNote = noteMapper.GetNoteNumber(idx + (activeOctaveOffset * 12));
                             break;
@@ -134,7 +138,8 @@ namespace HarpHero
                 {
                     for (int idx = 0; idx < keyBinds.Value.singleOctave.notes.Length; idx++)
                     {
-                        if (keyState[keyBinds.Value.singleOctave.notes[idx]])
+                        var testVk = keyBinds.Value.singleOctave.notes[idx];
+                        if (testVk != VirtualKey.NO_KEY && keyState[testVk])
                         {
                             activeNote = noteMapper.GetNoteNumber(idx + (activeOctaveOffset * 12));
                             break;
