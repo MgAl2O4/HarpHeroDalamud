@@ -67,9 +67,12 @@ namespace HarpHero
 
         public void SetTimeScaling(float timeScaling)
         {
-            if (midiPlayback != null)
+            if (midiPlayback != null && timeScaling != midiPlayback.Speed)
             {
                 midiPlayback.Speed = timeScaling;
+
+                // restart internal counters
+                midiPlayback.MoveToTime(midiPlayback.GetCurrentTime<MetricTimeSpan>());
             }
         }
 
