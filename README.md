@@ -12,7 +12,13 @@ Features:
 3. Converts MIDI tracks to fit game limitations
 4. Sync with game's metronome
 
-MIDI files are not included, look around in net, there's plenty of free ones (something something license, copyrights, etc)
+MIDI files are not included, look around in net, there's plenty of free ones   
+(something something license, copyrights, etc)
+
+
+Known issues:
+* doesn't recognize clicking keys with mouse
+* ...or gamepad
 
 ## Translation
 
