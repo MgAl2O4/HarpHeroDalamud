@@ -56,6 +56,8 @@ namespace HarpHero
         public void Stop()
         {
             midiPlayback?.Stop();
+            midiDevice?.Dispose();
+            midiDevice = null;
         }
 
         public void WarmupDevice()

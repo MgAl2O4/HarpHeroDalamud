@@ -166,8 +166,9 @@ namespace HarpHero
                     // this can throw exception when device is in use
                     musicPlayer.WarmupDevice();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    PluginLog.Error(ex, "Failed to start midi player");
                     return false;
                 }
 
