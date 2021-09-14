@@ -8,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <AssemblyVersion>0.0.0.1</AssemblyVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	<UseWPF>true</UseWPF>
   </PropertyGroup>
@@ -52,7 +52,9 @@
   </ItemGroup>
   
   <Target Name="CopyAssets" BeforeTargets="Build">
-    <Copy SourceFiles="$(ProjectDir)\assets\icon.png" DestinationFolder="$(OutDir)\images" />    
+    <Copy SourceFiles="$(ProjectDir)\assets\icon.png" DestinationFolder="$(OutDir)\images" />
+    <Copy SourceFiles="$(ProjectDir)\assets\image1.png" DestinationFolder="$(OutDir)\images" />
+    <Copy SourceFiles="$(ProjectDir)\assets\image2.png" DestinationFolder="$(OutDir)\images" />
   </Target>
 
 </Project>

@@ -2,11 +2,13 @@
   "Author": "MgAl2O4",
   "Name": "Harp Hero",
   "Punchline": "Bard performance assistant",
-  "Description": "Better assist mode for bards who like to play music but don't know how to.\nDoes NOT play anything automatically, you are still the button pusher.",
+  "Description": "Assist mode for bards who want to play music but don't know how to.\n- does NOT play anything automatically\n- only keyboard binds are supported right now\n- needs MIDI files to work\n- adapts MIDI tracks to fit in game limitations for you\n- you will be scored :O",
   "InternalName": "HarpHero",
-  "AssemblyVersion": "0.0.0.1",
+  "AssemblyVersion": "1.0.0.0",
   "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/HarpHeroDalamud/main/assets/icon.png",
   "ImageUrls": [
+    "https://raw.githubusercontent.com/MgAl2O4/HarpHeroDalamud/main/assets/image1.png",
+    "https://raw.githubusercontent.com/MgAl2O4/HarpHeroDalamud/main/assets/image2.png"
   ],
   "RepoUrl": "https://github.com/MgAl2O4/HarpHeroDalamud",
   "ApplicableVersion": "any",

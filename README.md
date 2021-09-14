@@ -1,23 +1,21 @@
 # Harp Hero
 
-Under construction. This will one day become a music performance assist plugin for Dalamud:
+Dalamud plugin for bard's music performance based on MIDI files.
 * show what and when to press
 * do NOT play instead of player - there are already better tools for that
+* available soon...
 
-Currently it's in testable state, yay! 
+Features:
+1. Training mode
+![](/assets/bindings.gif)  
+2. Assist modes: keybind focused (as above) and note focused
+3. Converts MIDI tracks to fit game limitations
+4. Sync with game's metronome
 
-To do:
-* figure out what group play is about (is metronome sync enough?)
-* visualize track transformation to show how badly it was mutilated
-* high scores!
-* localization
+MIDI files are not included, look around in net, there's plenty of free ones (something something license, copyrights, etc)
 
-Done:
-* importing tracks from midi file
-* transforming midi tracks to fit game limitations (octave range, chords & overlapping notes, etc..)
-* UI with track management, controls and configs
-* training mode
-* assistance modes: note, key bindings
-* optional sync with game's metronome
+## Translation
+
+Not published on online management platform yet, feel free to check assets/loc/ files.
 
 Contact: MgAl2O4@protonmail.com
