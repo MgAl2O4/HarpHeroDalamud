@@ -113,6 +113,39 @@ namespace HarpHero
             return isPressed;
         }
 
+        public int GetActiveNoteNumber()
+        {
+            int activeNote = -1;
+            if (keyBinds.HasValue)
+            {
+                int activeOctaveOffset = GetActiveOctaveOffset();
+                if (isWideModeCached)
+                {
+                    for (int idx = 0; idx < keyBinds.Value.threeOctaves.notes.Length; idx++)
+                    {
+                        if (keyState[keyBinds.Value.threeOctaves.notes[idx]])
+                        {
+                            activeNote = noteMapper.GetNoteNumber(idx + (activeOctaveOffset * 12));
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int idx = 0; idx < keyBinds.Value.singleOctave.notes.Length; idx++)
+                    {
+                        if (keyState[keyBinds.Value.singleOctave.notes[idx]])
+                        {
+                            activeNote = noteMapper.GetNoteNumber(idx + (activeOctaveOffset * 12));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return activeNote;
+        }
+
         public string GetNoteKeyBinding(Note note)
         {
             if (isWideModeCached != noteMapper.isWideMode)

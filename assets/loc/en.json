@@ -1,5 +1,6 @@
 {
 	"Cmd_Status": { "message": "Show state of {0} plugin" },
+	"Toast_PerformanceAccuracy": { "message": "Accuracy: {0:P0}" },
 	"ST_ImportHint": { "message": "Import midi file" },
 	"ST_SettingsHint": { "message": "Open settings" },
 	"ST_PlayBPM": { "message": "Play BPM" },

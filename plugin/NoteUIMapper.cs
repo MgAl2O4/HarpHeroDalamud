@@ -119,5 +119,11 @@ namespace HarpHero
 
             return mappedNoteIdx >= 0 && mappedNoteIdx < notes.Length;
         }
+
+        public int GetNoteNumber(int mappedNoteIdx)
+        {
+            // note numbers starts on octave -1
+            return mappedNoteIdx + (12 * (midOctaveIdx + 1));
+        }
     }
 }

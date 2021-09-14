@@ -1,4 +1,5 @@
-﻿using Melanchall.DryWetMidi.Interaction;
+﻿using Dalamud.Logging;
+using Melanchall.DryWetMidi.Interaction;
 using System;
 using System.Collections.Generic;
 
@@ -7,6 +8,7 @@ namespace HarpHero
     public class TrackAssistant : IDisposable, ITickable
     {
         public readonly UnsafeMetronomeLink metronomeLink;
+        public readonly TrackScore scoreTracker;
         private readonly NoteInputWatcher noteInput;
         private readonly Configuration config;
 
@@ -43,12 +45,14 @@ namespace HarpHero
 
         public Action<bool> OnPlayChanged;
         public Action<bool> OnTrackChanged;
+        public Action<float> OnPerformanceScore;
 
         public TrackAssistant(UnsafeMetronomeLink metronomeLink, NoteInputWatcher noteInput, Configuration config)
         {
             this.metronomeLink = metronomeLink;
             this.noteInput = noteInput;
             this.config = config;
+            this.scoreTracker = new TrackScore(noteInput);
 
             if (metronomeLink != null)
             {
@@ -176,6 +180,11 @@ namespace HarpHero
                 currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
                 Tick(0);
 
+                if (!useWaitingForInput)
+                {
+                    scoreTracker.OnPlayStart();
+                }
+
                 OnPlayChanged?.Invoke(true);
             }
 
@@ -197,6 +206,7 @@ namespace HarpHero
 
             if (wasPlaying)
             {
+                scoreTracker.OnPlayStop();
                 OnPlayChanged?.Invoke(false);
             }
 
@@ -274,9 +284,11 @@ namespace HarpHero
                 if (currentTimeUs < trackDurationUs)
                 {
                     musicViewer.SetTimeUs(currentTimeUs);
+                    scoreTracker.Update(currentTimeUs);
                 }
                 else
                 {
+                    CalcScore();
                     Stop();
                 }
             }
@@ -363,6 +375,19 @@ namespace HarpHero
             {
                 notePausedForInput = noteInfo.note;
                 currentTimeUs = noteInfo.startUs;
+            }
+
+            scoreTracker.OnNotePlaying(noteInfo.note.NoteNumber, noteInfo.startUs);
+        }
+
+        private void CalcScore()
+        {
+            if (scoreTracker.IsActive)
+            {
+                float errorPct = 1.0f * scoreTracker.AccumulatedTimeDiff / trackDurationUs;
+                float accuracyPct = Math.Min(1.0f, Math.Max(0.0f, 1.0f - errorPct));
+
+                OnPerformanceScore?.Invoke(accuracyPct);
             }
         }
     }

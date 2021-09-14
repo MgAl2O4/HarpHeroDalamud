@@ -3,6 +3,7 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
+using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
@@ -36,7 +37,7 @@ namespace HarpHero
         private List<ITickable> tickableStuff = new List<ITickable>();
         private Configuration configuration { get; init; }
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState)
+        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState, ToastGui toastGui)
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
@@ -90,6 +91,11 @@ namespace HarpHero
                 noteInputWatch.OnKeyBindsSet(keybindReader.ReadBindings());
                 noteAssistantWindow.OnPlayChanged(active);
                 bindAssistantWindow.OnPlayChanged(active);
+            };
+
+            var accuracyToastOptions = new QuestToastOptions() { Position = QuestToastPosition.Centre, DisplayCheckmark = true, IconId = 0, PlaySound = true };
+            trackAssistant.OnPerformanceScore += (accuracy) => {
+                toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);
             };
 
             // prep plugin hooks
