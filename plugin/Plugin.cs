@@ -94,7 +94,8 @@ namespace HarpHero
             };
 
             var accuracyToastOptions = new QuestToastOptions() { Position = QuestToastPosition.Centre, DisplayCheckmark = true, IconId = 0, PlaySound = true };
-            trackAssistant.OnPerformanceScore += (accuracy) => {
+            trackAssistant.OnPerformanceScore += (accuracy) =>
+            {
                 toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);
             };
 

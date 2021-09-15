@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using System;
+﻿using System;
 
 namespace HarpHero
 {
@@ -91,7 +90,7 @@ namespace HarpHero
         public void OnPlayStart()
         {
             isPlaying = true;
-            
+
             isKeyPressUsed = false;
             isNotePlayUsed = false;
 
