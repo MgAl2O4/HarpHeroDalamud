@@ -56,8 +56,12 @@ namespace HarpHero
         public void Stop()
         {
             midiPlayback?.Stop();
-            midiDevice?.Dispose();
-            midiDevice = null;
+
+            if (midiDevice != null)
+            {
+                midiDevice.Dispose();
+                midiDevice = null;
+            }
         }
 
         public void WarmupDevice()
@@ -88,11 +92,17 @@ namespace HarpHero
 
         public void Dispose()
         {
-            midiDevice?.Dispose();
-            midiPlayback?.Dispose();
+            if (midiDevice != null)
+            {
+                midiDevice.Dispose();
+                midiDevice = null;
+            }
 
-            midiDevice = null;
-            midiPlayback = null;
+            if (midiPlayback != null)
+            {
+                midiPlayback.Dispose();
+                midiPlayback = null;
+            }
         }
 
         private void MidiPlayback_Finished(object sender, EventArgs e)
