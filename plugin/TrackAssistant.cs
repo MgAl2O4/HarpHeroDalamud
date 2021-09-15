@@ -54,6 +54,8 @@ namespace HarpHero
             this.config = config;
             this.scoreTracker = new TrackScore(noteInput);
 
+            useWaitingForInput = config?.UseTrainingMode ?? true;
+
             if (metronomeLink != null)
             {
                 metronomeLink.OnVisibilityChanged += (active) => { if (active) { SetMetronomeParams(); } };
@@ -349,7 +351,10 @@ namespace HarpHero
 
         public void OnTrainingModeChanged()
         {
-            notePausedForInput = null;
+            config.UseTrainingMode = useWaitingForInput;
+            config.Save();
+
+            Stop();
         }
 
         public void Dispose()

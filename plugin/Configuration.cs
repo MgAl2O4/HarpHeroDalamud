@@ -17,6 +17,8 @@ namespace HarpHero
         public bool UsePlayback { get; set; } = true;
         public int AssistMode { get; set; } = 2;
 
+        public bool UseTrainingMode { get; set; } = true;
+
         [NonSerialized]
         private DalamudPluginInterface pluginInterface;
 
