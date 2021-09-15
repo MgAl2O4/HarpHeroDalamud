@@ -24,7 +24,7 @@
 	"ST_MetronomeSyncError": { "message": "sync err: {0:0.#}ms" },
 	"ST_MetronomePlaying": { "message": "Playing" },
 	"ST_MetronomeStopped": { "message": "Stopped" },
-	"ST_TrainingWaits": { "message": "Waiting fo key press..." },
+	"ST_TrainingWaits": { "message": "Waiting for key press..." },
 	"ST_StatusPlaying": { "message": "Playing" },
 	"ST_StatusPlayTime": { "message": "time: {0:0.00}s" },
 	"ST_StartPlayingHint": { "message": "Start playing" },

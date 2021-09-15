@@ -113,7 +113,7 @@ namespace HarpHero
             locPlayMetronomeSyncError = Localization.Localize("ST_MetronomeSyncError", "sync err: {0:0.#}ms");
             locPlayMetronomePlaying = Localization.Localize("ST_MetronomePlaying", "Playing");
             locPlayMetronomeStopped = Localization.Localize("ST_MetronomeStopped", "Stopped");
-            locTrainingWaits = Localization.Localize("ST_TrainingWaits", "Waiting fo key press...");
+            locTrainingWaits = Localization.Localize("ST_TrainingWaits", "Waiting for key press...");
             locStatusPlaying = Localization.Localize("ST_StatusPlaying", "Playing");
             locStatusPlayTime = Localization.Localize("ST_StatusPlayTime", "time: {0:0.00}s");
             locStartPlayingHint = Localization.Localize("ST_StartPlayingHint", "Start playing");
