@@ -175,7 +175,7 @@ namespace HarpHero
                 bar = (statePtr->CurrentBar < 0) ? statePtr->CurrentBar : (statePtr->CurrentBar + 1);
                 beat = (statePtr->CurrentBeat == 0) ? cachedMeasure : statePtr->CurrentBeat;
 
-                int numFullBeats = (statePtr->CurrentBar * cachedMeasure) + (beat - 1);
+                long numFullBeats = (statePtr->CurrentBar * cachedMeasure) + (beat - 1);
                 timeUs = (numFullBeats * 60000000 / cachedBPM) + statePtr->CurrentBeatUs;
             }
             else

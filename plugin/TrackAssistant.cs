@@ -25,7 +25,7 @@ namespace HarpHero
         public bool IsPlaying => isPlaying;
         public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
         public bool IsPausedForInput => notePausedForInput != null;
-        public float CurrentTime => currentTimeUs * timeScaling / 1000000.0f;
+        public float CurrentTime => currentTimeUs / 1000000.0f;
 
         // TODO: expose
         public float NumSecondsFuture = 4.0f;
@@ -273,6 +273,27 @@ namespace HarpHero
 
                     long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
                     currentTimeUs += deltaUs;
+                }
+
+                // enforce metronome sync
+                if (isPlayingSound && HasMetronomeLink && metronomeLink.IsPlaying)
+                {
+                    long syncTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
+                    long syncTimeDiff = currentTimeUs - syncTimeUs;
+                    long syncTimeDiffAbs = Math.Abs(syncTimeDiff);
+
+                    if (syncTimeDiffAbs > 1000)
+                    {
+                        float speedOffset = -syncTimeDiff / 100000.0f;
+
+                        if (speedOffset < -0.25f) { speedOffset = -0.25f; }
+                        else if (speedOffset > 0.25f) { speedOffset = 0.25f; }
+
+                        if (timeScaling + speedOffset > 0.0f)
+                        {
+                            musicPlayer.SetTimeScaling(timeScaling + speedOffset);
+                        }
+                    }
                 }
 
                 // try starting playback 
