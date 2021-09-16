@@ -9,7 +9,7 @@ namespace HarpHero
     {
         public readonly UnsafeMetronomeLink metronomeLink;
         public readonly TrackScore scoreTracker;
-        private readonly NoteInputWatcher noteInput;
+        private readonly UIReaderBardPerformance uiReader;
         private readonly Configuration config;
 
         public MidiTrackWrapper musicTrack;
@@ -47,14 +47,19 @@ namespace HarpHero
         public Action<bool> OnTrackChanged;
         public Action<float> OnPerformanceScore;
 
-        public TrackAssistant(UnsafeMetronomeLink metronomeLink, NoteInputWatcher noteInput, Configuration config)
+        public TrackAssistant(UIReaderBardPerformance uiReader, UnsafeMetronomeLink metronomeLink, Configuration config)
         {
+            this.uiReader = uiReader;
             this.metronomeLink = metronomeLink;
-            this.noteInput = noteInput;
             this.config = config;
-            this.scoreTracker = new TrackScore(noteInput);
+            this.scoreTracker = new TrackScore();
 
             useWaitingForInput = config?.UseTrainingMode ?? true;
+
+            if (uiReader != null)
+            {
+                uiReader.OnPlayingNoteChanged += OnPlayingNoteChanged;
+            }
 
             if (metronomeLink != null)
             {
@@ -261,11 +266,7 @@ namespace HarpHero
                 }
                 else if (IsPausedForInput)
                 {
-                    bool isPressed = noteInput.IsNoteKeyPressed(notePausedForInput);
-                    if (isPressed)
-                    {
-                        notePausedForInput = null;
-                    }
+                    // no updates here, just wait
                 }
                 else
                 {
@@ -308,7 +309,6 @@ namespace HarpHero
                 if (currentTimeUs < trackDurationUs)
                 {
                     musicViewer.SetTimeUs(currentTimeUs);
-                    scoreTracker.Update(currentTimeUs);
                 }
                 else
                 {
@@ -396,9 +396,19 @@ namespace HarpHero
             }
         }
 
+        private void OnPlayingNoteChanged(int noteNumber)
+        {
+            if (notePausedForInput != null && noteNumber == notePausedForInput.NoteNumber)
+            {
+                notePausedForInput = null;
+            }
+
+            scoreTracker.OnNotePressed(noteNumber, currentTimeUs);
+        }
+
         private void OnMusicViewerNote(MidiTrackViewer.NoteInfo noteInfo)
         {
-            if (useWaitingForInput && !noteInput.IsNoteKeyPressed(noteInfo.note))
+            if (useWaitingForInput && uiReader.cachedState.ActiveNoteNumber != noteInfo.note.NoteNumber)
             {
                 notePausedForInput = noteInfo.note;
                 currentTimeUs = noteInfo.startUs;
@@ -417,5 +427,6 @@ namespace HarpHero
                 OnPerformanceScore?.Invoke(accuracyPct);
             }
         }
+
     }
 }

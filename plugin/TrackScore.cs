@@ -4,8 +4,6 @@ namespace HarpHero
 {
     public class TrackScore
     {
-        private readonly NoteInputWatcher noteInput;
-
         private int lastPressedNoteNumber = -1;
         private int lastPlayingNoteNumber = -1;
         private long lastPressedTimeUs;
@@ -20,38 +18,27 @@ namespace HarpHero
         private long maxPenaltyFreeTimeUs = 50 * 1000;
         public long AccumulatedTimeDiff => accumulatedTimeDiff;
 
-        public TrackScore(NoteInputWatcher noteInput)
-        {
-            this.noteInput = noteInput;
-        }
 
-        public void Update(long currentTimeUs)
+        // for now just ignore additional key presses and note duration, focus only on accuracy around intended note
+        // - pressed before note played (checked in note event)
+        // - pressed after note played (checked here)
+
+        public void OnNotePressed(int noteNumber, long currentTimeUs)
         {
             if (isPlaying)
             {
-                // this kind of sucks, ideally it should be event driven from hooking whatever plays note in game
-                // on the other hand, plugin is already getting heavy on custom sigs :/
+                lastPressedNoteNumber = noteNumber;
+                lastPressedTimeUs = currentTimeUs;
 
-                // for now just ignore additional key presses and note duration, focus only on accuracy around intended note
-                // - pressed before note played (checked in note event)
-                // - pressed after note played (checked here)
-
-                int currentNoteNumber = noteInput.GetActiveNoteNumber();
-                if (currentNoteNumber != lastPressedNoteNumber)
+                if (noteNumber <= 0)
                 {
-                    lastPressedNoteNumber = currentNoteNumber;
-                    lastPressedTimeUs = currentTimeUs;
-
-                    if (currentNoteNumber < 0)
-                    {
-                        isKeyPressUsed = false;
-                    }
-                    else if (currentNoteNumber == lastPlayingNoteNumber)
-                    {
-                        AddPenaltyTime(currentTimeUs, lastPlayingTimeUs);
-                        isKeyPressUsed = true;
-                        isNotePlayUsed = true;
-                    }
+                    isKeyPressUsed = false;
+                }
+                else if (noteNumber == lastPlayingNoteNumber)
+                {
+                    AddPenaltyTime(currentTimeUs, lastPlayingTimeUs);
+                    isKeyPressUsed = true;
+                    isNotePlayUsed = true;
                 }
             }
         }

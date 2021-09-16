@@ -17,12 +17,12 @@ namespace HarpHero
 
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
-        private readonly NoteInputWatcher noteInput;
+        private readonly NoteInputMapper noteInput;
         private readonly TrackAssistant trackAssistant;
 
         private float noMusicUpkeepRemaining;
 
-        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputWatcher noteInput) : base("Bind Assistant")
+        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Bind Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;

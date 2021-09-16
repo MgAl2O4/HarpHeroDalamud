@@ -28,7 +28,7 @@ namespace HarpHero
 
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
-        private readonly NoteInputWatcher noteInput;
+        private readonly NoteInputMapper noteInput;
         private readonly TrackAssistant trackAssistant;
 
         public bool showOctaveShiftHints = true;
@@ -42,7 +42,7 @@ namespace HarpHero
 
         private float noMusicUpkeepRemaining = 0.0f;
 
-        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputWatcher noteInput) : base("Note Assistant")
+        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Note Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
@@ -294,7 +294,7 @@ namespace HarpHero
                 minNoteTime[idx] = 100.0f;
             }
 
-            int activeOctaveOffset = noteInput.GetActiveOctaveOffset();
+            int activeOctaveOffset = uiReader.cachedState.ActiveOctaveOffset;
             int shownOctaveOffset = 100;
             int numShownOffsets = 0;
             bool canShowOctaveOffsetKey = showOctaveShiftHints;

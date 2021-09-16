@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace HarpHero
 {
@@ -18,8 +19,18 @@ namespace HarpHero
             NodesNotReady,
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 0x64)]
+        public unsafe struct AgentData
+        {
+            [FieldOffset(0x5c)] public int NoteNumberOffset;
+            [FieldOffset(0x60)] public int ActiveNoteNumber;
+            // same agent used for both addon modes
+        }
+
         public UIStateBardPerformance cachedState = new();
         public Action<bool> OnVisibilityChanged;
+        public Action<int> OnOctaveOffsetChanged;
+        public Action<int> OnPlayingNoteChanged;
 
         public Status status = Status.AddonNotFound;
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
@@ -27,6 +38,7 @@ namespace HarpHero
 
         private GameGui gameGui;
         private IntPtr cachedAddonPtr;
+        private IntPtr cachedAgentPtr;
 
         public UIReaderBardPerformance(GameGui gameGui)
         {
@@ -48,6 +60,7 @@ namespace HarpHero
             if (cachedAddonPtr != useAddonPtr)
             {
                 cachedAddonPtr = useAddonPtr;
+                cachedAgentPtr = IntPtr.Zero;
                 cachedState.ResetCachedAddr();
             }
 
@@ -73,6 +86,11 @@ namespace HarpHero
                         }
                     }
 
+                    if (cachedAgentPtr == IntPtr.Zero)
+                    {
+                        cachedAgentPtr = gameGui.FindAgentInterface(useAddonPtr);
+                    }
+
                     canScanNodes = cachedState.keys.Count > 0;
                 }
             }
@@ -88,6 +106,8 @@ namespace HarpHero
                 CalcKeysBoundingBox();
                 SetStatus((useAddonPtr == shortAddonPtr) ? Status.NoErrors : Status.NoErrorsWide);
             }
+
+            UpdatePlayingNote();
         }
 
         private unsafe void AddKeyNodeAddresses(AtkResNode* containerNode, int numKeys = 13)
@@ -200,6 +220,37 @@ namespace HarpHero
                 cachedState.keysSize = Vector2.Zero;
             }
         }
+
+        private unsafe void UpdatePlayingNote()
+        {
+            int newNoteIdx = 0;
+            int newNoteOffset = 0;
+
+            var agentDataPtr = (AgentData*)cachedAgentPtr;
+            if (agentDataPtr != null)
+            {
+                newNoteIdx = agentDataPtr->ActiveNoteNumber;
+                newNoteOffset = agentDataPtr->NoteNumberOffset;
+
+                bool isNewValid = newNoteIdx > 0 && newNoteIdx < (12 * 8);
+                if (!isNewValid)
+                {
+                    newNoteIdx = 0;
+                }
+            }
+
+            if (cachedState.activeNoteOffset != newNoteOffset)
+            {
+                cachedState.activeNoteOffset = newNoteOffset;
+                OnOctaveOffsetChanged?.Invoke(cachedState.ActiveOctaveOffset);
+            }
+
+            if (cachedState.activeNote != newNoteIdx)
+            {
+                cachedState.activeNote = newNoteIdx;
+                OnPlayingNoteChanged?.Invoke(cachedState.ActiveNoteNumber);
+            }
+        }
     }
 
     public class UIStateBardPerformance
@@ -213,6 +264,12 @@ namespace HarpHero
 
         public Vector2 keysPos;
         public Vector2 keysSize;
+
+        public int activeNote;
+        public int activeNoteOffset;
+
+        public int ActiveNoteNumber => (activeNote > 10) ? (activeNote + 9) : 0;
+        public int ActiveOctaveOffset => activeNoteOffset / 12;
 
         public List<KeyNode> keys = new();
 

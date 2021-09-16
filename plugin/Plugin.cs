@@ -1,6 +1,5 @@
 ﻿using Dalamud;
 using Dalamud.Game;
-using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.Toast;
@@ -37,7 +36,7 @@ namespace HarpHero
         private List<ITickable> tickableStuff = new List<ITickable>();
         private Configuration configuration { get; init; }
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, KeyState keyState, ToastGui toastGui)
+        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, ToastGui toastGui)
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
@@ -51,8 +50,8 @@ namespace HarpHero
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
-            var noteMapper = new NoteUIMapper();
-            var noteInputWatch = new NoteInputWatcher(noteMapper, keyState);
+            var noteUiMapper = new NoteUIMapper();
+            var noteInputMapper = new NoteInputMapper(noteUiMapper);
 
             // prep data scrapers
             uiReaderPerformance = new UIReaderBardPerformance(gameGui);
@@ -60,17 +59,12 @@ namespace HarpHero
             metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
 
             // more utils
-            trackAssistant = new TrackAssistant(metronome, noteInputWatch, configuration);
-            trackAssistant.OnTrackChanged += (valid) => noteMapper.OnTrackChanged(trackAssistant);
+            trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
+            trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
             tickableStuff.Add(trackAssistant);
 
             var fileManager = new MidiFileManager();
             fileManager.OnImported += (_) => { trackAssistant.OnTracksImported(fileManager.tracks); };
-
-#if DEBUG
-            // temp debug stuff
-            fileManager.ImportFile(@"D:\temp\test3.mid");
-#endif
 
             // prep UI
             statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration);
@@ -80,11 +74,11 @@ namespace HarpHero
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
             windowSystem.AddWindow(trackViewWindow);
 
-            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
+            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
             windowSystem.AddWindow(noteAssistantWindow);
             tickableStuff.Add(noteAssistantWindow);
 
-            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
+            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
             windowSystem.AddWindow(bindAssistantWindow);
             tickableStuff.Add(bindAssistantWindow);
 
@@ -92,7 +86,7 @@ namespace HarpHero
             uiReaderPerformance.OnVisibilityChanged += (active) => { noteAssistantWindow.OnPerformanceActive(active); bindAssistantWindow.OnPerformanceActive(active); };
             trackAssistant.OnPlayChanged += (active) =>
             {
-                noteInputWatch.OnKeyBindsSet(keybindReader.ReadBindings());
+                noteInputMapper.OnKeyBindsSet(keybindReader.ReadBindings());
                 noteAssistantWindow.OnPlayChanged(active);
                 bindAssistantWindow.OnPlayChanged(active);
             };
