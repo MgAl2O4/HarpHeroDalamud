@@ -10,7 +10,7 @@ namespace HarpHero
     public class PluginWindowTrackView : Window, IDisposable
     {
         private readonly TrackAssistant trackAssistant;
-        
+
         private MidiTrackWrapper shownTrack;
         private MidiTrackViewer[] trackViewers;
         private int shownSecond;
