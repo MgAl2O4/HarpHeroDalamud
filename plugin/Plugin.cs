@@ -45,22 +45,20 @@ namespace HarpHero
             configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             configuration.Initialize(pluginInterface);
 
+            // prep data scrapers
+            uiReaderPerformance = new UIReaderBardPerformance(gameGui);
+            keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
+            metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
+
             // prep utils
             locManager = new Localization("assets/loc", "", true);
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
             var noteUiMapper = new NoteUIMapper();
-            var noteInputMapper = new NoteInputMapper(noteUiMapper);
+            var noteInputMapper = new NoteInputMapper(noteUiMapper, keybindReader);
 
-            // prep data scrapers
-            uiReaderPerformance = new UIReaderBardPerformance(gameGui);
-            keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
-            metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
-
-            // more utils
             trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
-            trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
             tickableStuff.Add(trackAssistant);
 
             var fileManager = new MidiFileManager();
@@ -68,34 +66,24 @@ namespace HarpHero
 
             // prep UI
             statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration);
-            windowSystem.AddWindow(statusWindow);
-
             var trackViewWindow = new PluginWindowTrackView(trackAssistant);
-            statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
-            windowSystem.AddWindow(trackViewWindow);
-
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
-            windowSystem.AddWindow(noteAssistantWindow);
-            tickableStuff.Add(noteAssistantWindow);
-
             var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
-            windowSystem.AddWindow(bindAssistantWindow);
-            tickableStuff.Add(bindAssistantWindow);
 
+            statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
-            uiReaderPerformance.OnVisibilityChanged += (active) => { noteAssistantWindow.OnPerformanceActive(active); bindAssistantWindow.OnPerformanceActive(active); };
-            trackAssistant.OnPlayChanged += (active) =>
-            {
-                noteInputMapper.OnKeyBindsSet(keybindReader.ReadBindings());
-                noteAssistantWindow.OnPlayChanged(active);
-                bindAssistantWindow.OnPlayChanged(active);
-            };
-
-            var accuracyToastOptions = new QuestToastOptions() { Position = QuestToastPosition.Centre, DisplayCheckmark = true, IconId = 0, PlaySound = true };
+            trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
+            trackAssistant.OnPlayChanged += (active) => noteInputMapper.OnPlayChanged(active);
             trackAssistant.OnPerformanceScore += (accuracy) =>
             {
+                var accuracyToastOptions = new QuestToastOptions() { Position = QuestToastPosition.Centre, DisplayCheckmark = true, IconId = 0, PlaySound = true };
                 toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);
             };
+
+            windowSystem.AddWindow(statusWindow);
+            windowSystem.AddWindow(trackViewWindow);
+            windowSystem.AddWindow(noteAssistantWindow); tickableStuff.Add(noteAssistantWindow);
+            windowSystem.AddWindow(bindAssistantWindow); tickableStuff.Add(bindAssistantWindow);
 
             // prep plugin hooks
             statusCommand = new(OnCommand);

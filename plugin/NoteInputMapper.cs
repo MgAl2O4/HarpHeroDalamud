@@ -8,24 +8,29 @@ namespace HarpHero
 {
     public class NoteInputMapper
     {
-        private readonly NoteUIMapper noteMapper;
+        private readonly NoteUIMapper uiMapper;
+        private readonly UnsafeReaderPerformanceKeybinds bindingReader;
 
         private PerformanceBindingInfo? keyBinds;
         private Dictionary<int, string> mapNoteBindingDesc = new();
         private Dictionary<VirtualKey, string> mapBindingDesc = new();
         private bool isWideModeCached = false;
 
-        public NoteInputMapper(NoteUIMapper noteMapper)
+        public NoteInputMapper(NoteUIMapper noteMapper, UnsafeReaderPerformanceKeybinds bindingReader)
         {
-            this.noteMapper = noteMapper;
+            this.uiMapper = noteMapper;
+            this.bindingReader = bindingReader;
         }
 
-        public void OnKeyBindsSet(PerformanceBindingInfo? keyBinds)
+        public void OnPlayChanged(bool active)
         {
-            this.keyBinds = keyBinds;
+            if (active)
+            {
+                keyBinds = bindingReader.ReadBindings();
 
-            mapNoteBindingDesc.Clear();
-            isWideModeCached = noteMapper.isWideMode;
+                mapNoteBindingDesc.Clear();
+                isWideModeCached = uiMapper.isWideMode;
+            }
         }
 
         private bool FindNoteKeyOctaveBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset, out VirtualKey noteKey, out VirtualKey octaveKey)
@@ -50,10 +55,10 @@ namespace HarpHero
 
         public string GetNoteKeyBinding(Note note)
         {
-            if (isWideModeCached != noteMapper.isWideMode)
+            if (isWideModeCached != uiMapper.isWideMode)
             {
                 mapNoteBindingDesc.Clear();
-                isWideModeCached = noteMapper.isWideMode;
+                isWideModeCached = uiMapper.isWideMode;
             }
 
             int noteNumber = note.NoteNumber;
@@ -62,7 +67,7 @@ namespace HarpHero
                 return noteBindingDesc;
             }
 
-            if (!keyBinds.HasValue || !noteMapper.GetMappedNoteIdx(note, out int mappedNoteIdx, out int octaveOffset))
+            if (!keyBinds.HasValue || !uiMapper.GetMappedNoteIdx(note, out int mappedNoteIdx, out int octaveOffset))
             {
                 return null;
             }
@@ -117,7 +122,7 @@ namespace HarpHero
                 return null;
             }
 
-            var octaveKey = noteMapper.isWideMode ?
+            var octaveKey = uiMapper.isWideMode ?
                 ((octaveOffset > 0) ? keyBinds.Value.threeOctaves.octaveUp : keyBinds.Value.threeOctaves.octaveDown) :
                 ((octaveOffset > 0) ? keyBinds.Value.singleOctave.octaveUp : keyBinds.Value.singleOctave.octaveDown);
 

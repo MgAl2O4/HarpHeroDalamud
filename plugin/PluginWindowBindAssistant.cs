@@ -29,6 +29,9 @@ namespace HarpHero
             this.noteInput = noteInput;
             this.trackAssistant = trackAssistant;
 
+            uiReader.OnVisibilityChanged += OnPerformanceActive;
+            trackAssistant.OnPlayChanged += OnPlayChanged;
+
             IsOpen = false;
 
             // doesn't matter will be updated on next draw
