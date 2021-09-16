@@ -10,6 +10,7 @@
 	"ST_TrackHeader": { "message": "Track" },
 	"ST_SelectTrack": { "message": "Select" },
 	"ST_PreviewTrack": { "message": "Preview track" },
+	"ST_ShowTrackNotes": { "message": "Show notes" },
 	"ST_TrackBPM": { "message": "BPM" },
 	"ST_TrackMeasure": { "message": "Measure" },
 	"ST_TrackBars": { "message": "Bars" },

@@ -20,6 +20,7 @@ namespace HarpHero
         private Vector4 colorDetail = new Vector4(0.2f, 0.9f, 0.9f, 1);
 
         public bool showConfigs = false;
+        public Action<MidiTrackWrapper> OnShowTrack;
 
         private const int MaxNameLen = 30;
         private string[] cachedTrackNames;
@@ -33,7 +34,8 @@ namespace HarpHero
         private string locTrainingMode;
         private string locTrackHeader;
         private string locSelectTrack;
-        private string locPreviewTrack;
+        private string locPreviewTrackSound;
+        private string locPreviewTrackNotes;
         private string locTrackBPM;
         private string locTrackMeasure;
         private string locTrackBars;
@@ -98,7 +100,8 @@ namespace HarpHero
             locTrainingMode = Localization.Localize("ST_TrainingMode", "Training mode");
             locTrackHeader = Localization.Localize("ST_TrackHeader", "Track");
             locSelectTrack = Localization.Localize("ST_SelectTrack", "Select");
-            locPreviewTrack = Localization.Localize("ST_PreviewTrack", "Preview track");
+            locPreviewTrackSound = Localization.Localize("ST_PreviewTrack", "Preview track");
+            locPreviewTrackNotes = Localization.Localize("ST_ShowTrackNotes", "Show notes");
             locTrackBPM = Localization.Localize("ST_TrackBPM", "BPM");
             locTrackMeasure = Localization.Localize("ST_TrackMeasure", "Measure");
             locTrackBars = Localization.Localize("ST_TrackBars", "Bars");
@@ -253,7 +256,17 @@ namespace HarpHero
                 }
 
                 ImGui.SameLine();
-                ImGui.Dummy(new Vector2(25, 0));
+                ImGui.Dummy(new Vector2(50, 0));
+                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 46);
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
+                {
+                    OnShowTrack?.Invoke(trackAssistant.musicTrack);
+                }
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(locPreviewTrackNotes);
+                }
+
                 ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 18);
                 if (trackAssistant.IsPlayingPreview)
                 {
@@ -270,7 +283,7 @@ namespace HarpHero
                     }
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(locPreviewTrack);
+                        ImGui.SetTooltip(locPreviewTrackSound);
                     }
                 }
 

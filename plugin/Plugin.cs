@@ -76,6 +76,10 @@ namespace HarpHero
             statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration);
             windowSystem.AddWindow(statusWindow);
 
+            var trackViewWindow = new PluginWindowTrackView(trackAssistant);
+            statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
+            windowSystem.AddWindow(trackViewWindow);
+
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteMapper, noteInputWatch);
             windowSystem.AddWindow(noteAssistantWindow);
             tickableStuff.Add(noteAssistantWindow);
