@@ -32,6 +32,7 @@ namespace HarpHero
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
         public int NumWarmupBars = 1;
+        private long maxEarlyPressTimeUs = 50 * 1000;
 
         public int midOctaveIdx;
         public float timeScaling = 1.0f;
@@ -43,6 +44,8 @@ namespace HarpHero
         private bool isPlaying;
         private bool isPlayingSound;
         private Note notePausedForInput;
+        private long lastPressTimeUs;
+        private int lastPressNoteNumber;
 
         public Action<bool> OnPlayChanged;
         public Action<bool> OnTrackChanged;
@@ -399,9 +402,13 @@ namespace HarpHero
 
         private void OnPlayingNoteChanged(int noteNumber)
         {
+            lastPressTimeUs = currentTimeUs;
+            lastPressNoteNumber = noteNumber;
+
             if (notePausedForInput != null && noteNumber == notePausedForInput.NoteNumber)
             {
                 notePausedForInput = null;
+                lastPressNoteNumber = 0;
             }
 
             scoreTracker.OnNotePressed(noteNumber, currentTimeUs);
@@ -409,10 +416,17 @@ namespace HarpHero
 
         private void OnMusicViewerNote(MidiTrackViewer.NoteInfo noteInfo)
         {
-            if (useWaitingForInput && uiReader.cachedState.ActiveNoteNumber != noteInfo.note.NoteNumber)
+            if (useWaitingForInput)
             {
-                notePausedForInput = noteInfo.note;
-                currentTimeUs = noteInfo.startUs;
+                bool isPressedNow = uiReader.cachedState.ActiveNoteNumber == noteInfo.note.NoteNumber;
+                bool wasPressedRecently = (lastPressNoteNumber > 0) && (lastPressNoteNumber == noteInfo.note.NoteNumber) && ((currentTimeUs - lastPressTimeUs) < maxEarlyPressTimeUs);
+
+                if (!isPressedNow && !wasPressedRecently)
+                {
+                    notePausedForInput = noteInfo.note;
+                    currentTimeUs = noteInfo.startUs;
+                    lastPressNoteNumber = 0;
+                }
             }
 
             scoreTracker.OnNotePlaying(noteInfo.note.NoteNumber, noteInfo.startUs);
