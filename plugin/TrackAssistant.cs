@@ -19,7 +19,8 @@ namespace HarpHero
         public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors && config.UseMetronomeLink;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null);
         public bool CanUsePlayback => config.UsePlayback && !useWaitingForInput;
-        public bool CanShowNoteAssistant => config.UseAssistNote();
+        public bool CanShowNoteAssistant => config.UseAssistNoteA();
+        public bool CanShowNoteAssistant2 => config.UseAssistNoteB();
         public bool CanShowBindAssistant => config.UseAssistBind();
         public int TargetBPM => targetBPM;
         public bool IsPlaying => isPlaying;

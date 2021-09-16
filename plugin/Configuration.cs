@@ -17,6 +17,9 @@ namespace HarpHero
         public bool UsePlayback { get; set; } = true;
         public int AssistMode { get; set; } = 2;
 
+        public int AssistNote2Markers { get; set; } = 1;
+        public bool AssistNote2Enabled { get; set; } = true;
+
         public bool UseTrainingMode { get; set; } = true;
 
         [NonSerialized]
@@ -32,7 +35,8 @@ namespace HarpHero
             pluginInterface?.SavePluginConfig(this);
         }
 
-        public bool UseAssistNote() => AssistMode == 1;
+        public bool UseAssistNoteA() => AssistMode == 1;
         public bool UseAssistBind() => AssistMode == 2;
+        public bool UseAssistNoteB() => (AssistMode == 1) && AssistNote2Enabled;
     }
 }

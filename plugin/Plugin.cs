@@ -28,6 +28,7 @@ namespace HarpHero
         private readonly UnsafeReaderPerformanceKeybinds keybindReader;
         private readonly TrackAssistant trackAssistant;
         private readonly UnsafeMetronomeLink metronome;
+        private readonly NoteUIMapper noteUiMapper;
         private readonly Localization locManager;
 
         public static Localization CurrentLocManager;
@@ -55,7 +56,7 @@ namespace HarpHero
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
-            var noteUiMapper = new NoteUIMapper();
+            noteUiMapper = new NoteUIMapper();
             var noteInputMapper = new NoteInputMapper(noteUiMapper, keybindReader);
 
             trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
@@ -69,6 +70,7 @@ namespace HarpHero
             var trackViewWindow = new PluginWindowTrackView(trackAssistant);
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
             var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
+            var noteAssistant2Window = new PluginWindowNoteAssistant2(uiReaderPerformance, trackAssistant, noteUiMapper, configuration);
 
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
@@ -84,6 +86,7 @@ namespace HarpHero
             windowSystem.AddWindow(trackViewWindow);
             windowSystem.AddWindow(noteAssistantWindow); tickableStuff.Add(noteAssistantWindow);
             windowSystem.AddWindow(bindAssistantWindow); tickableStuff.Add(bindAssistantWindow);
+            windowSystem.AddWindow(noteAssistant2Window); tickableStuff.Add(noteAssistant2Window);
 
             // prep plugin hooks
             statusCommand = new(OnCommand);
@@ -148,6 +151,7 @@ namespace HarpHero
             try
             {
                 uiReaderPerformance.Update();
+                noteUiMapper.Update(uiReaderPerformance.cachedState);
                 metronome.Update();
 
                 float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;

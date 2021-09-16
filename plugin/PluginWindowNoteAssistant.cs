@@ -105,8 +105,6 @@ namespace HarpHero
 
         public override void PreDraw()
         {
-            noteMapper.Update(uiReader != null ? uiReader.cachedState : null);
-
             int numMappedNotes = noteMapper.notes?.Length ?? 0;
             if (numMappedNotes > 0)
             {

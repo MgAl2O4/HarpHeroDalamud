@@ -4,6 +4,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace HarpHero
@@ -25,6 +26,7 @@ namespace HarpHero
         private const int MaxNameLen = 30;
         private string[] cachedTrackNames;
         private string[] cachedAssistNames;
+        private int[] cachedAssistIds;
 
         private string locImportHint;
         private string locSettingsHint;
@@ -134,11 +136,22 @@ namespace HarpHero
             locConfigUsePlayback = Localization.Localize("CFG_UsePlayback", "Use playback");
             locConfigUsePlaybackHelp = Localization.Localize("CFG_UsePlaybackHelp", "Play music track during performance, not available in training mode. This doesn't send any input to game, just makes hitting correct beats easier.");
             locConfigAssistMode = Localization.Localize("CFG_AssistMode", "Assist mode");
-            cachedAssistNames = new string[] {
-                Localization.Localize("CFG_AssistDisabled", "Disabled"),
-                Localization.Localize("CFG_AssistNote", "Note"),
-                Localization.Localize("CFG_AssistBind", "Key binding")
+
+            var sortedAssistNames = new List<Tuple<int, string>>
+            {
+                new Tuple<int, string>(0, Localization.Localize("CFG_AssistDisabled", "Disabled")),
+                new Tuple<int, string>(1, Localization.Localize("CFG_AssistNote", "Note")),
+                new Tuple<int, string>(2, Localization.Localize("CFG_AssistBind", "Key binding")),
             };
+            sortedAssistNames.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+
+            cachedAssistNames = new string[sortedAssistNames.Count];
+            cachedAssistIds = new int[sortedAssistNames.Count];
+            for (int idx = 0; idx < sortedAssistNames.Count; idx++)
+            {
+                cachedAssistNames[idx] = sortedAssistNames[idx].Item2;
+                cachedAssistIds[idx] = sortedAssistNames[idx].Item1;
+            }
         }
 
         public override void Draw()
@@ -490,7 +503,7 @@ namespace HarpHero
             ImGui.Text($"{locConfigAssist}:");
             ImGui.Indent();
 
-            int assistModeCopy = config.AssistMode;
+            int assistModeIdx = Math.Max(0, Array.IndexOf(cachedAssistIds, config.AssistMode));
             bool useMetronomeLinkCopy = config.UseMetronomeLink;
             bool usePlaybackCopy = config.UsePlayback;
 
@@ -504,12 +517,12 @@ namespace HarpHero
             ImGui.Text($"{locConfigAssistMode}:");
             ImGui.SameLine();
             ImGui.SetNextItemWidth(150);
-            hasChanges = ImGui.Combo("##assistMode", ref assistModeCopy, cachedAssistNames, cachedAssistNames.Length) || hasChanges;
+            hasChanges = ImGui.Combo("##assistMode", ref assistModeIdx, cachedAssistNames, cachedAssistNames.Length) || hasChanges;
             ImGui.Unindent();
 
             if (hasChanges)
             {
-                config.AssistMode = assistModeCopy;
+                config.AssistMode = cachedAssistIds[assistModeIdx];
                 config.UseMetronomeLink = useMetronomeLinkCopy;
                 config.UsePlayback = usePlaybackCopy;
                 needsSave = true;
