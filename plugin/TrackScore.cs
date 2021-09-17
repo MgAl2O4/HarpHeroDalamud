@@ -131,8 +131,8 @@ namespace HarpHero
             scoreRankMajor = Math.Clamp(rankMajor, 0, rankNames.Length - 1);
             scoreRankMinor = 0;
 
-            // 10, 10, 15, 15, 20, 20, ...
-            scoreRankMinorMax = 10 + ((scoreRankMajor / 2) * 5);
+            // 10, 10, 12, 14, 16, ...
+            scoreRankMinorMax = Math.Max(10, 8 + (scoreRankMajor * 2));
             return scoreRankMajor == rankMajor;
         }
 
