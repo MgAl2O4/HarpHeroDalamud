@@ -32,7 +32,7 @@ namespace HarpHero
         // TODO: expose
         public float NumSecondsFuture = 4.0f;
         public float NumSecondsPast = 0.0f;
-        public int NumWarmupBars = 1;
+        public float NumWarmupSeconds = 3.0f;
         private long maxEarlyPressTimeUs = 50 * 1000;
 
         public int midOctaveIdx;
@@ -192,7 +192,7 @@ namespace HarpHero
                 musicViewer.generateBarData = false; // TODO: expose?
                 musicViewer.OnPlayStart();
 
-                currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
+                currentTimeUs = -(long)(NumWarmupSeconds * timeScaling * 1000 * 1000);
                 Tick(0);
 
                 scoreTracker.SetTrainingMode(useWaitingForInput);
