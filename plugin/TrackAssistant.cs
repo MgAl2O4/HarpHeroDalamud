@@ -44,6 +44,7 @@ namespace HarpHero
         private bool isPlaying;
         private bool isPlayingSound;
         private Note notePausedForInput;
+        private long pausedTimeUs;
         private long lastPressTimeUs;
         private int lastPressNoteNumber;
 
@@ -168,6 +169,7 @@ namespace HarpHero
             {
                 isPlayingSound = false;
                 notePausedForInput = null;
+                pausedTimeUs = 0;
 
                 try
                 {
@@ -192,11 +194,8 @@ namespace HarpHero
                 currentTimeUs = -TimeConverter.ConvertTo<MetricTimeSpan>(new BarBeatTicksTimeSpan(NumWarmupBars, 0), musicTrack.tempoMap).TotalMicroseconds;
                 Tick(0);
 
-                if (!useWaitingForInput)
-                {
-                    scoreTracker.OnPlayStart();
-                }
-
+                scoreTracker.SetTrainingMode(useWaitingForInput);
+                scoreTracker.OnPlayStart();
                 OnPlayChanged?.Invoke(true);
             }
 
@@ -271,6 +270,8 @@ namespace HarpHero
                 else if (IsPausedForInput)
                 {
                     // no updates here, just wait
+                    long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
+                    pausedTimeUs = Math.Min(pausedTimeUs + deltaUs, 1000 * 1000 * 60);
                 }
                 else
                 {
@@ -320,6 +321,33 @@ namespace HarpHero
                     Stop();
                 }
             }
+        }
+
+        public bool GetNextPlayingNote(out int noteNumber, out long startTimeUs, int offset = 0)
+        {
+            if (musicViewer != null)
+            {
+                for (int idx = 0; idx < musicViewer.shownNotes.Count; idx++)
+                {
+                    if (musicViewer.shownNotes[idx].startUs < currentTimeUs)
+                    {
+                        continue;
+                    }
+
+                    if (offset <= 0)
+                    {
+                        noteNumber = musicViewer.shownNotes[idx].note.NoteNumber;
+                        startTimeUs = musicViewer.shownNotes[idx].startUs;
+                        return true;
+                    }
+
+                    offset--;
+                }
+            }
+
+            noteNumber = 0;
+            startTimeUs = 0;
+            return false;
         }
 
         private void OnTrackUpdated()
@@ -405,13 +433,20 @@ namespace HarpHero
             lastPressTimeUs = currentTimeUs;
             lastPressNoteNumber = noteNumber;
 
-            if (notePausedForInput != null && noteNumber == notePausedForInput.NoteNumber)
+            long useTimeUs = currentTimeUs;
+            if (notePausedForInput != null)
             {
-                notePausedForInput = null;
-                lastPressNoteNumber = 0;
+                useTimeUs += pausedTimeUs;
+
+                if (noteNumber == notePausedForInput.NoteNumber)
+                {
+                    notePausedForInput = null;
+                    lastPressNoteNumber = 0;
+                }
             }
 
-            scoreTracker.OnNotePressed(noteNumber, currentTimeUs);
+            GetNextPlayingNote(out int nextPlayingNoteNumber, out long nextPlayingTimeUs);
+            scoreTracker.OnNotePressed(noteNumber, useTimeUs, nextPlayingNoteNumber, nextPlayingTimeUs);
         }
 
         private void OnMusicViewerNote(MidiTrackViewer.NoteInfo noteInfo)
@@ -426,6 +461,7 @@ namespace HarpHero
                     notePausedForInput = noteInfo.note;
                     currentTimeUs = noteInfo.startUs;
                     lastPressNoteNumber = 0;
+                    pausedTimeUs = 0;
                 }
             }
 

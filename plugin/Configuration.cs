@@ -21,6 +21,7 @@ namespace HarpHero
         public bool AssistNote2Enabled { get; set; } = true;
 
         public bool UseTrainingMode { get; set; } = true;
+        public bool ShowScore { get; set; } = true;
 
         [NonSerialized]
         private DalamudPluginInterface pluginInterface;

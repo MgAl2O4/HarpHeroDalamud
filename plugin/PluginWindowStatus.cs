@@ -69,6 +69,7 @@ namespace HarpHero
         private string locConfigUsePlayback;
         private string locConfigUsePlaybackHelp;
         private string locConfigAssistMode;
+        private string locConfigShowScore;
 
         public PluginWindowStatus(TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config) : base("Harp Hero")
         {
@@ -136,6 +137,7 @@ namespace HarpHero
             locConfigUsePlayback = Localization.Localize("CFG_UsePlayback", "Use playback");
             locConfigUsePlaybackHelp = Localization.Localize("CFG_UsePlaybackHelp", "Play music track during performance, not available in training mode. This doesn't send any input to game, just makes hitting correct beats easier.");
             locConfigAssistMode = Localization.Localize("CFG_AssistMode", "Assist mode");
+            locConfigShowScore = Localization.Localize("CFG_ShowScore", "Show score");
 
             var sortedAssistNames = new List<Tuple<int, string>>
             {
@@ -506,12 +508,15 @@ namespace HarpHero
             int assistModeIdx = Math.Max(0, Array.IndexOf(cachedAssistIds, config.AssistMode));
             bool useMetronomeLinkCopy = config.UseMetronomeLink;
             bool usePlaybackCopy = config.UsePlayback;
+            bool showScoreCopy = config.ShowScore;
 
             hasChanges = ImGui.Checkbox(locConfigUseMetronome, ref useMetronomeLinkCopy) || hasChanges;
             ImGuiComponents.HelpMarker(locConfigUseMetronomeHelp);
 
             hasChanges = ImGui.Checkbox(locConfigUsePlayback, ref usePlaybackCopy) || hasChanges;
             ImGuiComponents.HelpMarker(locConfigUsePlaybackHelp);
+
+            hasChanges = ImGui.Checkbox(locConfigShowScore, ref showScoreCopy) || hasChanges;
 
             ImGui.AlignTextToFramePadding();
             ImGui.Text($"{locConfigAssistMode}:");
@@ -525,6 +530,7 @@ namespace HarpHero
                 config.AssistMode = cachedAssistIds[assistModeIdx];
                 config.UseMetronomeLink = useMetronomeLinkCopy;
                 config.UsePlayback = usePlaybackCopy;
+                config.ShowScore = showScoreCopy;
                 needsSave = true;
                 hasChanges = false;
             }

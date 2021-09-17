@@ -41,6 +41,7 @@
 	"CFG_UseMetronomeHelp": { "message": "Gives control over music start/stop to game's metronome" },
 	"CFG_UsePlayback": { "message": "Use playback" },
 	"CFG_UsePlaybackHelp": { "message": "Play music track during performance, not available in training mode. This doesn't send any input to game, just makes hitting correct beats easier." },
+	"CFG_ShowScore": { "message": "Show score" },
 	"CFG_AssistMode": { "message": "Assist mode" },
 	"CFG_AssistDisabled": { "message": "Disabled" },
 	"CFG_AssistNote": { "message": "Note" },
