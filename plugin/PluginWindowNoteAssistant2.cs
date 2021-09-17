@@ -1,4 +1,5 @@
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -265,7 +266,7 @@ namespace HarpHero
             }
 
             // find next MaxMarkersToShow unique markers for notes
-            var currentTimeUs = trackAssistant.musicViewer.TimeUs;
+            var currentTimeUs = trackAssistant.CurrentTimeUs;
             var maxMarkerTime = currentTimeUs + (trackAssistant.musicViewer.TimeRangeUs / 2);
             long lastPlayingTimeUs = 0;
             int noteCounter = 0;
@@ -278,7 +279,7 @@ namespace HarpHero
                     continue;
                 }
 
-                if (noteInfo.startUs > currentTimeUs)
+                if (noteInfo.startUs >= currentTimeUs)
                 {
                     if (!activeNoteMarkers.ContainsKey(noteInfo.startUs))
                     {

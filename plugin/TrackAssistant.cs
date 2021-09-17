@@ -27,6 +27,7 @@ namespace HarpHero
         public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
         public bool IsPausedForInput => notePausedForInput != null;
         public float CurrentTime => currentTimeUs / 1000000.0f;
+        public long CurrentTimeUs => currentTimeUs;
 
         // TODO: expose
         public float NumSecondsFuture = 4.0f;
@@ -430,8 +431,11 @@ namespace HarpHero
 
         private void OnPlayingNoteChanged(int noteNumber)
         {
-            lastPressTimeUs = currentTimeUs;
-            lastPressNoteNumber = noteNumber;
+            if (noteNumber != 0)
+            {
+                lastPressTimeUs = currentTimeUs;
+                lastPressNoteNumber = noteNumber;
+            }
 
             long useTimeUs = currentTimeUs;
             if (notePausedForInput != null)
