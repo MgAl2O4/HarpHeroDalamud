@@ -97,7 +97,7 @@ namespace HarpHero
             var spaceX = contentRegionMax.X - contentRegionMin.X;
             var spaceY = contentRegionMax.Y - contentRegionMin.Y;
             var trackViewer = trackViewers[0];
-            var noteNumberRange = shownTrack.statsOrg.maxNote - shownTrack.statsOrg.minNote;
+            var noteNumberRange = Math.Max(1, shownTrack.statsOrg.maxNote - shownTrack.statsOrg.minNote);
             var startTimeUs = trackViewers[0].TimeRangeStartUs;
             var timeRangeUs = trackViewers[0].TimeRangeUs;
 
