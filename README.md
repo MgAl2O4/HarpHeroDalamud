@@ -3,7 +3,6 @@
 Dalamud plugin for bard's music performance based on MIDI files.
 * show what and when to press
 * do NOT play instead of player - there are already better tools for that
-* available soon...
 
 Features:
 1. Training mode  
@@ -14,11 +13,6 @@ Features:
 
 MIDI files are not included, look around in net, there's plenty of free ones   
 (something something license, copyrights, etc)
-
-
-Known issues:
-* doesn't recognize clicking keys with mouse
-* ...or gamepad
 
 ## Translation
 
