@@ -1,6 +1,7 @@
 ﻿using Dalamud;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
@@ -22,11 +23,13 @@ namespace HarpHero
 
         public bool showConfigs = false;
         public Action<MidiTrackWrapper> OnShowTrack;
+        public Action<string> OnImportFile;
 
         private const int MaxNameLen = 30;
         private string[] cachedTrackNames;
         private string[] cachedAssistNames;
         private int[] cachedAssistIds;
+        private FileDialogManager dlgManager = new();
 
         private string locImportHint;
         private string locSettingsHint;
@@ -166,6 +169,8 @@ namespace HarpHero
             {
                 DrawStatus();
             }
+
+            dlgManager.Draw();
         }
 
         private void DrawStatus()
@@ -174,7 +179,7 @@ namespace HarpHero
             ImGui.AlignTextToFramePadding();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.FileImport))
             {
-                fileManager.ShowImportDialog();
+                dlgManager.OpenFileDialog(locImportHint, ".mid,.midi", (found, path) => { if (found) { fileManager.ImportFile(path); } });
             }
             if (ImGui.IsItemHovered())
             {

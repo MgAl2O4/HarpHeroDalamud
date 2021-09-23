@@ -1,9 +1,7 @@
 ﻿using Dalamud.Logging;
 using Melanchall.DryWetMidi.Core;
-using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace HarpHero
 {
@@ -13,13 +11,6 @@ namespace HarpHero
         public List<MidiTrackWrapper> tracks = new();
 
         public Action<MidiFileManager> OnImported;
-
-        public async void ShowImportDialog()
-        {
-            // TODO: async for real?
-            var path = await ShowDialogWorker();
-            ImportFile(path);
-        }
 
         public void ImportFile(string path)
         {
@@ -42,21 +33,6 @@ namespace HarpHero
                     tracks.Clear();
                 }
             }
-        }
-
-        private Task<string> ShowDialogWorker()
-        {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.DefaultExt = ".mid";
-            dialog.Filter = "Midi file (.mid)|*.mid";
-
-            var result = dialog.ShowDialog();
-            if (result == true)
-            {
-                return Task.FromResult(dialog.FileName);
-            }
-
-            return Task.FromResult<string>(null);
         }
     }
 }
