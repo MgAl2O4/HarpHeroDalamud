@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using System;
+﻿using System;
 
 namespace HarpHero
 {

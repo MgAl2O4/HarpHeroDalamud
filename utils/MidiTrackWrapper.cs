@@ -208,14 +208,16 @@ namespace HarpHero
 
             if (needsRemove)
             {
-                midiTrack.RemoveNotes(x => {
+                midiTrack.RemoveNotes(x =>
+                {
                     int matchIdx = changes.FindIndex(n => (n.noteNumber == x.NoteNumber) && (n.time == x.Time));
                     return (matchIdx >= 0) && changes[matchIdx].newDuration <= 0;
                 });
             }
             if (needsDurationChange)
             {
-                midiTrack.ProcessNotes(x => {
+                midiTrack.ProcessNotes(x =>
+                {
                     int matchIdx = changes.FindIndex(n => (n.noteNumber == x.NoteNumber) && (n.time == x.Time));
                     if (matchIdx >= 0)
                     {
