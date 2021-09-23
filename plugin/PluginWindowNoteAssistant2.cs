@@ -69,6 +69,7 @@ namespace HarpHero
             PositionCondition = ImGuiCond.None;
             SizeCondition = ImGuiCond.None;
             BgAlpha = 0.0f;
+            RespectCloseHotkey = false;
 
             Flags = ImGuiWindowFlags.NoDecoration |
                 ImGuiWindowFlags.NoResize |

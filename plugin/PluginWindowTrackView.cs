@@ -34,6 +34,7 @@ namespace HarpHero
             SizeConstraints = new WindowSizeConstraints() { MinimumSize = new Vector2(600, 400), MaximumSize = new Vector2(2000, 1000) };
             SizeCondition = ImGuiCond.FirstUseEver;
             BgAlpha = 1.0f;
+            RespectCloseHotkey = false;
         }
 
         public void Dispose()

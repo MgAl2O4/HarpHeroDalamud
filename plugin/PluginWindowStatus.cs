@@ -86,6 +86,7 @@ namespace HarpHero
             SizeConstraints = new WindowSizeConstraints() { MinimumSize = new Vector2(0, 0), MaximumSize = new Vector2(400, 1000) };
             SizeCondition = ImGuiCond.FirstUseEver;
             Flags = ImGuiWindowFlags.AlwaysAutoResize;
+            RespectCloseHotkey = false;
 
             Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
             CacheLocalization();
@@ -157,6 +158,11 @@ namespace HarpHero
                 cachedAssistNames[idx] = sortedAssistNames[idx].Item2;
                 cachedAssistIds[idx] = sortedAssistNames[idx].Item1;
             }
+        }
+
+        public override void OnClose()
+        {
+            dlgManager.Reset();
         }
 
         public override void Draw()
