@@ -75,6 +75,7 @@ namespace HarpHero
 
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
+            uiReaderPerformance.OnKeyboardModeChanged += (isKeyboard) => noteInputMapper.OnKeyboardModeChanged(isKeyboard);
             trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
             trackAssistant.OnPlayChanged += (active) => noteInputMapper.OnPlayChanged(active);
             trackAssistant.OnPerformanceScore += (accuracy) =>

@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -349,10 +350,21 @@ namespace HarpHero
 
                         if (canShowOctaveOffsetKey && (octaveOffset != 0) && !hideActiveShift)
                         {
-                            //canShowOctaveOffsetKey = false;
                             var octaveShiftHint = noteInput.GeOctaveKeyBinding(octaveOffset);
-                            var octaveShiftSize = ImGui.CalcTextSize(octaveShiftHint);
-                            drawList.AddText(new Vector2(lineBEndX - octaveShiftSize.X, posY0 - octaveShiftSize.Y), octaveShiftColor, octaveShiftHint);
+                            if (!string.IsNullOrEmpty(octaveShiftHint.text))
+                            {
+                                var octaveShiftSize = ImGui.CalcTextSize(octaveShiftHint.text);
+                                drawList.AddText(new Vector2(lineBEndX - octaveShiftSize.X, posY0 - octaveShiftSize.Y), octaveShiftColor, octaveShiftHint.text);
+                            }
+                            else if (octaveShiftHint.icon != FontAwesomeIcon.None)
+                            {
+                                var iconTxt = octaveShiftHint.icon.ToIconString();
+                                ImGui.PushFont(UiBuilder.IconFont);
+                                var octaveShiftSize = ImGui.CalcTextSize(iconTxt);
+                                ImGui.PopFont();
+
+                                drawList.AddText(UiBuilder.IconFont, ImGui.GetFontSize() * octaveShiftHint.customScale, new Vector2(lineBEndX - octaveShiftSize.X, posY0 - octaveShiftSize.Y), octaveShiftColor, iconTxt);
+                            }
                         }
                     }
 

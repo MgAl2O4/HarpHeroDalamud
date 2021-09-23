@@ -1,10 +1,13 @@
 ﻿using Dalamud.Game.Gui;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace HarpHero
 {
@@ -31,6 +34,7 @@ namespace HarpHero
         public Action<bool> OnVisibilityChanged;
         public Action<int> OnOctaveOffsetChanged;
         public Action<int> OnPlayingNoteChanged;
+        public Action<bool> OnKeyboardModeChanged;
 
         public Status status = Status.AddonNotFound;
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
@@ -103,11 +107,42 @@ namespace HarpHero
                     (keyOb.pos, keyOb.size) = GUINodeUtils.GetNodePosAndSize(keyNode);
                 }
 
+                if (cachedState.footerDescriptionAddr != 0)
+                {
+                    var footerText = GUINodeUtils.GetNodeText((AtkResNode*)cachedState.footerDescriptionAddr);
+                    if (cachedState.footerDescText != footerText)
+                    {
+                        cachedState.footerDescText = footerText;
+
+                        bool hasGamepadIcon = HasGamepadIcon(footerText);
+                        if (cachedState.isGamepad != hasGamepadIcon)
+                        {
+                            cachedState.isGamepad = hasGamepadIcon;
+                            OnKeyboardModeChanged?.Invoke(!hasGamepadIcon);
+                        }
+                    }
+                }
+
                 CalcKeysBoundingBox();
                 SetStatus((useAddonPtr == shortAddonPtr) ? Status.NoErrors : Status.NoErrorsWide);
             }
 
             UpdatePlayingNote();
+        }
+
+        private string gamepadIconString;
+        private bool HasGamepadIcon(string text)
+        {
+            if (gamepadIconString == null)
+            {
+                // look for L3 icon
+                var iconPayload = new IconPayload(BitmapFontIcon.ControllerAnalogLeftStickIn);
+                var iconBytes = iconPayload.Encode(true);
+
+                gamepadIconString = Encoding.ASCII.GetString(iconBytes);
+            }
+
+            return text.Contains(gamepadIconString);
         }
 
         private unsafe void AddKeyNodeAddresses(AtkResNode* containerNode, int numKeys = 13)
@@ -141,6 +176,8 @@ namespace HarpHero
             //     [2] res node, 2 nodes (sibling scan)
             //         [x] 6 list items each with 8 nodes, [0] octave+1, [1] octave-1
             //             [6] key desc
+            //     [6] TextNineGrid node, 2 nodes on list
+            //         [1] text => check if starts with icon (gamepad) or not (keyboard)
             //
             // wide mode is very similar, with 3 containers for each octave
             //
@@ -152,12 +189,18 @@ namespace HarpHero
             //     [3] res node, 12 piano key buttons
             //         [x] Button components
             //     [4] key maps as above
+            //     [7] TextNineGrid node, 2 nodes on list
+            //         [1] text => check if starts with icon (gamepad) or not (keyboard)
 
             var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
             if (nodeArrL0.Length == 7)
             {
                 var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 7);
                 AddKeyNodeAddresses(nodeA);
+
+                var nodeI1 = GUINodeUtils.PickNode(nodeArrL0, 6, 7);
+                var nodeI2 = GUINodeUtils.PickChildNode(nodeI1, 1, 2);
+                cachedState.footerDescriptionAddr = (long)nodeI2;
             }
             else
             {
@@ -167,6 +210,10 @@ namespace HarpHero
                 AddKeyNodeAddresses(nodeA);
                 AddKeyNodeAddresses(nodeB, 12);
                 AddKeyNodeAddresses(nodeC, 12);
+
+                var nodeI1 = GUINodeUtils.PickNode(nodeArrL0, 7, 9);
+                var nodeI2 = GUINodeUtils.PickChildNode(nodeI1, 1, 2);
+                cachedState.footerDescriptionAddr = (long)nodeI2;
             }
 
             return cachedState.keys.Count > 0;
@@ -265,6 +312,10 @@ namespace HarpHero
         public Vector2 keysPos;
         public Vector2 keysSize;
 
+        public long footerDescriptionAddr;
+        public string footerDescText;
+        public bool isGamepad;
+
         public int activeNote;
         public int activeNoteOffset;
 
@@ -276,6 +327,7 @@ namespace HarpHero
         public void ResetCachedAddr()
         {
             keys.Clear();
+            footerDescriptionAddr = 0;
         }
     }
 }

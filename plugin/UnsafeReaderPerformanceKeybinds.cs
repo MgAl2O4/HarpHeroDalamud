@@ -5,10 +5,28 @@ using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace HarpHero
 {
+    public enum GamepadButton
+    {
+        Unknown,
+        DPadN,          // up
+        DPadS,          // down
+        DPadW,          // left
+        DPadE,          // right
+        ActionN,        // Y, triangle
+        ActionS,        // A, cross
+        ActionW,        // X, square
+        ActionE,        // B, circle
+        LB,             // L1
+        LT,             // L2
+        RB,             // R1
+        RT,             // R2
+    }
+
     public struct PerformanceBindingInfo
     {
         public struct Mode
@@ -20,6 +38,12 @@ namespace HarpHero
 
         public Mode singleOctave;
         public Mode threeOctaves;
+
+        public GamepadButton[] gamepadNotes;
+        public GamepadButton gamepadOctaveUp;
+        public GamepadButton gamepadOctaveDown;
+        public GamepadButton gamepadHalfUp;
+        public GamepadButton gamepadHalfDown;
     }
 
     public unsafe class UnsafeReaderPerformanceKeybinds
@@ -31,6 +55,7 @@ namespace HarpHero
         private unsafe struct KeybindMemory
         {
             [FieldOffset(0x0)] public byte Key;
+            [FieldOffset(0x2)] public byte Gamepad;
         }
 
         private readonly GameGui gameGui;
@@ -40,6 +65,10 @@ namespace HarpHero
         private int baseShortOctave = 0;
         private int baseWideNotes = 0;
         private int baseWideOctave = 0;
+        private int baseGamepadNotes = 0;
+        private int baseGamepadModifiers = 0;
+
+        private Dictionary<byte, GamepadButton> mapGamepad = new();
 
         public UnsafeReaderPerformanceKeybinds(GameGui gameGui, SigScanner sigScanner)
         {
@@ -49,26 +78,57 @@ namespace HarpHero
             var ptrShortOctaves = IntPtr.Zero;
             var ptrWideNotes = IntPtr.Zero;
             var ptrWideOctaves = IntPtr.Zero;
+            var ptrGamepadNotes = IntPtr.Zero;
+            var ptrGamepadModifiers = IntPtr.Zero;
 
             if (sigScanner != null)
             {
                 // use LEA opcode from setting loops in WritePerformanceBindingsWide/WritePerformanceBindingsSingleOctave
-
-                ptrShortNotes = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 16");
-                ptrWideNotes = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 2e");
-                ptrShortOctaves = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 84 00 00 00 bd 02 00");
-                ptrWideOctaves = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 44 01 00 00 bd 02 00");
+                try
+                {
+                    ptrShortNotes = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 16");
+                    ptrWideNotes = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 2e");
+                    ptrShortOctaves = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 84 00 00 00 bd 02 00");
+                    ptrWideOctaves = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 44 01 00 00 bd 02 00");
+                    ptrGamepadNotes = sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 33 db 4c 8d 3d ?? ?? ?? ?? 66 0f");
+                    ptrGamepadModifiers = sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 66 66 0f 1f 84 00 00 00 00 00 48 8b 4e 10");
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Error(ex, "oh noes!");
+                }
             }
 
-            HasErrors = (ptrShortNotes == IntPtr.Zero) || (ptrShortOctaves == IntPtr.Zero) || (ptrWideNotes == IntPtr.Zero) || (ptrWideOctaves == IntPtr.Zero);
+            HasErrors = (ptrShortNotes == IntPtr.Zero) || (ptrShortOctaves == IntPtr.Zero) ||
+                (ptrWideNotes == IntPtr.Zero) || (ptrWideOctaves == IntPtr.Zero) ||
+                (ptrGamepadNotes == IntPtr.Zero) || (ptrGamepadModifiers == IntPtr.Zero);
+
             HasErrors = HasErrors || !SafeMemory.Read(ptrShortNotes, out baseShortNotes);
             HasErrors = HasErrors || !SafeMemory.Read(ptrShortOctaves, out baseShortOctave);
             HasErrors = HasErrors || !SafeMemory.Read(ptrWideNotes, out baseWideNotes);
             HasErrors = HasErrors || !SafeMemory.Read(ptrWideOctaves, out baseWideOctave);
+            HasErrors = HasErrors || !SafeMemory.Read(ptrGamepadNotes, out baseGamepadNotes);
+            HasErrors = HasErrors || !SafeMemory.Read(ptrGamepadModifiers, out baseGamepadModifiers);
 
             if (HasErrors)
             {
                 PluginLog.Error("Failed to find key bind indices, turning reader off");
+            }
+            else
+            {
+                // seems to be hardcoded mapping, idk if there's ay meaning to those numbers :<
+                mapGamepad.Add(0xA7, GamepadButton.DPadN);
+                mapGamepad.Add(0xA8, GamepadButton.DPadS);
+                mapGamepad.Add(0xA9, GamepadButton.DPadW);
+                mapGamepad.Add(0xAA, GamepadButton.DPadE);
+                mapGamepad.Add(0xAB, GamepadButton.ActionN);
+                mapGamepad.Add(0xAC, GamepadButton.ActionS);
+                mapGamepad.Add(0xAD, GamepadButton.ActionW);
+                mapGamepad.Add(0xAE, GamepadButton.ActionE);
+                mapGamepad.Add(0xAF, GamepadButton.LB);
+                mapGamepad.Add(0xB0, GamepadButton.LT);
+                mapGamepad.Add(0xB2, GamepadButton.RB);
+                mapGamepad.Add(0xB3, GamepadButton.RT);
             }
         }
 
@@ -85,6 +145,7 @@ namespace HarpHero
             {
                 // .text: 4c 8d 71 10 48 8b e9 41 bf 2e 00 00 00  => WritePerformanceBindingsWide(void* PerformanceSettingsAgent)
                 // .text: 4c 8d 71 10 48 8b e9 41 bf 16 00 00 00  => WritePerformanceBindingsSingleOctave(void* PerformanceSettingsAgent)
+                // .text: 88 44 2a 2a 33 c0 c6 44 24 22 00 39 19  => WritePerformanceBindingsGamepad(void* PerformanceSettingsAgent)
                 // 
                 // WritePerformanceBindings: open settings agent in memory view, break on binding byte access, snigle function reading it on save ^
                 //
@@ -96,6 +157,8 @@ namespace HarpHero
                 // - 0x23f (0x2 elems = octave modifiers)
                 // - 0x22b (0x16 elems = notes)
                 // - 0x227 (0x2 elems = octave modifiers)
+                // - 0x22b (0x16 elems = gamepad notes)
+                // - 0x227 (0x4 elems = gamepad modifiers)
 
                 var uiModulePtr = (gameGui != null) ? gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
@@ -109,36 +172,76 @@ namespace HarpHero
                         //PluginLog.Log($"bindings ptr: {(inputManager.ToInt64() + 0x848):X}");
                         var bindingArr = *((KeybindMemory**)(inputManager.ToInt64() + 0x848));
 
-                        VirtualKey ReadBinding(int baseIdx, int offset)
+                        VirtualKey ReadKeyBinding(int baseIdx, int offset)
                         {
                             return (VirtualKey)bindingArr[baseIdx + offset].Key;
                         }
 
-                        VirtualKey[] ReadBindings(int baseIdx, int count)
+                        VirtualKey[] ReadKeyBindings(int baseIdx, int count)
                         {
                             var result = new VirtualKey[count];
                             for (int idx = 0; idx < count; idx++)
                             {
-                                result[idx] = ReadBinding(baseIdx, idx);
+                                result[idx] = ReadKeyBinding(baseIdx, idx);
                             }
 
                             return result;
+                        }
+
+                        GamepadButton ReadGamepadBinding(int baseIdx, int offset)
+                        {
+                            if (mapGamepad.TryGetValue(bindingArr[baseIdx + offset].Gamepad, out var buttonEnum))
+                            {
+                                return buttonEnum;
+                            }
+
+                            return GamepadButton.Unknown;
+                        }
+
+                        GamepadButton[] ReadGamepadBindings(int baseIdx, int count)
+                        {
+                            var result = new GamepadButton[count];
+                            for (int idx = 0; idx < count; idx++)
+                            {
+                                result[idx] = ReadGamepadBinding(baseIdx, idx);
+                            }
+
+                            return result;
+                        }
+
+                        int[] gamepadNotes = new int[16];
+                        for (int idx = 0; idx < gamepadNotes.Length; idx++)
+                        {
+                            gamepadNotes[idx] = bindingArr[baseGamepadNotes + idx].Gamepad;
+                            //PluginLog.Log($"Gamepad.note[{idx}]: {gamepadNotes[idx]:X} [{(baseGamepadNotes + idx):X}, {(long)&bindingArr[baseGamepadNotes + idx]:X}]");
+                        }
+
+                        int[] gamepadModifiers = new int[4];
+                        for (int idx = 0; idx < gamepadModifiers.Length; idx++)
+                        {
+                            gamepadModifiers[idx] = bindingArr[baseGamepadModifiers + idx].Gamepad;
+                            //PluginLog.Log($"Gamepad.mod[{idx}]:  {gamepadModifiers[idx]:X} [{(baseGamepadModifiers + idx):X}, {(long)&bindingArr[baseGamepadModifiers + idx]:X}]");
                         }
 
                         resultBindings = new PerformanceBindingInfo()
                         {
                             singleOctave = new PerformanceBindingInfo.Mode()
                             {
-                                notes = ReadBindings(baseShortNotes, 12 + 1),
-                                octaveUp = ReadBinding(baseShortOctave, 0),
-                                octaveDown = ReadBinding(baseShortOctave, 1),
+                                notes = ReadKeyBindings(baseShortNotes, 12 + 1),
+                                octaveUp = ReadKeyBinding(baseShortOctave, 0),
+                                octaveDown = ReadKeyBinding(baseShortOctave, 1),
                             },
                             threeOctaves = new PerformanceBindingInfo.Mode()
                             {
-                                notes = ReadBindings(baseWideNotes, 12 + 12 + 12 + 1),
-                                octaveUp = ReadBinding(baseWideOctave, 0),
-                                octaveDown = ReadBinding(baseWideOctave, 1),
-                            }
+                                notes = ReadKeyBindings(baseWideNotes, 12 + 12 + 12 + 1),
+                                octaveUp = ReadKeyBinding(baseWideOctave, 0),
+                                octaveDown = ReadKeyBinding(baseWideOctave, 1),
+                            },
+                            gamepadNotes = ReadGamepadBindings(baseGamepadNotes, 12 + 1),
+                            gamepadOctaveUp = ReadGamepadBinding(baseGamepadModifiers, 0),
+                            gamepadOctaveDown = ReadGamepadBinding(baseGamepadModifiers, 1),
+                            gamepadHalfUp = ReadGamepadBinding(baseGamepadModifiers, 2),
+                            gamepadHalfDown = ReadGamepadBinding(baseGamepadModifiers, 3)
                         };
                     }
                 }
