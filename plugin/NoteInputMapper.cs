@@ -425,7 +425,7 @@ namespace HarpHero
             int lParam = (int)(scanCode << 16);
 
             GetKeyNameText(lParam, resultDesc, 260);
-            desc = new ButtonDesc() { text = resultDesc.ToString() };
+            desc = new ButtonDesc() { text = resultDesc.ToString(), customScale = 1.0f };
 
             mapVirtualKeyDesc.Add(key, desc);
             return desc;
