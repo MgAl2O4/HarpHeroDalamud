@@ -180,7 +180,19 @@ namespace HarpHero
                 var noteInputChord = noteInput.GetNoteKeyBinding(noteBinding.noteInfo.note);
                 bool canDraw = true;
 
-                if (noteBinding.pressIdx < trackAssistant.musicViewer.maxBindingsToShow)
+                if (noteBinding.hasBindingConflict)
+                {
+                    var colorLightBk = UIColors.colorGray50;
+
+                    drawList.AddRectFilledMultiColor(new Vector2(posX0, posY), new Vector2(posX1, posY + noteHalfHeight),
+                        colorLightBk, colorLightBk & colorFarMask, colorLightBk & colorFarMask, colorLightBk);
+
+                    drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY),
+                        colorLight, colorLight & colorFarMask, colorLight & colorFarMask, colorLight);
+
+                    canDraw = false;
+                }
+                else if (noteBinding.pressIdx < trackAssistant.musicViewer.maxBindingsToShow)
                 {
                     // note colors:
                     // - keyboard: colorKeyboardNotes[noteBinding.bindingIdx]

@@ -28,6 +28,7 @@ namespace HarpHero
             public int pressIdx;
             public int bindingIdx;
             public bool showHint;
+            public bool hasBindingConflict;
         }
 
         public float timeWindowSecondsAhead = 9.0f;
@@ -273,6 +274,10 @@ namespace HarpHero
         public IEnumerable<NoteBindingInfo> GetShownNotesBindings()
         {
             int pressIdx = 0;
+            int maxPressIdxWithConflict = maxNotesToHint;
+            var listHistory = new List<int>();
+            var mapBindingConflicts = new Dictionary<int, int>();
+
             for (int idx = 0; idx < shownNotes.Count; idx++)
             {
                 var noteInfo = shownNotes[idx];
@@ -282,10 +287,23 @@ namespace HarpHero
                 }
 
                 int bindingIdx = shownBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber);
-                if (bindingIdx < 0)
+                if ((bindingIdx < 0) && (pressIdx >= maxPressIdxWithConflict))
                 {
                     break;
                 }
+
+                bool hasConflict = (bindingIdx < 0);
+                if (hasConflict)
+                {
+                    if (!mapBindingConflicts.TryGetValue(noteInfo.note.NoteNumber, out bindingIdx))
+                    {
+                        bindingIdx = (listHistory.Count > 0) ? listHistory[0] : 0;
+                        mapBindingConflicts.Add(noteInfo.note.NoteNumber, bindingIdx);
+                    }
+                }
+
+                listHistory.Remove(bindingIdx);
+                listHistory.Add(bindingIdx);
 
                 yield return new NoteBindingInfo()
                 {
@@ -293,6 +311,7 @@ namespace HarpHero
                     pressIdx = pressIdx,
                     bindingIdx = bindingIdx,
                     showHint = (pressIdx >= 0) && (pressIdx < maxNotesToHint),
+                    hasBindingConflict = hasConflict
                 };
 
                 pressIdx++;
