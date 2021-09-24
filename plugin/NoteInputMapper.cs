@@ -1,12 +1,7 @@
-﻿using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.Text;
-using Dalamud.Interface;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+﻿using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Game.ClientState.Keys;
 using Melanchall.DryWetMidi.Interaction;
-using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace HarpHero
 {
@@ -15,143 +10,22 @@ namespace HarpHero
         private readonly NoteUIMapper uiMapper;
         private readonly UnsafeReaderPerformanceKeybinds bindingReader;
 
-        public struct CompButtonDesc
-        {
-            public string simpleText;
-            public ButtonDesc[] buttonList;
-
-            public CompButtonDesc(ButtonDesc[] list)
-            {
-                simpleText = null;
-                buttonList = list;
-
-                if (list != null)
-                {
-                    int numIcons = 0;
-                    int numCustomScales = 0;
-                    for (int idx = 0; idx < list.Length; idx++)
-                    {
-                        numIcons += (list[idx].icon != FontAwesomeIcon.None) ? 1 : 0;
-                        numCustomScales += (list[idx].customScale != 1.0f) ? 1 : 0;
-                    }
-
-                    if (numIcons == 0 && numCustomScales == 0)
-                    {
-                        buttonList = null;
-                        simpleText = string.Join(" + ", list);
-                    }
-                }
-            }
-
-            public bool IsValid()
-            {
-                return !string.IsNullOrEmpty(simpleText) || buttonList != null;
-            }
-        }
-
-        public struct ButtonDesc
-        {
-            public FontAwesomeIcon icon;
-            public string text;
-            public float customScale;
-
-            public bool IsValid()
-            {
-                return !string.IsNullOrEmpty(text) || icon != FontAwesomeIcon.None;
-            }
-
-            public override string ToString()
-            {
-                return !string.IsNullOrEmpty(text) ? text : icon.ToString();
-            }
-        }
-
-        public struct GamepadModeDesc
-        {
-            public ButtonDesc xbox;
-            public ButtonDesc sony;
-
-            public GamepadModeDesc(FontAwesomeIcon iconXbox, FontAwesomeIcon iconSony)
-            {
-                xbox = new ButtonDesc() { icon = iconXbox, customScale = 0.9f };
-                sony = new ButtonDesc() { icon = iconSony, customScale = 0.9f };
-            }
-
-            public GamepadModeDesc(string textXbox, FontAwesomeIcon iconSony)
-            {
-                xbox = new ButtonDesc() { text = textXbox, customScale = 1.0f };
-                sony = new ButtonDesc() { icon = iconSony, customScale = 0.9f };
-            }
-
-            public GamepadModeDesc(string textXbox, string textSony, float scaleSony = 1.0f)
-            {
-                xbox = new ButtonDesc() { text = textXbox, customScale = 1.0f };
-                sony = new ButtonDesc() { text = textSony, customScale = scaleSony };
-            }
-        }
-
         private PerformanceBindingInfo? keyBinds;
-        private Dictionary<int, CompButtonDesc> mapNoteBinding = new();
-        private Dictionary<VirtualKey, ButtonDesc> mapVirtualKeyDesc = new();
-        private Dictionary<GamepadButton, GamepadModeDesc> mapGamepadButtonDesc = new();
-        private Dictionary<GamepadButton, int> mapGamepadSide = new();
+        private Dictionary<int, InputBindingChord> mapNoteBinding = new();
+        private GamepadButtons gamepadButtonsLeft = 0;
 
-        private ButtonDesc missingBinding = new();
-        private CompButtonDesc missingCompBinging = new();
+        private InputBindingKey missingBindingKey = new();
+        private InputBindingChord missingBingingChord = new();
 
         private bool isWideModeCached = false;
         private bool isKeyboardMode = true;
-        private bool isUsingXboxGamepadStyle = true;
 
         public NoteInputMapper(NoteUIMapper noteMapper, UnsafeReaderPerformanceKeybinds bindingReader)
         {
             this.uiMapper = noteMapper;
             this.bindingReader = bindingReader;
 
-            // can't change without client restart
-            isUsingXboxGamepadStyle = IsUsingXboxGamepadStyle();
-
-            // font is kind of small, but still better than using mountains for triangle :<
-            bool useUnicodeActions = true;
-
-            mapGamepadButtonDesc.Add(GamepadButton.DPadN, new GamepadModeDesc(FontAwesomeIcon.ChevronCircleUp, FontAwesomeIcon.ChevronCircleUp));
-            mapGamepadButtonDesc.Add(GamepadButton.DPadS, new GamepadModeDesc(FontAwesomeIcon.ChevronCircleDown, FontAwesomeIcon.ChevronCircleDown));
-            mapGamepadButtonDesc.Add(GamepadButton.DPadE, new GamepadModeDesc(FontAwesomeIcon.ChevronCircleRight, FontAwesomeIcon.ChevronCircleRight));
-            mapGamepadButtonDesc.Add(GamepadButton.DPadW, new GamepadModeDesc(FontAwesomeIcon.ChevronCircleLeft, FontAwesomeIcon.ChevronCircleLeft));
-
-            if (useUnicodeActions)
-            {
-                mapGamepadButtonDesc.Add(GamepadButton.ActionN, new GamepadModeDesc("Y", "" + Convert.ToChar(SeIconChar.Triangle), 1.25f));
-                mapGamepadButtonDesc.Add(GamepadButton.ActionS, new GamepadModeDesc("A", "" + Convert.ToChar(SeIconChar.Cross), 1.25f));
-                mapGamepadButtonDesc.Add(GamepadButton.ActionE, new GamepadModeDesc("B", "" + Convert.ToChar(SeIconChar.Circle), 1.25f));
-                mapGamepadButtonDesc.Add(GamepadButton.ActionW, new GamepadModeDesc("X", "" + Convert.ToChar(SeIconChar.Square), 1.25f));
-            }
-            else
-            {
-                mapGamepadButtonDesc.Add(GamepadButton.ActionN, new GamepadModeDesc("Y", FontAwesomeIcon.Mountain));
-                mapGamepadButtonDesc.Add(GamepadButton.ActionS, new GamepadModeDesc("A", FontAwesomeIcon.Times));
-                mapGamepadButtonDesc.Add(GamepadButton.ActionE, new GamepadModeDesc("B", FontAwesomeIcon.CircleNotch));
-                mapGamepadButtonDesc.Add(GamepadButton.ActionW, new GamepadModeDesc("X", FontAwesomeIcon.Expand));
-            }
-
-            mapGamepadButtonDesc.Add(GamepadButton.LB, new GamepadModeDesc("LB", "L1"));
-            mapGamepadButtonDesc.Add(GamepadButton.LT, new GamepadModeDesc("LT", "L2"));
-            mapGamepadButtonDesc.Add(GamepadButton.RB, new GamepadModeDesc("RB", "R1"));
-            mapGamepadButtonDesc.Add(GamepadButton.RT, new GamepadModeDesc("RT", "R2"));
-
-            mapGamepadSide.Add(GamepadButton.DPadN, -1);
-            mapGamepadSide.Add(GamepadButton.DPadS, -1);
-            mapGamepadSide.Add(GamepadButton.DPadE, -1);
-            mapGamepadSide.Add(GamepadButton.DPadW, -1);
-            mapGamepadSide.Add(GamepadButton.LB, -1);
-            mapGamepadSide.Add(GamepadButton.LT, -1);
-
-            mapGamepadSide.Add(GamepadButton.ActionN, 1);
-            mapGamepadSide.Add(GamepadButton.ActionS, 1);
-            mapGamepadSide.Add(GamepadButton.ActionE, 1);
-            mapGamepadSide.Add(GamepadButton.ActionW, 1);
-            mapGamepadSide.Add(GamepadButton.RB, 1);
-            mapGamepadSide.Add(GamepadButton.RT, 1);
+            gamepadButtonsLeft = GamepadButtons.DpadUp | GamepadButtons.DpadDown | GamepadButtons.DpadLeft | GamepadButtons.DpadRight | GamepadButtons.L1 | GamepadButtons.L2;
         }
 
         public void OnPlayChanged(bool active)
@@ -191,22 +65,22 @@ namespace HarpHero
             return hasBindings;
         }
 
-        private ButtonDesc[] GetNoteOctaveKeyboardBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset)
+        private InputBindingKey[] GetNoteOctaveKeyboardBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset)
         {
             if (FindNoteKeyOctaveBindings(modeBindings, useNoteIdx, useOctaveOffset, out VirtualKey noteKey, out VirtualKey octaveKey))
             {
                 if (octaveKey != VirtualKey.NO_KEY)
                 {
-                    return new ButtonDesc[] { GetVirtualKeyDesc(octaveKey), GetVirtualKeyDesc(noteKey) };
+                    return new InputBindingKey[] { InputBindingUtils.GetVirtualKeyData(octaveKey), InputBindingUtils.GetVirtualKeyData(noteKey) };
                 }
 
-                return new ButtonDesc[] { GetVirtualKeyDesc(noteKey) };
+                return new InputBindingKey[] { InputBindingUtils.GetVirtualKeyData(noteKey) };
             }
 
             return null;
         }
 
-        private ButtonDesc[] GetNoteOctaveGamepadBindings(int useNoteIdx, int useOctaveOffset)
+        private InputBindingKey[] GetNoteOctaveGamepadBindings(int useNoteIdx, int useOctaveOffset)
         {
             if (useNoteIdx < 0 || useNoteIdx > 12)
             {
@@ -214,7 +88,7 @@ namespace HarpHero
             }
 
             // special case for mid octave high C
-            if (useNoteIdx == 0 && useOctaveOffset == 1 && keyBinds.Value.gamepadNotes[12] != GamepadButton.Unknown)
+            if (useNoteIdx == 0 && useOctaveOffset == 1 && keyBinds.Value.gamepadNotes[12] != GamepadButtons.None)
             {
                 useNoteIdx = 12;
                 useOctaveOffset = 0;
@@ -225,84 +99,66 @@ namespace HarpHero
                 return null;
             }
 
-            var activeOctaveMod = (useOctaveOffset < 0) ? keyBinds.Value.gamepadOctaveDown :
+            var activeOctaveBind = (useOctaveOffset < 0) ? keyBinds.Value.gamepadOctaveDown :
                 (useOctaveOffset > 0) ? keyBinds.Value.gamepadOctaveUp :
-                GamepadButton.Unknown;
+                GamepadButtons.None;
 
-            if (useOctaveOffset != 0 && activeOctaveMod == GamepadButton.Unknown)
+            if (useOctaveOffset != 0 && activeOctaveBind == GamepadButtons.None)
             {
                 return null;
             }
 
-            var descParts = new List<ButtonDesc>();
-            if (activeOctaveMod != GamepadButton.Unknown)
+            var descParts = new List<InputBindingKey>();
+            if (activeOctaveBind != GamepadButtons.None)
             {
-                descParts.Add(GetGamepadButtonDesc(activeOctaveMod));
+                descParts.Add(InputBindingUtils.GetGamepadButtonData(activeOctaveBind));
             }
 
-            if (keyBinds.Value.gamepadNotes[useNoteIdx] != GamepadButton.Unknown)
+            var noteBind = keyBinds.Value.gamepadNotes[useNoteIdx];
+            if (noteBind == GamepadButtons.None)
             {
-                descParts.Add(GetGamepadButtonDesc(keyBinds.Value.gamepadNotes[useNoteIdx]));
-            }
-            else
-            {
-                GamepadButton foundBind = GamepadButton.Unknown;
+                var halfStepBind = GamepadButtons.None;
 
                 // require both for "simplicity" below
-                if (keyBinds.Value.gamepadHalfDown != GamepadButton.Unknown && keyBinds.Value.gamepadHalfUp != GamepadButton.Unknown)
+                if (keyBinds.Value.gamepadHalfDown != GamepadButtons.None && keyBinds.Value.gamepadHalfUp != GamepadButtons.None)
                 {
                     // feeling generous for fingers: prioritize step up/down to keep on the same side of pad as active octave modifier
-                    bool preferStepUp = (activeOctaveMod == GamepadButton.Unknown) || mapGamepadSide[activeOctaveMod] == mapGamepadSide[keyBinds.Value.gamepadHalfUp];
-                    if (preferStepUp)
+                    bool isOctaveModOnLeft = (gamepadButtonsLeft & activeOctaveBind) == activeOctaveBind;
+                    bool isStepUpOnLeft = (gamepadButtonsLeft & keyBinds.Value.gamepadHalfUp) == keyBinds.Value.gamepadHalfUp;
+                    bool preferStepUp = (activeOctaveBind == GamepadButtons.None) || (isOctaveModOnLeft == isStepUpOnLeft);
+
+                    if (preferStepUp && useNoteIdx < 12)
                     {
-                        if (useNoteIdx < 12)
-                        {
-                            foundBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
-                            if (foundBind != GamepadButton.Unknown)
-                            {
-                                descParts.Add(GetGamepadButtonDesc(keyBinds.Value.gamepadHalfUp));
-                                descParts.Add(GetGamepadButtonDesc(foundBind));
-                            }
-                        }
+                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
+                        halfStepBind = (noteBind == GamepadButtons.None) ? GamepadButtons.None : keyBinds.Value.gamepadHalfUp;
                     }
 
-                    if (foundBind == GamepadButton.Unknown)
+                    if (noteBind == GamepadButtons.None && useNoteIdx > 0)
                     {
-                        if (useNoteIdx > 0)
-                        {
-                            foundBind = keyBinds.Value.gamepadNotes[useNoteIdx - 1];
-                            if (foundBind != GamepadButton.Unknown)
-                            {
-                                descParts.Add(GetGamepadButtonDesc(keyBinds.Value.gamepadHalfDown));
-                                descParts.Add(GetGamepadButtonDesc(foundBind));
-                            }
-                        }
+                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx - 1];
+                        halfStepBind = (noteBind == GamepadButtons.None) ? GamepadButtons.None : keyBinds.Value.gamepadHalfDown;
                     }
 
-                    if (!preferStepUp && foundBind == GamepadButton.Unknown)
+                    if (noteBind == GamepadButtons.None && !preferStepUp && useNoteIdx < 12)
                     {
-                        if (useNoteIdx < 12)
-                        {
-                            foundBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
-                            if (foundBind != GamepadButton.Unknown)
-                            {
-                                descParts.Add(GetGamepadButtonDesc(keyBinds.Value.gamepadHalfUp));
-                                descParts.Add(GetGamepadButtonDesc(foundBind));
-                            }
-                        }
+                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
+                        halfStepBind = (noteBind == GamepadButtons.None) ? GamepadButtons.None : keyBinds.Value.gamepadHalfUp;
                     }
                 }
 
-                if (foundBind == GamepadButton.Unknown)
+                if (noteBind == GamepadButtons.None || halfStepBind == GamepadButtons.None)
                 {
                     return null;
                 }
+
+                descParts.Add(InputBindingUtils.GetGamepadButtonData(halfStepBind));
             }
 
+            descParts.Add(InputBindingUtils.GetGamepadButtonData(noteBind));
             return descParts.ToArray();
         }
 
-        public CompButtonDesc GetNoteKeyBinding(Note note)
+        public InputBindingChord GetNoteKeyBinding(Note note)
         {
             if (isWideModeCached != uiMapper.isWideMode)
             {
@@ -318,10 +174,10 @@ namespace HarpHero
 
             if (!keyBinds.HasValue || !uiMapper.GetMappedNoteIdx(note, out int mappedNoteIdx, out int octaveOffset))
             {
-                return missingCompBinging;
+                return missingBingingChord;
             }
 
-            ButtonDesc[] descParts = null;
+            InputBindingKey[] descParts = null;
             if (isKeyboardMode)
             {
                 if (isWideModeCached)
@@ -350,16 +206,16 @@ namespace HarpHero
                 descParts = GetNoteOctaveGamepadBindings(mappedNoteIdx, octaveOffset);
             }
 
-            var compDesc = new CompButtonDesc(descParts);
-            mapNoteBinding.Add(noteNumber, compDesc);
-            return compDesc;
+            var newInputChord = new InputBindingChord(descParts);
+            mapNoteBinding.Add(noteNumber, newInputChord);
+            return newInputChord;
         }
 
-        public ButtonDesc GeOctaveKeyBinding(int octaveOffset)
+        public InputBindingKey GeOctaveKeyBinding(int octaveOffset)
         {
             if (!keyBinds.HasValue || octaveOffset == 0)
             {
-                return missingBinding;
+                return missingBindingKey;
             }
 
             if (isKeyboardMode)
@@ -370,71 +226,19 @@ namespace HarpHero
 
                 if (octaveKey != VirtualKey.NO_KEY)
                 {
-                    return GetVirtualKeyDesc(octaveKey);
+                    return InputBindingUtils.GetVirtualKeyData(octaveKey);
                 }
             }
             else
             {
                 var gamepadButton = (octaveOffset > 0) ? keyBinds.Value.gamepadOctaveUp : keyBinds.Value.gamepadOctaveDown;
-                if (gamepadButton != GamepadButton.Unknown)
+                if (gamepadButton != GamepadButtons.None)
                 {
-                    return GetGamepadButtonDesc(gamepadButton);
+                    return InputBindingUtils.GetGamepadButtonData(gamepadButton);
                 }
             }
 
-            return missingBinding;
+            return missingBindingKey;
         }
-
-        private unsafe bool IsUsingXboxGamepadStyle()
-        {
-            // magic number being magical.
-            const short gamepadStyleOption = 91;
-
-            ConfigModule* modulePtr = ConfigModule.Instance();
-            if (modulePtr != null)
-            {
-                var valuePtr = modulePtr->GetValueById(gamepadStyleOption);
-                if (valuePtr != null && valuePtr->Value > 0)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private ButtonDesc GetGamepadButtonDesc(GamepadButton button)
-        {
-            if (mapGamepadButtonDesc.TryGetValue(button, out var combinedDesc))
-            {
-                return isUsingXboxGamepadStyle ? combinedDesc.xbox : combinedDesc.sony;
-            }
-
-            return missingBinding;
-        }
-
-        private ButtonDesc GetVirtualKeyDesc(VirtualKey key)
-        {
-            if (mapVirtualKeyDesc.TryGetValue(key, out var desc))
-            {
-                return desc;
-            }
-
-            var resultDesc = new StringBuilder();
-            uint scanCode = MapVirtualKey((uint)key, 0);
-            int lParam = (int)(scanCode << 16);
-
-            GetKeyNameText(lParam, resultDesc, 260);
-            desc = new ButtonDesc() { text = resultDesc.ToString(), customScale = 1.0f };
-
-            mapVirtualKeyDesc.Add(key, desc);
-            return desc;
-        }
-
-        [DllImport("user32.dll")]
-        static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-        [DllImport("user32.dll")]
-        static extern int GetKeyNameText(int lParam, [Out] StringBuilder lpString, int nSize);
     }
 }

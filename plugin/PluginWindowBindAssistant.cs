@@ -1,5 +1,4 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -170,60 +169,14 @@ namespace HarpHero
                 drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight), noteColor, noteColorFar, noteColorFar, noteColor);
                 if (noteBinding.showHint)
                 {
-                    var noteDesComp = noteInput.GetNoteKeyBinding(noteBinding.noteInfo.note);
-                    DrawCompositeBinding(new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorBindsDark[hintColorIdx], noteDesComp);
+                    var noteInputChord = noteInput.GetNoteKeyBinding(noteBinding.noteInfo.note);
+                    InputBindingUtils.AddToDrawList(drawList, new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorBindsDark[hintColorIdx], noteInputChord);
                 }
             }
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
             var posLineX = Position.Value.X + 10 + Size.Value.X * tLX;
             drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + Size.Value.Y - 10), colorBindsDark[playingColorIdx]);
-        }
-
-        private void DrawCompositeBinding(Vector2 pos, uint color, NoteInputMapper.CompButtonDesc compositeBinding)
-        {
-            var drawList = ImGui.GetWindowDrawList();
-
-            if (!string.IsNullOrEmpty(compositeBinding.simpleText))
-            {
-                drawList.AddText(pos, color, compositeBinding.simpleText);
-            }
-            else if (compositeBinding.buttonList != null)
-            {
-                string plusStr = null;
-                foreach (var buttonDesc in compositeBinding.buttonList)
-                {
-                    if (plusStr != null)
-                    {
-                        var partSize = ImGui.CalcTextSize(plusStr);
-                        drawList.AddText(pos, color, plusStr);
-                        pos.X += partSize.X;
-                    }
-                    else
-                    {
-                        plusStr = " + ";
-                    }
-
-                    if (!string.IsNullOrEmpty(buttonDesc.text))
-                    {
-                        var partSize = ImGui.CalcTextSize(buttonDesc.text);
-                        var offsetY = (buttonDesc.customScale > 1.0f) ? partSize.Y * (-buttonDesc.customScale + 1.0f) : 0.0f;
-
-                        drawList.AddText(UiBuilder.DefaultFont, ImGui.GetFontSize() * buttonDesc.customScale, (offsetY != 0) ? new Vector2(pos.X, pos.Y + offsetY) : pos, color, buttonDesc.text);
-                        pos.X += partSize.X * buttonDesc.customScale;
-                    }
-                    else if (buttonDesc.icon != FontAwesomeIcon.None)
-                    {
-                        var iconTxt = buttonDesc.icon.ToIconString();
-                        ImGui.PushFont(UiBuilder.IconFont);
-                        var partSize = ImGui.CalcTextSize(buttonDesc.icon.ToIconString());
-                        ImGui.PopFont();
-
-                        drawList.AddText(UiBuilder.IconFont, ImGui.GetFontSize() * buttonDesc.customScale, pos, color, iconTxt);
-                        pos.X += partSize.X * buttonDesc.customScale;
-                    }
-                }
-            }
         }
     }
 }

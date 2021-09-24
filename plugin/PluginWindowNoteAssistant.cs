@@ -1,5 +1,4 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -351,20 +350,12 @@ namespace HarpHero
 
                         if (canShowOctaveOffsetKey && (octaveOffset != 0) && !hideActiveShift)
                         {
-                            var octaveShiftHint = noteInput.GeOctaveKeyBinding(octaveOffset);
-                            if (!string.IsNullOrEmpty(octaveShiftHint.text))
+                            // this one is always Lx/Rx with simple text description, ignore icon logic
+                            var octaveInputKey = noteInput.GeOctaveKeyBinding(octaveOffset);
+                            if (octaveInputKey.IsValid())
                             {
-                                var octaveShiftSize = ImGui.CalcTextSize(octaveShiftHint.text);
-                                drawList.AddText(new Vector2(lineBEndX - octaveShiftSize.X, posY0 - octaveShiftSize.Y), octaveShiftColor, octaveShiftHint.text);
-                            }
-                            else if (octaveShiftHint.icon != FontAwesomeIcon.None)
-                            {
-                                var iconTxt = octaveShiftHint.icon.ToIconString();
-                                ImGui.PushFont(UiBuilder.IconFont);
-                                var octaveShiftSize = ImGui.CalcTextSize(iconTxt);
-                                ImGui.PopFont();
-
-                                drawList.AddText(UiBuilder.IconFont, ImGui.GetFontSize() * octaveShiftHint.customScale, new Vector2(lineBEndX - octaveShiftSize.X, posY0 - octaveShiftSize.Y), octaveShiftColor, iconTxt);
+                                var (octaveKeyTextSize, octaveKeyTextScale) = InputBindingUtils.CalcInputKeySizeAndScale(octaveInputKey);
+                                drawList.AddText(new Vector2(lineBEndX - octaveKeyTextSize.X, posY0 - octaveKeyTextSize.Y), octaveShiftColor, octaveInputKey.text);
                             }
                         }
                     }

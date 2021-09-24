@@ -1,5 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game;
+using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Gui;
 using Dalamud.Logging;
@@ -10,23 +11,6 @@ using System.Runtime.InteropServices;
 
 namespace HarpHero
 {
-    public enum GamepadButton
-    {
-        Unknown,
-        DPadN,          // up
-        DPadS,          // down
-        DPadW,          // left
-        DPadE,          // right
-        ActionN,        // Y, triangle
-        ActionS,        // A, cross
-        ActionW,        // X, square
-        ActionE,        // B, circle
-        LB,             // L1
-        LT,             // L2
-        RB,             // R1
-        RT,             // R2
-    }
-
     public struct PerformanceBindingInfo
     {
         public struct Mode
@@ -39,11 +23,11 @@ namespace HarpHero
         public Mode singleOctave;
         public Mode threeOctaves;
 
-        public GamepadButton[] gamepadNotes;
-        public GamepadButton gamepadOctaveUp;
-        public GamepadButton gamepadOctaveDown;
-        public GamepadButton gamepadHalfUp;
-        public GamepadButton gamepadHalfDown;
+        public GamepadButtons[] gamepadNotes;
+        public GamepadButtons gamepadOctaveUp;
+        public GamepadButtons gamepadOctaveDown;
+        public GamepadButtons gamepadHalfUp;
+        public GamepadButtons gamepadHalfDown;
     }
 
     public unsafe class UnsafeReaderPerformanceKeybinds
@@ -68,7 +52,7 @@ namespace HarpHero
         private int baseGamepadNotes = 0;
         private int baseGamepadModifiers = 0;
 
-        private Dictionary<byte, GamepadButton> mapGamepad = new();
+        private Dictionary<byte, GamepadButtons> mapGamepad = new();
 
         public UnsafeReaderPerformanceKeybinds(GameGui gameGui, SigScanner sigScanner)
         {
@@ -117,18 +101,18 @@ namespace HarpHero
             else
             {
                 // seems to be hardcoded mapping, idk if there's ay meaning to those numbers :<
-                mapGamepad.Add(0xA7, GamepadButton.DPadN);
-                mapGamepad.Add(0xA8, GamepadButton.DPadS);
-                mapGamepad.Add(0xA9, GamepadButton.DPadW);
-                mapGamepad.Add(0xAA, GamepadButton.DPadE);
-                mapGamepad.Add(0xAB, GamepadButton.ActionN);
-                mapGamepad.Add(0xAC, GamepadButton.ActionS);
-                mapGamepad.Add(0xAD, GamepadButton.ActionW);
-                mapGamepad.Add(0xAE, GamepadButton.ActionE);
-                mapGamepad.Add(0xAF, GamepadButton.LB);
-                mapGamepad.Add(0xB0, GamepadButton.LT);
-                mapGamepad.Add(0xB2, GamepadButton.RB);
-                mapGamepad.Add(0xB3, GamepadButton.RT);
+                mapGamepad.Add(0xA7, GamepadButtons.DpadUp);
+                mapGamepad.Add(0xA8, GamepadButtons.DpadDown);
+                mapGamepad.Add(0xA9, GamepadButtons.DpadLeft);
+                mapGamepad.Add(0xAA, GamepadButtons.DpadRight);
+                mapGamepad.Add(0xAB, GamepadButtons.North);
+                mapGamepad.Add(0xAC, GamepadButtons.South);
+                mapGamepad.Add(0xAD, GamepadButtons.West);
+                mapGamepad.Add(0xAE, GamepadButtons.East);
+                mapGamepad.Add(0xAF, GamepadButtons.L1);
+                mapGamepad.Add(0xB0, GamepadButtons.L2);
+                mapGamepad.Add(0xB2, GamepadButtons.R1);
+                mapGamepad.Add(0xB3, GamepadButtons.R2);
             }
         }
 
@@ -188,19 +172,19 @@ namespace HarpHero
                             return result;
                         }
 
-                        GamepadButton ReadGamepadBinding(int baseIdx, int offset)
+                        GamepadButtons ReadGamepadBinding(int baseIdx, int offset)
                         {
                             if (mapGamepad.TryGetValue(bindingArr[baseIdx + offset].Gamepad, out var buttonEnum))
                             {
                                 return buttonEnum;
                             }
 
-                            return GamepadButton.Unknown;
+                            return GamepadButtons.None;
                         }
 
-                        GamepadButton[] ReadGamepadBindings(int baseIdx, int count)
+                        GamepadButtons[] ReadGamepadBindings(int baseIdx, int count)
                         {
-                            var result = new GamepadButton[count];
+                            var result = new GamepadButtons[count];
                             for (int idx = 0; idx < count; idx++)
                             {
                                 result[idx] = ReadGamepadBinding(baseIdx, idx);
