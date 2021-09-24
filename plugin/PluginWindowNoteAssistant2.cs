@@ -10,16 +10,16 @@ namespace HarpHero
     {
         private const float NoMusicUpkeepTime = 3.0f;
 
-        private const uint colorCircleIdleW = 0x80404040;
-        private const uint colorCircleIdleB = 0x80808080;
+        private const uint colorCircleIdleW = UIColors.colorGray25;
+        private const uint colorCircleIdleB = UIColors.colorGray50;
 
-        private const uint colorNoteLowerOctaveB = 0xffecbb09;
-        private const uint colorNoteThisOctaveB = 0xff09edbc;
-        private const uint colorNoteHigherOctaveB = 0xff0986ec;
+        private const uint colorNoteLowerOctaveB = UIColors.colorBlue;
+        private const uint colorNoteThisOctaveB = UIColors.colorGreen;
+        private const uint colorNoteHigherOctaveB = UIColors.colorRed;
 
-        private const uint colorNoteLowerOctaveW = 0xffb63507;
-        private const uint colorNoteThisOctaveW = 0xff07b837;
-        private const uint colorNoteHigherOctaveW = 0xff0730b6;
+        private const uint colorNoteLowerOctaveW = UIColors.colorBlueDark;
+        private const uint colorNoteThisOctaveW = UIColors.colorGreenDark;
+        private const uint colorNoteHigherOctaveW = UIColors.colorRedDark;
 
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
@@ -210,7 +210,7 @@ namespace HarpHero
                 {
                     bool isHalfStep = noteMapper.octaveNotes[noteMapper.notes[idx].octaveIdx].isHalfStep;
                     float useDrawY = isHalfStep ? cachedBlackKeyY : cachedWhiteKeyY;
-                    uint drawColor = GetAlphaModulatedColor(isHalfStep ? colorCircleIdleB : colorCircleIdleW);
+                    uint drawColor = GetAlphaModulatedColor(isHalfStep ? colorCircleIdleB : colorCircleIdleW, 0.5f);
 
                     drawList.AddCircle(new Vector2(cachedNotePosX[idx], useDrawY), markerRadius, drawColor);
                 }
@@ -252,8 +252,7 @@ namespace HarpHero
 
                 uint GetAlphaModulatedColor(uint color, float modAlpha = 1.0f)
                 {
-                    var drawAlpha = ((color >> 24) / 255.0f) * cachedOverlayAlpha * modAlpha;
-                    return (color & 0x00ffffff) | (uint)Math.Min(255, drawAlpha * 255) << 24;
+                    return UIColors.GetAlphaModulated(color, modAlpha * cachedOverlayAlpha);
                 }
             }
         }

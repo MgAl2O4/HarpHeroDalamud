@@ -19,11 +19,11 @@ namespace HarpHero
         private int minValidNoteNumber;
         private int maxValidNoteNumber;
 
-        private const uint colorTimeLineBeat = 0xff004040;
-        private const uint colorTimeLineBar = 0xff008080;
-        private const uint colorNoteOrg = 0xff404040;
-        private const uint colorNote = 0xffa8a810;
-        private const uint colorNoteInvalid = 0xff1010a8;
+        private const uint colorTimeLineBeat = UIColors.colorGrayYellowDark;
+        private const uint colorTimeLineBar = UIColors.colorGrayYellow;
+        private const uint colorNoteOrg = UIColors.colorGray25;
+        private const uint colorNote = UIColors.colorGreenDark;
+        private const uint colorNoteInvalid = UIColors.colorRed;
 
         public PluginWindowTrackView(TrackAssistant trackAssistant) : base("Track View")
         {

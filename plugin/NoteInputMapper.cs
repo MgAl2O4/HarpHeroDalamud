@@ -20,6 +20,8 @@ namespace HarpHero
         private bool isWideModeCached = false;
         private bool isKeyboardMode = true;
 
+        public bool IsKeyboardMode => isKeyboardMode;
+
         public NoteInputMapper(NoteUIMapper noteMapper, UnsafeReaderPerformanceKeybinds bindingReader)
         {
             this.uiMapper = noteMapper;

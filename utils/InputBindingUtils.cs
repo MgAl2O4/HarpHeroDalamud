@@ -30,6 +30,7 @@ namespace HarpHero
     public struct InputBindingChord
     {
         public readonly InputBindingKey[] keys;
+        public readonly GamepadButtons mainButton;
         public readonly string simpleText;
         public readonly string separator;
 
@@ -38,6 +39,7 @@ namespace HarpHero
             this.keys = keys;
             this.separator = separator;
             simpleText = InputBindingUtils.TryCreatingSimpleChordDescription(keys, separator, ignoreScaleOverrides: false);
+            mainButton = InputBindingUtils.FindMainGamepadButton(keys);
         }
     }
 
@@ -45,10 +47,28 @@ namespace HarpHero
     {
         private static Dictionary<VirtualKey, InputBindingKey> mapVirtualKeys = new();
         private static Dictionary<GamepadButtons, InputBindingKey> mapGamepadButtons = new();
-        private static GamepadButtons supportedGamepadButtons = 0;
-        private static bool isUsingXboxGamepadStyle = true;
 
-        public static bool IsUsingXboxGamepadStyle => isUsingXboxGamepadStyle;
+        private static GamepadButtons supportedButtonMask = 0;
+        private static readonly GamepadButtons mainButtonMask =
+            GamepadButtons.DpadUp | GamepadButtons.DpadDown | GamepadButtons.DpadLeft | GamepadButtons.DpadRight |
+            GamepadButtons.North | GamepadButtons.South | GamepadButtons.West | GamepadButtons.East;
+
+        private static bool isUsingXboxGamepadStyle = true;
+        private static bool isGamepadStyleInitialized = false;
+
+        public static bool IsUsingXboxGamepadStyle
+        {
+            get
+            {
+                if (!isGamepadStyleInitialized)
+                {
+                    isGamepadStyleInitialized = true;
+                    isUsingXboxGamepadStyle = GetGamepadStyleSettings() == 0;
+                }
+                
+                return isUsingXboxGamepadStyle;
+            }
+        }
 
         public static InputBindingKey GetVirtualKeyData(VirtualKey key)
         {
@@ -76,7 +96,7 @@ namespace HarpHero
             }
 
             // limit set of supported buttons to what i need right now.
-            if ((supportedGamepadButtons & button) == 0)
+            if ((supportedButtonMask & button) == 0)
             {
                 button = GamepadButtons.None;
             }
@@ -118,6 +138,22 @@ namespace HarpHero
 
             bool canUseSimpleDesc = (numIcons == 0) && (ignoreScaleOverrides || numCustomScales == 0);
             return canUseSimpleDesc ? desc : null;
+        }
+
+        public static GamepadButtons FindMainGamepadButton(InputBindingKey[] keys)
+        {
+            if (keys != null)
+            {
+                foreach (var key in keys)
+                {
+                    if ((key.gamepadButton & mainButtonMask) != 0)
+                    {
+                        return key.gamepadButton;
+                    }
+                }
+            }
+
+            return GamepadButtons.None;
         }
 
         public static void AddToDrawList(ImDrawListPtr drawList, Vector2 pos, uint color, InputBindingChord inputChord)
@@ -233,7 +269,7 @@ namespace HarpHero
 
             foreach (var kvp in mapGamepadButtons)
             {
-                supportedGamepadButtons |= kvp.Key;
+                supportedButtonMask |= kvp.Key;
             }
         }
 

@@ -14,13 +14,13 @@ namespace HarpHero
         private const float TrackAssistOctaveShiftX = 100.0f;
         private const float NoMusicUpkeepTime = 3.0f;
 
-        private const uint colorTimeLineBeat = 0x80404040;
-        private const uint colorTimeLineBar = 0x80808080;
-        private const uint colorNoteLowerOctave = 0xffff0000;
-        private const uint colorNoteThisOctave = 0xff00ff00;
-        private const uint colorNoteHigherOctave = 0xff0000ff;
+        private static readonly uint colorTimeLineBeat = UIColors.GetAlphaModulated(UIColors.colorGray25, 0.5f);
+        private static readonly uint colorTimeLineBar = UIColors.GetAlphaModulated(UIColors.colorGray50, 0.5f);
+        private const uint colorNoteLowerOctave = UIColors.colorBlue;
+        private const uint colorNoteThisOctave = UIColors.colorGreen;
+        private const uint colorNoteHigherOctave = UIColors.colorRed;
 
-        private const uint colorGuideNextRGB = 0x40cbf9;
+        private const uint colorGuideNextRGB = UIColors.colorYellow;
         private const float alphaGuideInactive = 0.05f;
         private const float alphaGuideFar = 0.25f;
         private const float alphaGuideMed = 0.5f;
@@ -226,22 +226,22 @@ namespace HarpHero
                     lineAlpha = alphaGuideFar;
                 }
 
-                uint drawAlpha = (uint)(0xff * bgAlpha * lineAlpha);
-                uint drawColor = (nextPlayIdx == idx ? colorGuideNextRGB : 0xffffff) | (drawAlpha << 24);
+                uint drawColor = UIColors.GetAlphaModulated(nextPlayIdx == idx ? colorGuideNextRGB : 0xffffff, bgAlpha * lineAlpha);
 
-                bool isHalfStep = noteMapper.octaveNotes[noteMapper.notes[idx].octaveIdx].isHalfStep;
                 drawList.AddTriangleFilled(
                     new Vector2(cachedNotePosX[idx] - keyHalfWidth, cachedNoteActivationPosY + 1),
                     new Vector2(cachedNotePosX[idx] + keyHalfWidth, cachedNoteActivationPosY + 1),
-                    new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY + markerHeight), drawColor);
+                    new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY + markerHeight),
+                    drawColor);
 
+                bool isHalfStep = noteMapper.octaveNotes[noteMapper.notes[idx].octaveIdx].isHalfStep;
                 if (isHalfStep)
                 {
-                    uint drawColorHalfStep = 0x000000 | (drawAlpha << 24);
                     drawList.AddTriangleFilled(
                         new Vector2(cachedNotePosX[idx] - keyHalfWidth + halfStepFrame, cachedNoteActivationPosY + 1 + halfStepFrame),
                         new Vector2(cachedNotePosX[idx] + keyHalfWidth - halfStepFrame, cachedNoteActivationPosY + 1 + halfStepFrame),
-                        new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY + markerHeight - halfStepFrame), drawColorHalfStep);
+                        new Vector2(cachedNotePosX[idx], cachedNoteActivationPosY + markerHeight - halfStepFrame),
+                        drawColor & 0xff000000);
                 }
             }
         }

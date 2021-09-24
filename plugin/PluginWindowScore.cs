@@ -13,8 +13,8 @@ namespace HarpHero
         private int lastShownRankMajor;
         private Vector2[] cachedRankMinorPos;
 
-        private uint colorMinorEmpty = 0xff5c5b4c;
-        private uint[] colorMinor = { 0xff09edbc, 0xff40cbf9, 0xff5b71ff };
+        private uint colorMinorEmpty = UIColors.colorGray33;
+        private uint[] colorMinor = { UIColors.colorGreen, UIColors.colorYellow, UIColors.colorRed };
 
         public PluginWindowScore(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, Configuration config) : base("Track score")
         {

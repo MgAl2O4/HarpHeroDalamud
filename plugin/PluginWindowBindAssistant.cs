@@ -1,6 +1,9 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using ImGuiNET;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace HarpHero
@@ -12,15 +15,22 @@ namespace HarpHero
         private const float TrackAssistOffsetY = 20.0f;
         private const float NoMusicUpkeepTime = 3.0f;
 
-        private readonly uint[] colorBinds = { 0xff5c5b4c, 0xff09edbc, 0xff40cbf9, 0xff5b71ff };
-        private readonly uint[] colorBindsDark = { 0xff5c5b4c, 0xff069d7d, 0xff07b4ed, 0xff0a2bff };
-
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
         private readonly NoteInputMapper noteInput;
         private readonly TrackAssistant trackAssistant;
 
         private float noMusicUpkeepRemaining;
+
+        private struct GamepadColors
+        {
+            public uint colorLight;
+            public uint colorDark;
+            public uint colorLightBk;
+            public uint colorDarkBk;
+            public bool isDualColor;
+        }
+        private Dictionary<GamepadButtons, GamepadColors> mapGamepadColors = new();
 
         public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Bind Assistant")
         {
@@ -47,6 +57,8 @@ namespace HarpHero
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
+
+            InitGamepadButtonColors();
         }
 
         public void Dispose()
@@ -141,7 +153,8 @@ namespace HarpHero
             var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
 
             float noteHalfHeight = 5.0f;
-            int playingColorIdx = 0;
+            uint colorFarMask = 0x40ffffff;
+            uint colorPlayingDark = 0xffffffff;
 
             foreach (var noteBinding in trackAssistant.musicViewer.GetShownNotesBindings())
             {
@@ -153,30 +166,97 @@ namespace HarpHero
                 var posX1 = Position.Value.X + 10 + Size.Value.X * tX1;
                 var posY = Position.Value.Y + 30 + (Size.Value.Y - 20) * tY;
 
-                int hintColorIdx =
-                    (noteBinding.pressIdx >= trackAssistant.musicViewer.maxBindingsToShow) ? 0 :
-                    (noteBinding.bindingIdx >= 0 && noteBinding.bindingIdx < colorBinds.Length - 1) ? noteBinding.bindingIdx + 1 :
-                    0;
+                uint colorLight = UIColors.colorGray33;
+                uint colorDark = UIColors.colorGray33;
+                var noteInputChord = noteInput.GetNoteKeyBinding(noteBinding.noteInfo.note);
+                bool canDraw = true;
+
+                if (noteBinding.pressIdx < trackAssistant.musicViewer.maxBindingsToShow)
+                {
+                    // note colors:
+                    // - keyboard: colorKeyboardNotes[noteBinding.bindingIdx]
+                    // - gamepad:  gamepadStyle[noteButtonIdx]
+
+                    if (noteInput.IsKeyboardMode)
+                    {
+                        bool hasValidBinding = (noteBinding.bindingIdx >= 0) && (noteBinding.bindingIdx < UIColors.colorKeyboardNotes.Length);
+                        if (hasValidBinding)
+                        {
+                            colorLight = UIColors.colorKeyboardNotes[noteBinding.bindingIdx];
+                            colorDark = UIColors.colorKeyboardNotesDark[noteBinding.bindingIdx];
+                        }
+                    }
+                    else
+                    {
+                        if (mapGamepadColors.TryGetValue(noteInputChord.mainButton, out var gamepadColors))
+                        {
+                            colorLight = gamepadColors.colorLight;
+                            colorDark = gamepadColors.colorDark;
+
+                            if (gamepadColors.isDualColor)
+                            {
+                                drawList.AddRectFilledMultiColor(new Vector2(posX0, posY), new Vector2(posX1, posY + noteHalfHeight),
+                                    gamepadColors.colorLightBk, gamepadColors.colorLightBk & colorFarMask, gamepadColors.colorLightBk & colorFarMask, gamepadColors.colorLightBk);
+
+                                drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY),
+                                    gamepadColors.colorLight, gamepadColors.colorLight & colorFarMask, gamepadColors.colorLight & colorFarMask, gamepadColors.colorLight);
+
+                                canDraw = false;
+                            }
+                        }
+                    }
+                }
+
+                if (canDraw)
+                {
+                    drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight), 
+                        colorLight, colorLight & colorFarMask, colorLight & colorFarMask, colorLight);
+                }
+
+                if (noteBinding.showHint)
+                {
+                    InputBindingUtils.AddToDrawList(drawList, new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorDark, noteInputChord);
+                }
 
                 if (noteBinding.pressIdx == 0)
                 {
-                    playingColorIdx = hintColorIdx;
-                }
-
-                var noteColor = colorBinds[hintColorIdx];
-                var noteColorFar = noteColor & 0x40ffffff;
-
-                drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight), noteColor, noteColorFar, noteColorFar, noteColor);
-                if (noteBinding.showHint)
-                {
-                    var noteInputChord = noteInput.GetNoteKeyBinding(noteBinding.noteInfo.note);
-                    InputBindingUtils.AddToDrawList(drawList, new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorBindsDark[hintColorIdx], noteInputChord);
+                    colorPlayingDark = colorDark;
                 }
             }
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
             var posLineX = Position.Value.X + 10 + Size.Value.X * tLX;
-            drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + Size.Value.Y - 10), colorBindsDark[playingColorIdx]);
+            drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + Size.Value.Y - 10), colorPlayingDark);
+        }
+
+        private void InitGamepadButtonColors()
+        {
+            if (InputBindingUtils.IsUsingXboxGamepadStyle)
+            {
+                mapGamepadColors.Add(GamepadButtons.DpadUp, new GamepadColors() { colorLight = UIColors.colorXboxActionNorth, colorDark = UIColors.colorXboxActionNorthDark, colorLightBk = UIColors.colorXboxDPadNorth, colorDarkBk = UIColors.colorXboxDPadNorthDark, isDualColor = true });
+                mapGamepadColors.Add(GamepadButtons.DpadDown, new GamepadColors() { colorLight = UIColors.colorXboxActionSouth, colorDark = UIColors.colorXboxActionSouthDark, colorLightBk = UIColors.colorXboxDPadSouth, colorDarkBk = UIColors.colorXboxDPadSouthDark, isDualColor = true });
+                mapGamepadColors.Add(GamepadButtons.DpadLeft, new GamepadColors() { colorLight = UIColors.colorXboxActionWest, colorDark = UIColors.colorXboxActionWestDark, colorLightBk = UIColors.colorXboxDPadWest, colorDarkBk = UIColors.colorXboxDPadWestDark, isDualColor = true });
+                mapGamepadColors.Add(GamepadButtons.DpadRight, new GamepadColors() { colorLight = UIColors.colorXboxActionEast, colorDark = UIColors.colorXboxActionEastDark, colorLightBk = UIColors.colorXboxDPadEast, colorDarkBk = UIColors.colorXboxDPadEastDark, isDualColor = true });
+
+                mapGamepadColors.Add(GamepadButtons.North, new GamepadColors() { colorLight = UIColors.colorXboxActionNorth, colorDark = UIColors.colorXboxActionNorthDark });
+                mapGamepadColors.Add(GamepadButtons.South, new GamepadColors() { colorLight = UIColors.colorXboxActionSouth, colorDark = UIColors.colorXboxActionSouthDark });
+                mapGamepadColors.Add(GamepadButtons.West, new GamepadColors() { colorLight = UIColors.colorXboxActionWest, colorDark = UIColors.colorXboxActionWestDark });
+                mapGamepadColors.Add(GamepadButtons.East, new GamepadColors() { colorLight = UIColors.colorXboxActionEast, colorDark = UIColors.colorXboxActionEastDark });
+            }
+            else
+            {
+                mapGamepadColors.Add(GamepadButtons.DpadUp, new GamepadColors() { colorLight = UIColors.colorSonyActionNorth, colorDark = UIColors.colorSonyActionNorthDark, colorLightBk = UIColors.colorSonyDPadNorth, colorDarkBk = UIColors.colorSonyDPadNorthDark, isDualColor = true });
+                mapGamepadColors.Add(GamepadButtons.DpadDown, new GamepadColors() { colorLight = UIColors.colorSonyActionSouth, colorDark = UIColors.colorSonyActionSouthDark, colorLightBk = UIColors.colorSonyDPadSouth, colorDarkBk = UIColors.colorSonyDPadSouthDark, isDualColor = true });
+                mapGamepadColors.Add(GamepadButtons.DpadLeft, new GamepadColors() { colorLight = UIColors.colorSonyActionWest, colorDark = UIColors.colorSonyActionWestDark, colorLightBk = UIColors.colorSonyDPadWest, colorDarkBk = UIColors.colorSonyDPadWestDark, isDualColor = true });
+                mapGamepadColors.Add(GamepadButtons.DpadRight, new GamepadColors() { colorLight = UIColors.colorSonyActionEast, colorDark = UIColors.colorSonyActionEastDark, colorLightBk = UIColors.colorSonyDPadEast, colorDarkBk = UIColors.colorSonyDPadEastDark, isDualColor = true });
+
+                mapGamepadColors.Add(GamepadButtons.North, new GamepadColors() { colorLight = UIColors.colorSonyActionNorth, colorDark = UIColors.colorSonyActionNorthDark });
+                mapGamepadColors.Add(GamepadButtons.South, new GamepadColors() { colorLight = UIColors.colorSonyActionSouth, colorDark = UIColors.colorSonyActionSouthDark });
+                mapGamepadColors.Add(GamepadButtons.West, new GamepadColors() { colorLight = UIColors.colorSonyActionWest, colorDark = UIColors.colorSonyActionWestDark });
+                mapGamepadColors.Add(GamepadButtons.East, new GamepadColors() { colorLight = UIColors.colorSonyActionEast, colorDark = UIColors.colorSonyActionEastDark });
+            }
+
+            mapGamepadColors.Add(GamepadButtons.None, new GamepadColors() { colorLight = UIColors.colorGray33, colorDark = UIColors.colorGray33 });
         }
     }
 }
