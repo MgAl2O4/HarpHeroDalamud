@@ -65,7 +65,7 @@ namespace HarpHero
                     isGamepadStyleInitialized = true;
                     isUsingXboxGamepadStyle = GetGamepadStyleSettings() == 0;
                 }
-                
+
                 return isUsingXboxGamepadStyle;
             }
         }

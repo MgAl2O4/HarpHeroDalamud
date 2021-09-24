@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -209,7 +208,7 @@ namespace HarpHero
 
                 if (canDraw)
                 {
-                    drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight), 
+                    drawList.AddRectFilledMultiColor(new Vector2(posX0, posY - noteHalfHeight), new Vector2(posX1, posY + noteHalfHeight),
                         colorLight, colorLight & colorFarMask, colorLight & colorFarMask, colorLight);
                 }
 
