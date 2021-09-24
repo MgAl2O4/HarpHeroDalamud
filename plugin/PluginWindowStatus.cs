@@ -408,7 +408,7 @@ namespace HarpHero
                     ImGui.SameLine();
                     ImGui.Text($"[{metronomeBar}:{metronomeBeat}]");
 
-                    if (syncErrorMs > 100.0f)
+                    if (syncErrorMs > 100.0f && trackAssistant.musicTrack != null)
                     {
                         ImGui.SameLine();
                         ImGui.TextColored(colorYellow, string.Format(locPlayMetronomeSyncError, syncErrorMs));

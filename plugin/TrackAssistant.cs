@@ -427,9 +427,12 @@ namespace HarpHero
             if (isMetronomePlaying)
             {
                 // make sure thaht time signature is matching current track
-                metronomeLink.Measure = musicTrack.stats.timeSignature?.Numerator ?? 4;
+                if (musicTrack != null)
+                {
+                    metronomeLink.Measure = musicTrack.stats.timeSignature?.Numerator ?? 4;
 
-                Start();
+                    Start();
+                }
             }
             else
             {
