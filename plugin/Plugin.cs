@@ -48,7 +48,8 @@ namespace HarpHero
             configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             configuration.Initialize(pluginInterface);
 
-            locManager = new Localization("assets/loc", "", true);
+            var myAssemblyName = GetType().Assembly.GetName().Name;
+            locManager = new Localization($"{myAssemblyName}.assets.loc.", "", true);            // res stream format: HarpHero.assets.loc.en.json
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
