@@ -173,18 +173,22 @@ namespace HarpHero
                 notePausedForInput = null;
                 pausedTimeUs = 0;
 
-                try
+                if (CanUsePlayback)
                 {
-                    musicPlayer = new MidiTrackPlayer(musicTrack);
-                    musicPlayer.SetTimeScaling(timeScaling);
+                    try
+                    {
+                        musicPlayer = new MidiTrackPlayer(musicTrack);
+                        musicPlayer.SetTimeScaling(timeScaling);
 
-                    // this can throw exception when device is in use
-                    musicPlayer.WarmupDevice();
-                }
-                catch (Exception ex)
-                {
-                    PluginLog.Error(ex, "Failed to start midi player");
-                    return false;
+                        // this can throw exception when device is in use
+                        musicPlayer.WarmupDevice();
+                    }
+                    catch (Exception ex)
+                    {
+                        PluginLog.Error(ex, "Failed to start midi player, turning off playback!");
+                        config.UsePlayback = false;
+                        return false;
+                    }
                 }
 
                 isPlaying = true;
