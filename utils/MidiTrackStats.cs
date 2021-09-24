@@ -138,6 +138,11 @@ namespace HarpHero
 
                 foreach (var note in track.GetNotes())
                 {
+                    if (note.Time < beatTimes[currentBeatIdx])
+                    {
+                        continue;
+                    }
+
                     if (note.Time >= endTick)
                     {
                         break;
@@ -147,6 +152,7 @@ namespace HarpHero
                     {
                         if (maxNotesPerBeat < currentBeatNotes)
                         {
+                            var noteTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(note.Time, tempoMap);
                             maxNotesPerBeat = currentBeatNotes;
                         }
 
