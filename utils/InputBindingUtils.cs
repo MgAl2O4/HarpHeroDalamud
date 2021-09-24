@@ -10,7 +10,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace HarpHero
+namespace MgAl2O4.Utils
 {
     public struct InputBindingKey
     {

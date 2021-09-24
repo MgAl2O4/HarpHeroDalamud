@@ -3,6 +3,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
