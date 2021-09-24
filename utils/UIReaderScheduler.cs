@@ -79,10 +79,12 @@ namespace MgAl2O4.Utils
                             var addonPtr = GetAddonPtrIfValid(addon.name);
                             if (addonPtr != addon.addonPtr)
                             {
+                                addon.isActive = false;
                                 addon.reader.OnAddonLost();
 
                                 if (addonPtr != IntPtr.Zero)
                                 {
+                                    addon.isActive = true;
                                     addon.reader.OnAddonShown(addonPtr);
                                 }
                             }
