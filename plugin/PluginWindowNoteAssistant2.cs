@@ -1,5 +1,6 @@
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -117,6 +118,11 @@ namespace HarpHero
             }
         }
 
+        public override void OnOpen()
+        {
+            Plugin.TickScheduler.Register(this);
+        }
+
         public override void PreDraw()
         {
             int numMappedNotes = noteMapper.notes?.Length ?? 0;
@@ -153,7 +159,7 @@ namespace HarpHero
             }
         }
 
-        public void Tick(float deltaSeconds)
+        public bool Tick(float deltaSeconds)
         {
             if (IsOpen)
             {
@@ -175,6 +181,9 @@ namespace HarpHero
                     TickMarkers(deltaSeconds);
                 }
             }
+
+            // can tick? only if open
+            return IsOpen;
         }
 
         private void TickMarkers(float deltaSeconds)

@@ -98,6 +98,12 @@ namespace HarpHero
                     IsOpen = true;
                     noMusicUpkeepRemaining = NoMusicUpkeepTime;
                 }
+                else if (!active)
+                {
+                    // start ticking fadeout
+                    noMusicUpkeepRemaining = NoMusicUpkeepTime;
+                    Plugin.TickScheduler.Register(this);
+                }
             }
             else
             {
@@ -151,9 +157,10 @@ namespace HarpHero
             }
         }
 
-        public void Tick(float deltaSeconds)
+        public bool Tick(float deltaSeconds)
         {
-            if (IsOpen && (trackAssistant == null || !trackAssistant.IsPlaying))
+            bool canFadeOut = IsOpen && (trackAssistant == null || !trackAssistant.IsPlaying);
+            if (canFadeOut)
             {
                 noMusicUpkeepRemaining -= deltaSeconds;
                 if (noMusicUpkeepRemaining <= 0.0f)
@@ -161,6 +168,9 @@ namespace HarpHero
                     IsOpen = false;
                 }
             }
+
+            // can tick? only when still open and not playing
+            return canFadeOut && IsOpen;
         }
 
         public override void OnClose()

@@ -40,7 +40,7 @@ namespace HarpHero
         public NoteMap[] notes = null;
         public bool isWideMode = false;
 
-        public void Update(UIStateBardPerformance uiState)
+        public void OnNumKeysChanged(UIStateBardPerformance uiState)
         {
             if (uiState != null && (uiState.keys.Count == numNotesShort || uiState.keys.Count == numNotesWide))
             {

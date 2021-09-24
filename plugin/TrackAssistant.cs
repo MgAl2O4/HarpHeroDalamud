@@ -1,5 +1,6 @@
 ﻿using Dalamud.Logging;
 using Melanchall.DryWetMidi.Interaction;
+using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
 
@@ -187,6 +188,7 @@ namespace HarpHero
                 }
 
                 isPlaying = true;
+                Plugin.TickScheduler.Register(this);
 
                 musicViewer.generateBindingData = CanShowBindAssistant;
                 musicViewer.generateBarData = false; // TODO: expose?
@@ -249,79 +251,85 @@ namespace HarpHero
             }
         }
 
-        public void Tick(float deltaSeconds)
+        public bool Tick(float deltaSeconds)
         {
-            if (isPlaying)
+            if (!isPlaying)
             {
-                // time source priorities:
-                // - active playback
-                // - metronome link
-                // - training pause
-                // - tick's accumulator
+                // no more ticking when stopped
+                return false;
+            }
 
-                if (isPlayingSound)
-                {
-                    // time scaling already applied through musiPlayer's speed
-                    currentTimeUs = musicPlayer.GetCurrentTimeUs();
-                }
-                else if (HasMetronomeLink && metronomeLink.IsPlaying)
-                {
-                    currentTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
-                }
-                else if (IsPausedForInput)
-                {
-                    // no updates here, just wait
-                    long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
-                    pausedTimeUs = Math.Min(pausedTimeUs + deltaUs, 1000 * 1000 * 60);
-                }
-                else
-                {
-                    // keep int64 for accuracy, floats will gradually degrade
-                    // prob overkill since most midis won't last longer than 10 minutes
-                    // ~7 significant digits, 600s.0000 - accurate up to 100 us?
+            // time source priorities:
+            // - active playback
+            // - metronome link
+            // - training pause
+            // - tick's accumulator
 
-                    long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
-                    currentTimeUs += deltaUs;
-                }
+            if (isPlayingSound)
+            {
+                // time scaling already applied through musiPlayer's speed
+                currentTimeUs = musicPlayer.GetCurrentTimeUs();
+            }
+            else if (HasMetronomeLink && metronomeLink.IsPlaying)
+            {
+                currentTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
+            }
+            else if (IsPausedForInput)
+            {
+                // no updates here, just wait
+                long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
+                pausedTimeUs = Math.Min(pausedTimeUs + deltaUs, 1000 * 1000 * 60);
+            }
+            else
+            {
+                // keep int64 for accuracy, floats will gradually degrade
+                // prob overkill since most midis won't last longer than 10 minutes
+                // ~7 significant digits, 600s.0000 - accurate up to 100 us?
 
-                // enforce metronome sync
-                if (isPlayingSound && HasMetronomeLink && metronomeLink.IsPlaying)
+                long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
+                currentTimeUs += deltaUs;
+            }
+
+            // enforce metronome sync
+            if (isPlayingSound && HasMetronomeLink && metronomeLink.IsPlaying)
+            {
+                long syncTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
+                long syncTimeDiff = currentTimeUs - syncTimeUs;
+                long syncTimeDiffAbs = Math.Abs(syncTimeDiff);
+
+                if (syncTimeDiffAbs > 1000)
                 {
-                    long syncTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
-                    long syncTimeDiff = currentTimeUs - syncTimeUs;
-                    long syncTimeDiffAbs = Math.Abs(syncTimeDiff);
+                    float speedOffset = -syncTimeDiff / 100000.0f;
 
-                    if (syncTimeDiffAbs > 1000)
+                    if (speedOffset < -0.25f) { speedOffset = -0.25f; }
+                    else if (speedOffset > 0.25f) { speedOffset = 0.25f; }
+
+                    if (timeScaling + speedOffset > 0.0f)
                     {
-                        float speedOffset = -syncTimeDiff / 100000.0f;
-
-                        if (speedOffset < -0.25f) { speedOffset = -0.25f; }
-                        else if (speedOffset > 0.25f) { speedOffset = 0.25f; }
-
-                        if (timeScaling + speedOffset > 0.0f)
-                        {
-                            musicPlayer.SetTimeScaling(timeScaling + speedOffset);
-                        }
+                        musicPlayer.SetTimeScaling(timeScaling + speedOffset);
                     }
                 }
-
-                // try starting playback 
-                if (CanUsePlayback && !isPlayingSound && currentTimeUs >= 0)
-                {
-                    isPlayingSound = musicPlayer.StartAt(currentTimeUs);
-                }
-
-                // update viewer & look for end of track
-                if (currentTimeUs < trackDurationUs)
-                {
-                    musicViewer.SetTimeUs(currentTimeUs);
-                }
-                else
-                {
-                    CalcScore();
-                    Stop();
-                }
             }
+
+            // try starting playback 
+            if (CanUsePlayback && !isPlayingSound && currentTimeUs >= 0)
+            {
+                isPlayingSound = musicPlayer.StartAt(currentTimeUs);
+            }
+
+            // update viewer & look for end of track
+            if (currentTimeUs < trackDurationUs)
+            {
+                musicViewer.SetTimeUs(currentTimeUs);
+            }
+            else
+            {
+                CalcScore();
+                Stop();
+            }
+
+            // can tick? only if still playing
+            return isPlaying;
         }
 
         public bool GetNextPlayingNote(out int noteNumber, out long startTimeUs, int offset = 0)

@@ -36,70 +36,58 @@ namespace HarpHero
         public Action<int> OnOctaveOffsetChanged;
         public Action<int> OnPlayingNoteChanged;
         public Action<bool> OnKeyboardModeChanged;
+        public Action<int> OnCachedKeysChanged;
 
         public Status status = Status.AddonNotFound;
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
         public bool HasErrors => false;
 
         private GameGui gameGui;
-        private IntPtr cachedAddonPtr;
         private IntPtr cachedAgentPtr;
+        private int cachedNumKeys;
+        private bool isWideMode;
+
+        public UIReaderBardPerformanceShort uiReaderShort = new();
+        public UIReaderBardPerformanceShort uiReaderWide = new();
 
         public UIReaderBardPerformance(GameGui gameGui)
         {
             this.gameGui = gameGui;
+
+            uiReaderShort.parentReader = this;
+            uiReaderWide.parentReader = this;
         }
 
-        public unsafe void Update()
+        public void OnAddonLost()
         {
-            IntPtr shortAddonPtr = gameGui.GetAddonByName("PerformanceMode", 1);
-            IntPtr wideAddonPtr = IntPtr.Zero;
-            IntPtr useAddonPtr = shortAddonPtr;
+            cachedAgentPtr = IntPtr.Zero;
+            cachedState.ResetCachedAddr();
 
-            if (useAddonPtr == IntPtr.Zero)
-            {
-                wideAddonPtr = gameGui.GetAddonByName("PerformanceModeWide", 1);
-                useAddonPtr = wideAddonPtr;
-            }
+            SetStatus(Status.AddonNotFound);
 
-            if (cachedAddonPtr != useAddonPtr)
+            if (cachedNumKeys != cachedState.keys.Count)
             {
-                cachedAddonPtr = useAddonPtr;
-                cachedAgentPtr = IntPtr.Zero;
-                cachedState.ResetCachedAddr();
+                SetCachedNumKeys(cachedState.keys.Count);
             }
+        }
 
-            bool canScanNodes = false;
-            if (useAddonPtr == IntPtr.Zero)
+        public void OnAddonShown(IntPtr addonPtr, bool isWide)
+        {
+            cachedAgentPtr = gameGui.FindAgentInterface(addonPtr);
+            isWideMode = isWide;
+        }
+
+        public unsafe void OnAddonUpdate(IntPtr addonPtr)
+        {
+            if (cachedState.keys.Count == 0)
             {
-                SetStatus(Status.AddonNotFound);
-            }
-            else
-            {
-                var baseNode = (AtkUnitBase*)useAddonPtr;
-                if (baseNode->RootNode == null || !baseNode->RootNode->IsVisible)
+                if (!ProcessKeyNodes((AtkUnitBase*)addonPtr))
                 {
-                    SetStatus(Status.AddonNotVisible);
-                }
-                else
-                {
-                    if (cachedState.keys.Count == 0)
-                    {
-                        if (!ProcessKeyNodes(baseNode))
-                        {
-                            SetStatus(Status.NodesNotReady);
-                        }
-                    }
-
-                    if (cachedAgentPtr == IntPtr.Zero)
-                    {
-                        cachedAgentPtr = gameGui.FindAgentInterface(useAddonPtr);
-                    }
-
-                    canScanNodes = cachedState.keys.Count > 0;
+                    SetStatus(Status.NodesNotReady);
                 }
             }
 
+            bool canScanNodes = cachedState.keys.Count > 0;
             if (canScanNodes)
             {
                 foreach (var keyOb in cachedState.keys)
@@ -125,10 +113,21 @@ namespace HarpHero
                 }
 
                 CalcKeysBoundingBox();
-                SetStatus((useAddonPtr == shortAddonPtr) ? Status.NoErrors : Status.NoErrorsWide);
+                SetStatus(isWideMode ? Status.NoErrorsWide : Status.NoErrors);
             }
 
             UpdatePlayingNote();
+
+            if (cachedNumKeys != cachedState.keys.Count)
+            {
+                SetCachedNumKeys(cachedState.keys.Count);
+            }
+        }
+
+        private void SetCachedNumKeys(int numKeys)
+        {
+            cachedNumKeys = numKeys;
+            OnCachedKeysChanged?.Invoke(numKeys);
         }
 
         private string gamepadIconString;
@@ -298,6 +297,58 @@ namespace HarpHero
                 cachedState.activeNote = newNoteIdx;
                 OnPlayingNoteChanged?.Invoke(cachedState.ActiveNoteNumber);
             }
+        }
+    }
+
+    // helper class for scheduler: handles single octave performance UI and passes all notifies to parent
+    public class UIReaderBardPerformanceShort : IUIReader
+    {
+        public UIReaderBardPerformance parentReader;
+
+        public string GetAddonName()
+        {
+            return "PerformanceMode";
+        }
+
+        public void OnAddonLost()
+        {
+            parentReader.OnAddonLost();
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            parentReader.OnAddonShown(addonPtr, false);
+        }
+
+        public void OnAddonUpdate(IntPtr addonPtr)
+        {
+            parentReader.OnAddonUpdate(addonPtr);
+        }
+    }
+
+    // helper class for scheduler: handles three octaves performance UI and passes all notifies to parent
+    public class UIReaderBardPerformanceWide : IUIReader
+    {
+        public UIReaderBardPerformance parentReader;
+
+        public string GetAddonName()
+        {
+            return "PerformanceModeWide";
+        }
+
+        public void OnAddonLost()
+        {
+            parentReader.OnAddonLost();
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            parentReader.OnAddonShown(addonPtr, true);
+        }
+
+        public void OnAddonUpdate(IntPtr addonPtr)
+        {
+            parentReader.OnAddonUpdate(addonPtr);
         }
     }
 

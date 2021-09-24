@@ -1,11 +1,11 @@
 ﻿using Dalamud.Game.Gui;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using MgAl2O4.Utils;
 using System;
 using System.Runtime.InteropServices;
 
 namespace HarpHero
 {
-    public class UIReaderBardMetronome
+    public class UIReaderBardMetronome : IUIReader
     {
         [StructLayout(LayoutKind.Explicit, Size = 0x80)]
         public unsafe struct AgentData
@@ -20,10 +20,10 @@ namespace HarpHero
             // LastWrite* are not usable (not initialized, write defaults on window close)
         }
 
-        private GameGui gameGui;
-        private IntPtr cachedAddonPtr;
+        private readonly GameGui gameGui;
         private IntPtr cachedAgentPtr;
 
+        public UnsafeMetronomeLink updateNotify;
         public IntPtr AgentPtr => cachedAgentPtr;
 
         public UIReaderBardMetronome(GameGui gameGui)
@@ -31,24 +31,26 @@ namespace HarpHero
             this.gameGui = gameGui;
         }
 
-        public unsafe void Update()
+        public string GetAddonName()
         {
-            IntPtr addonPtr = gameGui.GetAddonByName("PerformanceMetronome", 1);
+            return "PerformanceMetronome";
+        }
 
-            var baseNode = (AtkUnitBase*)addonPtr;
-            if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
-            {
-                if (cachedAddonPtr != addonPtr)
-                {
-                    cachedAddonPtr = addonPtr;
-                    cachedAgentPtr = gameGui.FindAgentInterface(addonPtr);
-                }
-            }
-            else
-            {
-                cachedAddonPtr = IntPtr.Zero;
-                cachedAgentPtr = IntPtr.Zero;
-            }
+        public void OnAddonLost()
+        {
+            cachedAgentPtr = IntPtr.Zero;
+            updateNotify.Update();
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            cachedAgentPtr = gameGui.FindAgentInterface(addonPtr);
+            // don't update now, will get OnAddonUpdate() in the same tick
+        }
+
+        public void OnAddonUpdate(IntPtr addonPtr)
+        {
+            updateNotify.Update();
         }
     }
 }

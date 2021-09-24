@@ -58,7 +58,9 @@ namespace HarpHero
         public UnsafeMetronomeLink(GameGui gameGui, SigScanner sigScanner)
         {
             this.gameGui = gameGui;
+
             uiReader = new UIReaderBardMetronome(gameGui);
+            uiReader.updateNotify = this;
 
             var ptrSetMeasureFunc = IntPtr.Zero;
             var ptrSetBPMFunc = IntPtr.Zero;
@@ -117,7 +119,6 @@ namespace HarpHero
         public unsafe void Update()
         {
             bool wasActive = IsActive;
-            uiReader.Update();
 
             bool newIsPlaying = false;
             var statePtr = (UIReaderBardMetronome.AgentData*)uiReader.AgentPtr;

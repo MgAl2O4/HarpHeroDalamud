@@ -6,8 +6,8 @@ using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using MgAl2O4.Utils;
 using System;
-using System.Collections.Generic;
 
 namespace HarpHero
 {
@@ -31,10 +31,12 @@ namespace HarpHero
         private readonly NoteUIMapper noteUiMapper;
         private readonly Localization locManager;
 
+        private readonly UIReaderScheduler uiReaderScheduler;
+        public static readonly TickScheduler TickScheduler = new();
+
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "en" };
 
-        private List<ITickable> tickableStuff = new List<ITickable>();
         private Configuration configuration { get; init; }
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, ToastGui toastGui)
@@ -46,21 +48,25 @@ namespace HarpHero
             configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             configuration.Initialize(pluginInterface);
 
+            locManager = new Localization("assets/loc", "", true);
+            locManager.SetupWithLangCode(pluginInterface.UiLanguage);
+            CurrentLocManager = locManager;
+
             // prep data scrapers
             uiReaderPerformance = new UIReaderBardPerformance(gameGui);
             keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
             metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
 
-            // prep utils
-            locManager = new Localization("assets/loc", "", true);
-            locManager.SetupWithLangCode(pluginInterface.UiLanguage);
-            CurrentLocManager = locManager;
+            uiReaderScheduler = new UIReaderScheduler(gameGui);
+            uiReaderScheduler.AddObservedAddon(uiReaderPerformance.uiReaderShort);
+            uiReaderScheduler.AddObservedAddon(uiReaderPerformance.uiReaderWide);
+            uiReaderScheduler.AddObservedAddon(metronome.uiReader);
 
+            // prep utils
             noteUiMapper = new NoteUIMapper();
             var noteInputMapper = new NoteInputMapper(noteUiMapper, keybindReader);
 
             trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
-            tickableStuff.Add(trackAssistant);
 
             var fileManager = new MidiFileManager();
             fileManager.OnImported += (_) => { trackAssistant.OnTracksImported(fileManager.tracks); };
@@ -76,6 +82,7 @@ namespace HarpHero
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
             uiReaderPerformance.OnKeyboardModeChanged += (isKeyboard) => noteInputMapper.OnKeyboardModeChanged(isKeyboard);
+            uiReaderPerformance.OnCachedKeysChanged += (_) => noteUiMapper.OnNumKeysChanged(uiReaderPerformance.cachedState);
             trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
             trackAssistant.OnPlayChanged += (active) => noteInputMapper.OnPlayChanged(active);
             trackAssistant.OnPerformanceScore += (accuracy) =>
@@ -89,9 +96,9 @@ namespace HarpHero
 
             windowSystem.AddWindow(statusWindow);
             windowSystem.AddWindow(trackViewWindow);
-            windowSystem.AddWindow(noteAssistantWindow); tickableStuff.Add(noteAssistantWindow);
-            windowSystem.AddWindow(bindAssistantWindow); tickableStuff.Add(bindAssistantWindow);
-            windowSystem.AddWindow(noteAssistant2Window); tickableStuff.Add(noteAssistant2Window);
+            windowSystem.AddWindow(noteAssistantWindow);
+            windowSystem.AddWindow(bindAssistantWindow);
+            windowSystem.AddWindow(noteAssistant2Window);
             windowSystem.AddWindow(scoreWindow);
 
             // prep plugin hooks
@@ -156,15 +163,9 @@ namespace HarpHero
         {
             try
             {
-                uiReaderPerformance.Update();
-                noteUiMapper.Update(uiReaderPerformance.cachedState);
-                metronome.Update();
-
                 float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
-                foreach (var tickOb in tickableStuff)
-                {
-                    tickOb.Tick(deltaSeconds);
-                }
+                uiReaderScheduler.Update(deltaSeconds);
+                TickScheduler.Update(deltaSeconds);
             }
             catch (Exception ex)
             {
