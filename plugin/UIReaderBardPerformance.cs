@@ -48,7 +48,7 @@ namespace HarpHero
         private bool isWideMode;
 
         public UIReaderBardPerformanceShort uiReaderShort = new();
-        public UIReaderBardPerformanceShort uiReaderWide = new();
+        public UIReaderBardPerformanceWide uiReaderWide = new();
 
         public UIReaderBardPerformance(GameGui gameGui)
         {
