@@ -59,6 +59,18 @@ namespace HarpHero
                 ImGuiWindowFlags.NoNav;
 
             InitGamepadButtonColors();
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                int drawErrState =
+                    (trackAssistant == null) ? 1 :
+                    (trackAssistant.musicViewer == null) ? 2 :
+                    !Size.HasValue ? 3 :
+                    !trackAssistant.IsPlaying ? 4 :
+                    0;
+
+                Dalamud.Logging.PluginLog.Log($"PluginWindowBindAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{trackAssistant.CanShowBindAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
+            };
         }
 
         public void Dispose()

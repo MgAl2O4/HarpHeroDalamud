@@ -3,6 +3,7 @@
 	"Toast_PerformanceAccuracy": { "message": "Accuracy: {0:P0}" },
 	"ST_ImportHint": { "message": "Import midi file" },
 	"ST_SettingsHint": { "message": "Open settings" },
+	"ST_DebugSnapshot": { "message": "Log debug snapshot" },
 	"ST_PlayBPM": { "message": "Play BPM" },
 	"ST_KeyPerSecond": { "message": "key/s" },
 	"ST_WaitingForImport": { "message": "Waiting for music track import..." },

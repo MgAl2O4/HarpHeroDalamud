@@ -114,6 +114,11 @@ namespace HarpHero
             {
                 PluginLog.Error("Failed to find metronome functions, turning link off");
             }
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                Dalamud.Logging.PluginLog.Log($"UnsafeMetronomeLink: error:{HasErrors} (F1:{ptrSetMeasureFunc:X}, F2:{ptrSetBPMFunc:X}, F3:{ptrGetBPMFunc:X}, F4:{ptrGetMeasureFunc:X}, F5:{ptrMetronomeStopFunc:X}, ex:{hasException})");
+            };
         }
 
         public unsafe void Update()

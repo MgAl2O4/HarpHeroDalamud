@@ -114,6 +114,11 @@ namespace HarpHero
                 mapGamepad.Add(0xB2, GamepadButtons.R1);
                 mapGamepad.Add(0xB3, GamepadButtons.R2);
             }
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                Dalamud.Logging.PluginLog.Log($"UnsafeReaderPerformanceKeybinds: error:{HasErrors} (S:{baseShortNotes}:{baseShortOctave}, W:{baseWideNotes}:{baseWideOctave}, G:{baseGamepadNotes}:{baseGamepadModifiers})");
+            };
         }
 
         public PerformanceBindingInfo? ReadBindings()

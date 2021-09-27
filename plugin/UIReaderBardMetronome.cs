@@ -29,6 +29,11 @@ namespace HarpHero
         public UIReaderBardMetronome(GameGui gameGui)
         {
             this.gameGui = gameGui;
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                Dalamud.Logging.PluginLog.Log($"UIReaderBardMetronome: active:{AgentPtr != IntPtr.Zero}");
+            };
         }
 
         public string GetAddonName()

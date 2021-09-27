@@ -75,6 +75,19 @@ namespace HarpHero
                 metronomeLink.OnPlayingChanged += (newIsPlaying) => OnMetronomePlaying(newIsPlaying);
                 // TODO: waht about messing with measure? this should be driven by track - reset on play?
             }
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                Dalamud.Logging.PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay}, IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
+                if (musicTrack != null)
+                {
+                    Dalamud.Logging.PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}");
+                }
+                else
+                {
+                    Dalamud.Logging.PluginLog.Log($"> musicTrack: not loaded");
+                }
+            };
         }
 
         public void SetTrack(MidiTrackWrapper track)

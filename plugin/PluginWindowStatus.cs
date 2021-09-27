@@ -33,6 +33,7 @@ namespace HarpHero
 
         private string locImportHint;
         private string locSettingsHint;
+        private string locDebugSnapshot;
         private string locPlayBPM;
         private string locKeyPerSecond;
         private string locWaitingForImport;
@@ -101,6 +102,7 @@ namespace HarpHero
         {
             locImportHint = Localization.Localize("ST_ImportHint", "Import midi file");
             locSettingsHint = Localization.Localize("ST_SettingsHint", "Open settings");
+            locDebugSnapshot = Localization.Localize("ST_DebugSnapshot", "Log debug snapshot");
             locPlayBPM = Localization.Localize("ST_PlayBPM", "Play BPM");
             locKeyPerSecond = Localization.Localize("ST_KeyPerSecond", "key/s");
             locWaitingForImport = Localization.Localize("ST_WaitingForImport", "Waiting for music track import...");
@@ -196,6 +198,17 @@ namespace HarpHero
             var trackIndentSize = ImGui.GetCursorPosX();
             var fileName = GetTrimmedName(System.IO.Path.GetFileName(fileManager.FilePath));
             ImGui.Text(string.IsNullOrEmpty(fileName) ? $"<< {locImportHint}" : fileName);
+
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 50);
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
+            {
+                Plugin.RequestDebugSnapshot();
+            }
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetTooltip(locDebugSnapshot);
+            }
+
             ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 18);
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {

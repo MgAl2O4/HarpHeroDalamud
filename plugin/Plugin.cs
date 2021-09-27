@@ -34,6 +34,7 @@ namespace HarpHero
         private readonly UIReaderScheduler uiReaderScheduler;
         public static readonly TickScheduler TickScheduler = new();
 
+        public static Action<int> OnDebugSnapshot;
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "en" };
 
@@ -142,6 +143,14 @@ namespace HarpHero
             windowSystem.RemoveAllWindows();
             framework.Update -= Framework_OnUpdateEvent;
             pluginInterface.Dispose();
+        }
+
+        private static int debugSnapshotCounter = 0;
+        public static void RequestDebugSnapshot()
+        {
+            PluginLog.Log($"Requesting debug snapshot #{debugSnapshotCounter}");
+            OnDebugSnapshot?.Invoke(debugSnapshotCounter);
+            debugSnapshotCounter++;
         }
 
         private void OnCommand(string command, string args)

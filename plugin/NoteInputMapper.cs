@@ -29,6 +29,12 @@ namespace HarpHero
             this.bindingReader = bindingReader;
 
             gamepadButtonsLeft = GamepadButtons.DpadUp | GamepadButtons.DpadDown | GamepadButtons.DpadLeft | GamepadButtons.DpadRight | GamepadButtons.L1 | GamepadButtons.L2;
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                string bindDesc = (keyBinds != null && keyBinds.HasValue) ? "ok" : "--";
+                Dalamud.Logging.PluginLog.Log($"InputMapper: wide:{isWideModeCached}, keyboard:{isKeyboardMode}, bindings:{bindDesc}");
+            };
         }
 
         public void OnPlayChanged(bool active)

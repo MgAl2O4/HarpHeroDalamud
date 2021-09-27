@@ -56,6 +56,11 @@ namespace HarpHero
 
             uiReaderShort.parentReader = this;
             uiReaderWide.parentReader = this;
+
+            Plugin.OnDebugSnapshot += (_) =>
+            {
+                Dalamud.Logging.PluginLog.Log($"UIReaderBardPerformance: status:{status}, numKeys:{cachedNumKeys}, isWide:{isWideMode}, useGamepad:{cachedState.isGamepad}");
+            };
         }
 
         public void OnAddonLost()
