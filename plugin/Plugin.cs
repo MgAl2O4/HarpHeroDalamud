@@ -142,7 +142,6 @@ namespace HarpHero
             commandManager.RemoveHandler("/harphero");
             windowSystem.RemoveAllWindows();
             framework.Update -= Framework_OnUpdateEvent;
-            pluginInterface.Dispose();
         }
 
         private static int debugSnapshotCounter = 0;
