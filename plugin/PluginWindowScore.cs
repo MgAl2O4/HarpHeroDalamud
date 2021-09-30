@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -65,6 +66,8 @@ namespace HarpHero
                 }
 
                 Position = new Vector2(uiReader.cachedState.keysPos.X - offsetX - size, uiReader.cachedState.keysPos.Y);
+
+                size /= ImGuiHelpers.GlobalScale;
                 Size = new Vector2(size, size);
             }
         }

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MgAl2O4.Utils;
@@ -120,7 +121,7 @@ namespace HarpHero
             {
                 float upkeepPct = (noMusicUpkeepRemaining / NoMusicUpkeepTime);
                 float upkeepAlpha = upkeepPct * upkeepPct;
-                float newWindowPosY = Math.Max(50, uiReader.cachedState.keysPos.Y - TrackAssistSizeMinY - TrackAssistOffsetY);
+                float newWindowPosY = Math.Max(50, uiReader.cachedState.keysPos.Y - (TrackAssistSizeMinY + TrackAssistOffsetY) * ImGuiHelpers.GlobalScale);
 
                 bool isWide = (uiReader.cachedState.keys.Count > 13);
                 float newWindowSizeX = uiReader.cachedState.keysSize.X / (isWide ? 3 : 1);
@@ -128,7 +129,7 @@ namespace HarpHero
                     (!isWide ? 0 : (uiReader.cachedState.keysSize.X - newWindowSizeX) * 0.5f);
 
                 Position = new Vector2(newWindowPosX, newWindowPosY);
-                Size = new Vector2(newWindowSizeX, uiReader.cachedState.keysPos.Y - newWindowPosY);
+                Size = new Vector2(newWindowSizeX, uiReader.cachedState.keysPos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
                 BgAlpha = upkeepAlpha;
             }
         }
@@ -183,9 +184,9 @@ namespace HarpHero
                 float tX1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.endUs - timeRangeStartUs) / timeRangeUs));
                 float tY = Math.Min(1.0f, Math.Max(0.0f, 1.0f * noteBinding.bindingIdx / trackAssistant.musicViewer.maxBindingsToShow));
 
-                var posX0 = Position.Value.X + 10 + Size.Value.X * tX0;
-                var posX1 = Position.Value.X + 10 + Size.Value.X * tX1;
-                var posY = Position.Value.Y + 30 + (Size.Value.Y - 20) * tY;
+                var posX0 = Position.Value.X + (10 + (Size.Value.X * tX0)) * ImGuiHelpers.GlobalScale;
+                var posX1 = Position.Value.X + (10 + (Size.Value.X * tX1)) * ImGuiHelpers.GlobalScale;
+                var posY = Position.Value.Y + (30 + ((Size.Value.Y - 20) * tY)) * ImGuiHelpers.GlobalScale;
 
                 uint colorLight = UIColors.colorGray33;
                 uint colorDark = UIColors.colorGray33;
@@ -258,8 +259,8 @@ namespace HarpHero
             }
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
-            var posLineX = Position.Value.X + 10 + Size.Value.X * tLX;
-            drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + Size.Value.Y - 10), colorPlayingDark);
+            var posLineX = Position.Value.X + (10 + (Size.Value.X * tLX)) * ImGuiHelpers.GlobalScale;
+            drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + (Size.Value.Y - 10) * ImGuiHelpers.GlobalScale), colorPlayingDark);
         }
 
         private void InitGamepadButtonColors()

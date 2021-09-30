@@ -1,3 +1,4 @@
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MgAl2O4.Utils;
@@ -136,7 +137,7 @@ namespace HarpHero
                 cachedOverlayAlpha = upkeepPct * upkeepPct;
 
                 Position = new Vector2(uiLowC.pos.X, uiLowC.pos.Y);
-                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, uiLowC.size.Y);
+                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, uiLowC.size.Y) / ImGuiHelpers.GlobalScale;
 
                 if (cachedNotePosX == null || cachedNotePosX.Length != numMappedNotes)
                 {

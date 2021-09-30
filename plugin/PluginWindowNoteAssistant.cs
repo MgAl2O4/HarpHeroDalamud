@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MgAl2O4.Utils;
 using System;
@@ -138,11 +139,11 @@ namespace HarpHero
                 float newWindowPosY = Math.Max(50, uiLowC.pos.Y - trackAssistSizeY - TrackAssistOffsetY);
 
                 Position = new Vector2(uiLowC.pos.X, newWindowPosY);
-                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X + TrackAssistOctaveShiftX, uiLowC.pos.Y - newWindowPosY);
+                Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X + TrackAssistOctaveShiftX, uiLowC.pos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
                 BgAlpha = upkeepAlpha;
 
                 cachedNoteAppearPosY = Position.Value.Y + 10;
-                cachedNoteActivationPosY = Position.Value.Y + Size.Value.Y - 20;
+                cachedNoteActivationPosY = Position.Value.Y + (Size.Value.Y - 20) * ImGuiHelpers.GlobalScale;
 
                 if (cachedNotePosX == null || cachedNotePosX.Length != numMappedNotes)
                 {
@@ -279,7 +280,7 @@ namespace HarpHero
         {
             var drawList = ImGui.GetWindowDrawList();
             var posStartX = Position.Value.X + 10;
-            var posEndX = Position.Value.X + Size.Value.X - 10;
+            var posEndX = Position.Value.X + (Size.Value.X - 10) * ImGuiHelpers.GlobalScale;
 
             var timeRangeStartUs = trackAssistant.musicViewer.TimeRangeStartUs;
             var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
@@ -359,7 +360,7 @@ namespace HarpHero
                         uint octaveShiftColorFaded = (noteColor & 0x00ffffff) | 0x10000000;
                         uint octaveShiftColorWide = (noteColor & 0x00ffffff) | 0x0f000000;
 
-                        var lineBEndX = Position.Value.X + Size.Value.X - 10;
+                        var lineBEndX = Position.Value.X + (Size.Value.X - 10) * ImGuiHelpers.GlobalScale;
                         var lineBStartX = lineBEndX - TrackAssistOctaveShiftX;
 
                         bool hideActiveShift = (activeOctaveOffset == octaveOffset) && (numShownOffsets == 0) && (t0 < 0.2f);

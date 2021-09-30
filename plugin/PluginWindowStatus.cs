@@ -199,7 +199,7 @@ namespace HarpHero
             var fileName = GetTrimmedName(System.IO.Path.GetFileName(fileManager.FilePath));
             ImGui.Text(string.IsNullOrEmpty(fileName) ? $"<< {locImportHint}" : fileName);
 
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 50);
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (50 * ImGuiHelpers.GlobalScale));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
             {
                 Plugin.RequestDebugSnapshot();
@@ -209,7 +209,7 @@ namespace HarpHero
                 ImGui.SetTooltip(locDebugSnapshot);
             }
 
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 18);
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (18 * ImGuiHelpers.GlobalScale));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
                 showConfigs = true;
@@ -228,7 +228,7 @@ namespace HarpHero
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text($"{locPlayBPM}:");
                 ImGui.SameLine();
-                ImGui.PushItemWidth(100);
+                ImGui.PushItemWidth(100 * ImGuiHelpers.GlobalScale);
 
                 int targetBPM = trackAssistant.TargetBPM;
                 if (targetBPM == 0)
@@ -284,7 +284,7 @@ namespace HarpHero
                 ImGui.Text($"{locSelectTrack}:");
                 ImGui.SameLine();
 
-                ImGui.SetNextItemWidth(200);
+                ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
                 int selectedIdx = fileManager.tracks.IndexOf(trackAssistant.musicTrack);
                 if (ImGui.Combo("##trackCombo", ref selectedIdx, cachedTrackNames, cachedTrackNames.Length))
                 {
@@ -295,8 +295,8 @@ namespace HarpHero
                 }
 
                 ImGui.SameLine();
-                ImGui.Dummy(new Vector2(50, 0));
-                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 46);
+                ImGuiHelpers.ScaledDummy(new Vector2(50, 0));
+                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (46 * ImGuiHelpers.GlobalScale));
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
                 {
                     OnShowTrack?.Invoke(trackAssistant.musicTrack);
@@ -306,7 +306,7 @@ namespace HarpHero
                     ImGui.SetTooltip(locPreviewTrackNotes);
                 }
 
-                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 18);
+                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (18 * ImGuiHelpers.GlobalScale));
                 if (trackAssistant.IsPlayingPreview)
                 {
                     if (ImGuiComponents.IconButton(21, FontAwesomeIcon.Stop))
@@ -333,7 +333,7 @@ namespace HarpHero
                 ImGui.Text($"{locTrackBPM}:");
                 ImGui.SameLine();
                 ImGui.TextColored(colorDetail, statBlock.beatsPerMinute.ToString());
-                ImGui.SameLine(120);
+                ImGui.SameLine(120 * ImGuiHelpers.GlobalScale);
                 ImGui.Text($"{locTrackMeasure}:");
                 ImGui.SameLine();
                 ImGui.TextColored(colorDetail, $"{statBlock.timeSignature?.Numerator ?? 4}{timeSigVarDesc}");
@@ -341,7 +341,7 @@ namespace HarpHero
                 ImGui.Text($"{locTrackBars}:");
                 ImGui.SameLine();
                 ImGui.TextColored(colorDetail, statBlock.numBarsTotal.ToString());
-                ImGui.SameLine(120);
+                ImGui.SameLine(120 * ImGuiHelpers.GlobalScale);
                 ImGui.Text($"{locTrackOctaves}:");
                 ImGui.SameLine();
                 ImGui.TextColored(isRangeValid ? colorDetail : colorErr, statBlock.GetOctaveRange().ToString());
@@ -349,7 +349,7 @@ namespace HarpHero
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text($"{locTrackSection}:");
                 ImGui.SameLine();
-                ImGui.PushItemWidth(100);
+                ImGui.PushItemWidth(100 * ImGuiHelpers.GlobalScale);
                 int[] sectionBars = { statBlock.startBar, statBlock.endBar };
                 if (ImGui.InputInt2("##section", ref sectionBars[0]))
                 {
