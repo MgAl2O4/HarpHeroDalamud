@@ -466,6 +466,11 @@ namespace HarpHero
         {
             if (noteNumber != 0)
             {
+                // default range is mid octave: 4
+                // wide mode: octaves 3..5
+                // if track is shifted in either direction, remap pressed note to match (playback will be shifted though)
+                noteNumber += (midOctaveIdx - 4) * 12;
+
                 lastPressTimeUs = currentTimeUs;
                 lastPressNoteNumber = noteNumber;
             }
