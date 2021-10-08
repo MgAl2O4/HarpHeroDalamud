@@ -78,14 +78,19 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                Dalamud.Logging.PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay}, IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
+                PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay}, IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
                 if (musicTrack != null)
                 {
-                    Dalamud.Logging.PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}");
+                    PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}");
                 }
                 else
                 {
-                    Dalamud.Logging.PluginLog.Log($"> musicTrack: not loaded");
+                    PluginLog.Log($"> musicTrack: not loaded");
+                }
+
+                if (notePausedForInput != null)
+                {
+                    PluginLog.Log($"> paused for: {notePausedForInput} = {notePausedForInput.NoteNumber}, lastPressed:{lastPressNoteNumber}");
                 }
             };
         }
