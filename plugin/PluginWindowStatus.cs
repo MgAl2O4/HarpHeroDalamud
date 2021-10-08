@@ -368,6 +368,17 @@ namespace HarpHero
                 ImGui.Text(locTrackSectionUnits);
 
                 ImGui.PopItemWidth();
+
+                float trackLengthPct = (statBlock.numBarsTotal > 0) ? 1.0f * statBlock.numBars / statBlock.numBarsTotal : 1.0f;
+                var trackLengthDesc = $"({trackLengthPct:P0})".Replace("%", "%%");
+                var trackLengthColor =
+                    (trackLengthPct < 0.5f) ? colorErr :
+                    (trackLengthPct < 0.75f) ? colorYellow :
+                    colorOk;
+
+                ImGui.SameLine();
+                ImGui.TextColored(trackLengthColor, trackLengthDesc);
+
                 ImGui.SameLine();
                 if (ImGui.Button(locTrackSectionReset))
                 {
