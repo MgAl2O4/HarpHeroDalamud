@@ -26,6 +26,7 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
         private readonly TrackAssistant trackAssistant;
+        private readonly Configuration config;
 
         private float[] cachedNotePosX = null;
         private float cachedWhiteKeyY = 0;
@@ -61,8 +62,7 @@ namespace HarpHero
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
             this.trackAssistant = trackAssistant;
-            maxMarkersToShow = Math.Min(4, Math.Max(0, config.AssistNote2Markers));
-            markerWarnTimeUs = Math.Min(1000, Math.Max(1, config.AssistNote2WarnMs));
+            this.config = config;
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
             trackAssistant.OnPlayChanged += OnPlayChanged;
@@ -125,6 +125,9 @@ namespace HarpHero
         public override void OnOpen()
         {
             Plugin.TickScheduler.Register(this);
+
+            maxMarkersToShow = Math.Min(4, Math.Max(0, config.AssistNote2Markers));
+            markerWarnTimeUs = Math.Min(1000, Math.Max(1, config.AssistNote2WarnMs)) * 1000;
         }
 
         public override void PreDraw()
