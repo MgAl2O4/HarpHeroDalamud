@@ -136,21 +136,21 @@ namespace HarpHero
                     bool isStepUpOnLeft = (gamepadButtonsLeft & keyBinds.Value.gamepadHalfUp) == keyBinds.Value.gamepadHalfUp;
                     bool preferStepUp = (activeOctaveBind == GamepadButtons.None) || (isOctaveModOnLeft == isStepUpOnLeft);
 
-                    if (preferStepUp && useNoteIdx < 12)
+                    if (preferStepUp && useNoteIdx > 0)
                     {
-                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
+                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx - 1];
                         halfStepBind = (noteBind == GamepadButtons.None) ? GamepadButtons.None : keyBinds.Value.gamepadHalfUp;
                     }
 
-                    if (noteBind == GamepadButtons.None && useNoteIdx > 0)
+                    if (noteBind == GamepadButtons.None && useNoteIdx < 12)
                     {
-                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx - 1];
+                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
                         halfStepBind = (noteBind == GamepadButtons.None) ? GamepadButtons.None : keyBinds.Value.gamepadHalfDown;
                     }
 
-                    if (noteBind == GamepadButtons.None && !preferStepUp && useNoteIdx < 12)
+                    if (noteBind == GamepadButtons.None && !preferStepUp && useNoteIdx > 0)
                     {
-                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx + 1];
+                        noteBind = keyBinds.Value.gamepadNotes[useNoteIdx - 1];
                         halfStepBind = (noteBind == GamepadButtons.None) ? GamepadButtons.None : keyBinds.Value.gamepadHalfUp;
                     }
                 }
