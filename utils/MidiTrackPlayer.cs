@@ -13,6 +13,7 @@ namespace HarpHero
         public bool IsPlaying => midiPlayback?.IsRunning ?? false;
 
         public bool autoDispose = true;
+        private bool isDisposed = false;
 
         public MidiTrackPlayer(MidiTrackWrapper track)
         {
@@ -23,6 +24,7 @@ namespace HarpHero
                 {
                     midiPlayback = track.midiTrack.GetPlayback(track.tempoMap, midiDevice);
 
+                    midiPlayback.InterruptNotesOnStop = true;
                     midiPlayback.PlaybackStart = track.sectionStart;
                     midiPlayback.PlaybackEnd = track.sectionEnd;
                     midiPlayback.Finished += MidiPlayback_Finished;
@@ -55,6 +57,7 @@ namespace HarpHero
 
         public void Stop()
         {
+            if (isDisposed) { return; }
             midiPlayback?.Stop();
 
             if (midiDevice != null)
@@ -92,6 +95,9 @@ namespace HarpHero
 
         public void Dispose()
         {
+            if (isDisposed) { return; }
+            isDisposed = true;
+
             if (midiDevice != null)
             {
                 midiDevice.Dispose();
@@ -107,6 +113,7 @@ namespace HarpHero
 
         private void MidiPlayback_Finished(object sender, EventArgs e)
         {
+            if (isDisposed) { return; }
             OnFinished?.Invoke();
 
             if (autoDispose)
