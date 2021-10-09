@@ -34,6 +34,7 @@ namespace HarpHero
         private float noMusicUpkeepRemaining = 0.0f;
         private float markerRadius = 10.0f;
         private int maxMarkersToShow = 1;
+        private long markerWarnTimeUs = 100 * 1000;
 
         private class NoteMarker
         {
@@ -60,7 +61,8 @@ namespace HarpHero
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
             this.trackAssistant = trackAssistant;
-            maxMarkersToShow = Math.Min(4, Math.Max(1, config.AssistNote2Markers));
+            maxMarkersToShow = Math.Min(4, Math.Max(0, config.AssistNote2Markers));
+            markerWarnTimeUs = Math.Min(1000, Math.Max(1, config.AssistNote2WarnMs));
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
             trackAssistant.OnPlayChanged += OnPlayChanged;
@@ -211,7 +213,7 @@ namespace HarpHero
 
         public override void Draw()
         {
-            if (cachedNotePosX != null)
+            if (cachedNotePosX != null && maxMarkersToShow > 0)
             {
                 var drawList = ImGui.GetWindowDrawList();
                 var currentTimeUs = trackAssistant.musicViewer?.TimeUs ?? 0;
@@ -250,7 +252,7 @@ namespace HarpHero
                         var modColor = GetAlphaModulatedColor(noteColor);
 
                         var timeToPlayUs = kvp.Key - currentTimeUs;
-                        if (timeToPlayUs < (100 * 1000))
+                        if (timeToPlayUs < markerWarnTimeUs)
                         {
                             drawList.AddCircleFilled(pos, markerRadius * 0.75f, modColor);
                         }
@@ -269,7 +271,7 @@ namespace HarpHero
 
         private void UpdateNoteMarkers()
         {
-            if (trackAssistant == null || trackAssistant.musicViewer == null)
+            if (trackAssistant == null || trackAssistant.musicViewer == null || maxMarkersToShow <= 0)
             {
                 return;
             }

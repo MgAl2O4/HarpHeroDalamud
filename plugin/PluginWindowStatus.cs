@@ -74,6 +74,10 @@ namespace HarpHero
         private string locConfigUsePlaybackHelp;
         private string locConfigAssistMode;
         private string locConfigShowScore;
+        private string locConfigAssistBindScaleKeyboard;
+        private string locConfigAssistBindScaleGamepad;
+        private string locConfigAssistNoteNumMarkers;
+        private string locConfigAssistNoteWarnMs;
 
         public PluginWindowStatus(TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config) : base("Harp Hero")
         {
@@ -144,6 +148,10 @@ namespace HarpHero
             locConfigUsePlaybackHelp = Localization.Localize("CFG_UsePlaybackHelp", "Play music track during performance, not available in training mode. This doesn't send any input to game, just makes hitting correct beats easier.");
             locConfigAssistMode = Localization.Localize("CFG_AssistMode", "Assist mode");
             locConfigShowScore = Localization.Localize("CFG_ShowScore", "Show score");
+            locConfigAssistBindScaleKeyboard = Localization.Localize("CFG_BindScaleKeyboard", "Scale (keyboard)");
+            locConfigAssistBindScaleGamepad = Localization.Localize("CFG_BindScaleGamepad", "Scale (gamepad)");
+            locConfigAssistNoteNumMarkers = Localization.Localize("CFG_NoteNumMarkers", "Number of markers");
+            locConfigAssistNoteWarnMs = Localization.Localize("CFG_NoteWarnMs", "Warn time (ms)");
 
             var sortedAssistNames = new List<Tuple<int, string>>
             {
@@ -558,7 +566,6 @@ namespace HarpHero
             ImGui.SameLine();
             ImGui.SetNextItemWidth(150);
             hasChanges = ImGui.Combo("##assistMode", ref assistModeIdx, cachedAssistNames, cachedAssistNames.Length) || hasChanges;
-            ImGui.Unindent();
 
             if (hasChanges)
             {
@@ -570,6 +577,60 @@ namespace HarpHero
                 hasChanges = false;
             }
 
+            int numMarkersCopy = config.AssistNote2Markers;
+            int warnTimeCopy = config.AssistNote2WarnMs;
+            float scaleKeyboardCopy = config.AssistBindScaleKeyboard;
+            float scaleGamepadCopy = config.AssistBindScaleGamepad;
+
+            ImGui.Indent();
+            ImGui.Columns(2);
+            if (config.UseAssistBind())
+            {
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistBindScaleKeyboard);
+                ImGui.NextColumn();
+                hasChanges = ImGui.SliderFloat("##scaleKeyboard", ref scaleKeyboardCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
+
+                ImGui.NextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistBindScaleGamepad);
+                ImGui.NextColumn();
+                hasChanges = ImGui.SliderFloat("##scaleGamepad", ref scaleGamepadCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
+            }
+            else if (config.UseAssistNoteA())
+            {
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistNoteNumMarkers);
+                ImGui.NextColumn();
+                if (ImGui.InputInt("##noteMarkers", ref numMarkersCopy))
+                {
+                    numMarkersCopy = Math.Min(4, Math.Max(0, numMarkersCopy));
+                    hasChanges = true;
+                }
+
+                ImGui.NextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistNoteWarnMs);
+                ImGui.NextColumn();
+                if (ImGui.InputInt("##noteWarnTime", ref warnTimeCopy))
+                {
+                    warnTimeCopy = Math.Min(1000, Math.Max(1, warnTimeCopy));
+                    hasChanges = true;
+                }
+            }
+            ImGui.Unindent();
+
+            if (hasChanges)
+            {
+                config.AssistNote2Markers = numMarkersCopy;
+                config.AssistNote2WarnMs = warnTimeCopy;
+                config.AssistBindScaleKeyboard = scaleKeyboardCopy;
+                config.AssistBindScaleGamepad = scaleGamepadCopy;
+                needsSave = true;
+                hasChanges = false;
+            }
+
+            ImGui.Unindent();
             if (needsSave)
             {
                 config.Save();

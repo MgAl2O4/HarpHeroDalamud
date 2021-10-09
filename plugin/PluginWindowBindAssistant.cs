@@ -20,6 +20,7 @@ namespace HarpHero
         private readonly NoteUIMapper noteMapper;
         private readonly NoteInputMapper noteInput;
         private readonly TrackAssistant trackAssistant;
+        private readonly Configuration config;
 
         private float noMusicUpkeepRemaining;
 
@@ -33,12 +34,13 @@ namespace HarpHero
         }
         private Dictionary<GamepadButtons, GamepadColors> mapGamepadColors = new();
 
-        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Bind Assistant")
+        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput, Configuration config) : base("Bind Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
             this.noteInput = noteInput;
             this.trackAssistant = trackAssistant;
+            this.config = config;
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
             trackAssistant.OnPlayChanged += OnPlayChanged;
@@ -124,9 +126,9 @@ namespace HarpHero
                 float newWindowPosY = Math.Max(50, uiReader.cachedState.keysPos.Y - (TrackAssistSizeMinY + TrackAssistOffsetY) * ImGuiHelpers.GlobalScale);
 
                 bool isWide = (uiReader.cachedState.keys.Count > 13);
-                float newWindowSizeX = uiReader.cachedState.keysSize.X / (isWide ? 3 : 1);
-                float newWindowPosX = uiReader.cachedState.keysPos.X +
-                    (!isWide ? 0 : (uiReader.cachedState.keysSize.X - newWindowSizeX) * 0.5f);
+                float useScale = noteInput.IsKeyboardMode ? config.AssistBindScaleKeyboard : config.AssistBindScaleGamepad;
+                float newWindowSizeX = useScale * uiReader.cachedState.keysSize.X / (isWide ? 3 : 1);
+                float newWindowPosX = uiReader.cachedState.keysPos.X + (uiReader.cachedState.keysSize.X - newWindowSizeX) * 0.5f;
 
                 Position = new Vector2(newWindowPosX, newWindowPosY);
                 Size = new Vector2(newWindowSizeX, uiReader.cachedState.keysPos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;

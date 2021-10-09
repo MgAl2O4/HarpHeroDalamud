@@ -77,7 +77,7 @@ namespace HarpHero
             statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration);
             var trackViewWindow = new PluginWindowTrackView(trackAssistant);
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
-            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
+            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper, configuration);
             var noteAssistant2Window = new PluginWindowNoteAssistant2(uiReaderPerformance, trackAssistant, noteUiMapper, configuration);
             var scoreWindow = new PluginWindowScore(uiReaderPerformance, trackAssistant, configuration);
 

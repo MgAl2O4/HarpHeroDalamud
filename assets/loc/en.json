@@ -46,5 +46,9 @@
 	"CFG_AssistMode": { "message": "Assist mode" },
 	"CFG_AssistDisabled": { "message": "Disabled" },
 	"CFG_AssistNote": { "message": "Note" },
-	"CFG_AssistBind": { "message": "Key binding" }
+	"CFG_AssistBind": { "message": "Key binding" },
+	"CFG_BindScaleKeyboard": { "message": "Scale (keyboard)" },
+	"CFG_BindScaleGamepad": { "message": "Scale (gamepad)" },
+	"CFG_NoteNumMarkers": { "message": "Number of markers" },
+	"CFG_NoteWarnMs": { "message": "Warn time (ms)" }
 }
