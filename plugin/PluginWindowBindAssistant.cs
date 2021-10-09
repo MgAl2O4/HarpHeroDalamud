@@ -168,11 +168,22 @@ namespace HarpHero
             }
         }
 
+        private struct BindHintDrawInfo
+        {
+            public Vector2 pos;
+            public Vector2 size;
+            public uint color;
+            public float notePosY;
+            public int noteNum;
+            public InputBindingChord chord;
+        }
+
         private void DrawBindTimeline()
         {
             var drawList = ImGui.GetWindowDrawList();
             var timeRangeStartUs = trackAssistant.musicViewer.TimeRangeStartUs;
             var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
+            var bindHints = new List<BindHintDrawInfo>();
 
             float noteHalfHeight = 5.0f;
             uint colorFarMask = 0x40ffffff;
@@ -180,10 +191,12 @@ namespace HarpHero
 
             foreach (var noteBinding in trackAssistant.musicViewer.GetShownNotesBindings())
             {
-                float tX0 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.startUs - timeRangeStartUs) / timeRangeUs));
+                float tX0Raw = 1.0f * (noteBinding.noteInfo.startUs - timeRangeStartUs) / timeRangeUs;
+                float tX0 = Math.Min(1.0f, Math.Max(0.0f, tX0Raw));
                 float tX1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.endUs - timeRangeStartUs) / timeRangeUs));
                 float tY = Math.Min(1.0f, Math.Max(0.0f, 1.0f * noteBinding.bindingIdx / trackAssistant.musicViewer.maxBindingsToShow));
 
+                var posX0Raw = Position.Value.X + (10 + (Size.Value.X * tX0Raw)) * ImGuiHelpers.GlobalScale;
                 var posX0 = Position.Value.X + (10 + (Size.Value.X * tX0)) * ImGuiHelpers.GlobalScale;
                 var posX1 = Position.Value.X + (10 + (Size.Value.X * tX1)) * ImGuiHelpers.GlobalScale;
                 var posY = Position.Value.Y + (30 + ((Size.Value.Y - 20) * tY)) * ImGuiHelpers.GlobalScale;
@@ -249,13 +262,43 @@ namespace HarpHero
 
                 if (noteBinding.showHint)
                 {
-                    InputBindingUtils.AddToDrawList(drawList, new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5), colorDark, noteInputChord);
+                    var hintSize = InputBindingUtils.CalcInputChordSize(noteInputChord);
+                    var hintPos = new Vector2(posX0 + 5, posY - ImGui.GetTextLineHeight() - 5);
+
+                    bindHints.Add(new BindHintDrawInfo() { pos = hintPos, size = hintSize, chord = noteInputChord, color = colorDark, notePosY = posY, noteNum = noteBinding.noteInfo.note.NoteNumber });
                 }
 
                 if (noteBinding.pressIdx == 0)
                 {
                     colorPlayingDark = colorDark;
                 }
+            }
+
+            // draw from furthest to most current for proper occlusions
+            var padOfset = 5 * ImGuiHelpers.GlobalScale;
+            uint bindBackground = 0xcc000000;
+            for (int hintIdx = bindHints.Count - 1; hintIdx >= 0; hintIdx--)
+            {
+                var hintInfo = bindHints[hintIdx];
+                if (hintIdx == 0)
+                {
+                    drawList.AddRectFilled(new Vector2(hintInfo.pos.X - padOfset, hintInfo.pos.Y), new Vector2(hintInfo.pos.X + hintInfo.size.X + padOfset, hintInfo.notePosY - noteHalfHeight - 1), bindBackground);
+                }
+
+                // if overlapping with next AND being exactly the same note, make more transparent
+                uint useHintColor = hintInfo.color;
+                if ((hintIdx - 1 >= 0) &&
+                    bindHints[hintIdx - 1].noteNum == hintInfo.noteNum &&
+                    bindHints[hintIdx - 1].notePosY == hintInfo.notePosY)
+                {
+                    bool isOverlapping = (bindHints[hintIdx - 1].pos.X + bindHints[hintIdx - 1].size.X) > hintInfo.pos.X;
+                    if (isOverlapping)
+                    {
+                        useHintColor &= 0x40ffffff;
+                    }
+                }
+
+                InputBindingUtils.AddToDrawList(drawList, hintInfo.pos, useHintColor, hintInfo.chord);
             }
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;

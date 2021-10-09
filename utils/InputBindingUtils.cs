@@ -215,6 +215,38 @@ namespace MgAl2O4.Utils
             return (Vector2.Zero, keyScale);
         }
 
+        public static Vector2 CalcInputChordSize(InputBindingChord inputChord)
+        {
+            Vector2 size = Vector2.Zero;
+
+            if (!string.IsNullOrEmpty(inputChord.simpleText))
+            {
+                size = ImGui.CalcTextSize(inputChord.simpleText);
+            }
+            else if (inputChord.keys != null)
+            {
+                string sepStr = null;
+                foreach (var inputKey in inputChord.keys)
+                {
+                    if (sepStr != null)
+                    {
+                        var partSize = ImGui.CalcTextSize(sepStr);
+                        size.X += partSize.X;
+                    }
+                    else
+                    {
+                        sepStr = inputChord.separator;
+                    }
+
+                    var (textSize, textScale) = CalcInputKeySizeAndScale(inputKey);
+                    size.X += textSize.X * textScale;
+                    size.Y = Math.Max(size.Y, textSize.Y * textScale);
+                }
+            }
+
+            return size;
+        }
+
         private static void InitializeGamepadMap()
         {
             // font is kind of small, but still better than using mountains for triangle :<
