@@ -3,6 +3,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -186,7 +187,15 @@ namespace HarpHero
                 DrawStatus();
             }
 
-            dlgManager.Draw();
+            try
+            {
+                dlgManager.Draw();
+            }
+            catch (Exception ex)
+            {
+                PluginLog.LogError(ex, "file dialog died");
+                dlgManager.Reset();
+            }
         }
 
         private void DrawStatus()
