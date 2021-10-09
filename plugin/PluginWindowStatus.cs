@@ -346,6 +346,7 @@ namespace HarpHero
                 var statBlock = trackAssistant.musicTrack.stats;
                 var timeSigVarDesc = (statBlock.numTimeSignatures > 1) ? "*" : "";
                 bool isRangeValid = trackAssistant.CanPlay;
+                bool isSectionValid = statBlock.numBarsTotal > 0;
 
                 ImGui.Text($"{locTrackBPM}:");
                 ImGui.SameLine();
@@ -357,11 +358,18 @@ namespace HarpHero
 
                 ImGui.Text($"{locTrackBars}:");
                 ImGui.SameLine();
-                ImGui.TextColored(colorDetail, statBlock.numBarsTotal.ToString());
+                ImGui.TextColored(isSectionValid ? colorDetail : colorErr, statBlock.numBarsTotal.ToString());
                 ImGui.SameLine(120 * ImGuiHelpers.GlobalScale);
                 ImGui.Text($"{locTrackOctaves}:");
                 ImGui.SameLine();
-                ImGui.TextColored(isRangeValid ? colorDetail : colorErr, statBlock.GetOctaveRange().ToString());
+                if (!isSectionValid)
+                {
+                    ImGui.TextColored(colorDetail, "--");
+                }
+                else
+                {
+                    ImGui.TextColored(isRangeValid ? colorDetail : colorErr, statBlock.GetOctaveRange().ToString());
+                }
 
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text($"{locTrackSection}:");
@@ -371,24 +379,20 @@ namespace HarpHero
                 if (ImGui.InputInt2("##section", ref sectionBars[0]))
                 {
                     sectionBars[0] = Math.Max(0, sectionBars[0]);
-                    sectionBars[1] = Math.Min(statBlock.endBar, sectionBars[1]);
-                    if ((sectionBars[0] >= sectionBars[1]) || (sectionBars[0] == 0 && sectionBars[1] == statBlock.endBar))
-                    {
-                        trackAssistant.SetTrackSection(-1, -1);
-                    }
-                    else
-                    {
-                        trackAssistant.SetTrackSection(sectionBars[0], sectionBars[1]);
-                    }
+                    sectionBars[1] = Math.Min(trackAssistant.musicTrack.statsOrg.numBarsTotal, sectionBars[1]);
+
+                    // allow invalid values (0 length or start > end) here, most will be coming from in-between typing numbers
+                    trackAssistant.SetTrackSection(sectionBars[0], sectionBars[1]);
                 }
                 ImGui.SameLine();
                 ImGui.Text(locTrackSectionUnits);
 
                 ImGui.PopItemWidth();
 
-                float trackLengthPct = (statBlock.numBarsTotal > 0) ? 1.0f * statBlock.numBars / statBlock.numBarsTotal : 1.0f;
+                float trackLengthPct = (statBlock.numBarsTotal > 0) ? 1.0f * statBlock.numBars / statBlock.numBarsTotal : 0.0f;
                 var trackLengthDesc = $"({trackLengthPct:P0})".Replace("%", "%%");
                 var trackLengthColor =
+                    !isSectionValid ? colorErr :
                     (trackLengthPct < 0.5f) ? colorErr :
                     (trackLengthPct < 0.75f) ? colorYellow :
                     colorOk;
@@ -497,10 +501,17 @@ namespace HarpHero
                 else
                 {
                     ImGuiComponents.DisabledButton(FontAwesomeIcon.Play, 11);
-
-                    var errDesc = string.IsNullOrEmpty(fileManager.FilePath) ? locWaitingForImport : locStatusPlayNotAvail;
                     ImGui.SameLine();
-                    ImGui.Text(errDesc);
+
+                    bool isWaiting = string.IsNullOrEmpty(fileManager.FilePath);
+                    if (isWaiting)
+                    {
+                        ImGui.Text(locWaitingForImport);
+                    }
+                    else
+                    {
+                        ImGui.TextColored(colorErr, locStatusPlayNotAvail);
+                    }
                 }
             }
         }

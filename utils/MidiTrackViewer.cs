@@ -50,6 +50,9 @@ namespace HarpHero
         public long TimeRangeNowOffset => (long)(timeWindowSecondsBehind * 1000 * 1000);
         public long TimeRangeUs => (long)((timeWindowSecondsBehind + timeWindowSecondsAhead) * 1000 * 1000);
 
+        public long startTimeUs = -1;
+        public long endTimeUs = -1;
+
         public List<NoteInfo> shownNotes = new List<NoteInfo>();
         public List<long> shownBarLines = new List<long>();
         public List<long> shownBeatLines = new List<long>();
@@ -210,6 +213,12 @@ namespace HarpHero
                 for (int idx = 0; idx < shownNotes.Count; idx++)
                 {
                     var noteInfo = shownNotes[idx];
+
+                    if ((startTimeUs >= 0 && noteInfo.startUs < startTimeUs) || (endTimeUs >= 0 && noteInfo.endUs >= endTimeUs))
+                    {
+                        continue;
+                    }
+
                     if (noteInfo.startUs >= timeUs || noteInfo.endUs > timeUs)
                     {
                         if (nearestBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber) < 0)
@@ -282,6 +291,11 @@ namespace HarpHero
             {
                 var noteInfo = shownNotes[idx];
                 if (noteInfo.startUs < timeUs && noteInfo.endUs <= timeUs)
+                {
+                    continue;
+                }
+
+                if ((startTimeUs >= 0 && noteInfo.startUs < startTimeUs) || (endTimeUs >= 0 && noteInfo.endUs >= endTimeUs))
                 {
                     continue;
                 }

@@ -296,6 +296,14 @@ namespace HarpHero
                     continue;
                 }
 
+                bool isNoteIgnored =
+                    (trackAssistant.TrackStartTimeUs >= 0 && noteInfo.startUs < trackAssistant.TrackStartTimeUs) ||
+                    (trackAssistant.TrackEndTimeUs >= 0 && noteInfo.endUs >= trackAssistant.TrackEndTimeUs);
+                if (isNoteIgnored)
+                {
+                    continue;
+                }
+
                 if (noteInfo.startUs >= currentTimeUs)
                 {
                     if (!activeNoteMarkers.ContainsKey(noteInfo.startUs))

@@ -71,6 +71,7 @@ namespace HarpHero
         {
             var lastNote = track.GetNotes().Last();
             var lastNoteEndTick = lastNote.Time + lastNote.Length;
+            numBarsTotal = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(lastNoteEndTick, tempoMap).Bars + 1;
 
             if (sectionStart != null && sectionEnd != null)
             {
@@ -85,14 +86,28 @@ namespace HarpHero
 
             startBar = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(startTick, tempoMap).Bars;
             endBar = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(endTick, tempoMap).Bars;
-            numBars = endBar - startBar + 1;
-            numBarsTotal = (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(lastNoteEndTick, tempoMap).Bars + 1;
 
-            duration = TimeConverter.ConvertTo<MetricTimeSpan>(DurationTicks, tempoMap);
+            if (startTick < endTick)
+            {
+                numBars = endBar - startBar + 1;
+                duration = TimeConverter.ConvertTo<MetricTimeSpan>(DurationTicks, tempoMap);
+            }
+            else
+            {
+                numBars = 0;
+                numBarsTotal = 0;
+            }
         }
 
         private void CalcNoteRange(TrackChunk track)
         {
+            if (startTick >= endTick)
+            {
+                minNote = SevenBitNumber.MinValue;
+                maxNote = SevenBitNumber.MinValue;
+                return;
+            }
+
             minNote = SevenBitNumber.MaxValue;
             maxNote = SevenBitNumber.MinValue;
 
@@ -114,6 +129,12 @@ namespace HarpHero
 
         private void CalcNotePerBeat(TrackChunk track, TempoMap tempoMap)
         {
+            if (startTick >= endTick)
+            {
+                notesPerBeat = 0;
+                return;
+            }
+
             var beatTimes = new List<long>();
 
             var startTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(startTick, tempoMap);

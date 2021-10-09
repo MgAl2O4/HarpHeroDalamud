@@ -334,6 +334,8 @@ namespace HarpHero
             var minNote = SevenBitNumber.MaxValue;
             var maxNote = SevenBitNumber.MinValue;
             long lastValidTick = 0;
+            long lastValidTickEnd = 0;
+            bool hasRemovedNotes = false;
 
             foreach (var note in midiTrack.GetNotes())
             {
@@ -350,14 +352,17 @@ namespace HarpHero
                 if (isValid)
                 {
                     lastValidTick = note.Time;
+                    lastValidTickEnd = note.Time + note.Length;
                 }
                 else
                 {
+                    hasRemovedNotes = true;
                     break;
                 }
             }
 
-            return (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(lastValidTick, tempoMap).Bars;
+            var useTick = hasRemovedNotes ? lastValidTick : lastValidTickEnd;
+            return (int)TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(useTick, tempoMap).Bars;
         }
 
         public float GetScalingForBPM(int targetBPM)
@@ -377,6 +382,8 @@ namespace HarpHero
 
         public long GetDurationMidi() => GetDuration<MidiTimeSpan>().TimeSpan;
         public long GetDurationUs() => GetDuration<MetricTimeSpan>().TotalMicroseconds;
+        public long GetStartTimeUs() => TimeConverter.ConvertTo<MetricTimeSpan>(stats.startTick, tempoMap).TotalMicroseconds;
+        public long GetEndTimeUs() => TimeConverter.ConvertTo<MetricTimeSpan>(stats.endTick, tempoMap).TotalMicroseconds;
 
         public bool IsOctaveRangeValid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId);
     }

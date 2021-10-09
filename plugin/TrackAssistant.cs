@@ -18,7 +18,7 @@ namespace HarpHero
         public MidiTrackPlayer musicPlayer;
 
         public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors && config.UseMetronomeLink;
-        public bool CanPlay => (musicViewer != null) && (musicTrack != null);
+        public bool CanPlay => (musicViewer != null) && (musicTrack != null) && (trackEndTimeUs > trackStartTimeUs);
         public bool CanUsePlayback => config.UsePlayback && !useWaitingForInput;
         public bool CanShowNoteAssistant => config.UseAssistNoteA();
         public bool CanShowNoteAssistant2 => config.UseAssistNoteB();
@@ -29,6 +29,8 @@ namespace HarpHero
         public bool IsPausedForInput => notePausedForInput != null;
         public float CurrentTime => currentTimeUs / 1000000.0f;
         public long CurrentTimeUs => currentTimeUs;
+        public long TrackStartTimeUs => trackStartTimeUs;
+        public long TrackEndTimeUs => trackEndTimeUs;
 
         // TODO: expose
         public float NumSecondsFuture = 4.0f;
@@ -41,7 +43,8 @@ namespace HarpHero
         public bool useWaitingForInput = true;
         private int targetBPM;
 
-        private long trackDurationUs;
+        private long trackStartTimeUs;
+        private long trackEndTimeUs;
         private long currentTimeUs;
         private bool isPlaying;
         private bool isPlayingSound;
@@ -81,7 +84,7 @@ namespace HarpHero
                 PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay}, IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
                 if (musicTrack != null)
                 {
-                    PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}");
+                    PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}, range:{musicTrack.GetStartTimeUs() / 1000000.0f}..{musicTrack.GetEndTimeUs() / 1000000.0f}");
                 }
                 else
                 {
@@ -216,7 +219,7 @@ namespace HarpHero
                 musicViewer.generateBarData = false; // TODO: expose?
                 musicViewer.OnPlayStart();
 
-                currentTimeUs = -(long)(NumWarmupSeconds * timeScaling * 1000 * 1000);
+                currentTimeUs = trackStartTimeUs - (long)(NumWarmupSeconds * timeScaling * 1000 * 1000);
                 Tick(0);
 
                 scoreTracker.SetTrainingMode(useWaitingForInput);
@@ -289,12 +292,12 @@ namespace HarpHero
 
             if (isPlayingSound)
             {
-                // time scaling already applied through musiPlayer's speed
+                // time scaling and section start are already applied
                 currentTimeUs = musicPlayer.GetCurrentTimeUs();
             }
             else if (HasMetronomeLink && metronomeLink.IsPlaying)
             {
-                currentTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
+                currentTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling) + trackStartTimeUs;
             }
             else if (IsPausedForInput)
             {
@@ -315,7 +318,7 @@ namespace HarpHero
             // enforce metronome sync
             if (isPlayingSound && HasMetronomeLink && metronomeLink.IsPlaying)
             {
-                long syncTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling);
+                long syncTimeUs = (long)(metronomeLink.GetCurrentTime() * timeScaling) + trackStartTimeUs;
                 long syncTimeDiff = currentTimeUs - syncTimeUs;
                 long syncTimeDiffAbs = Math.Abs(syncTimeDiff);
 
@@ -334,13 +337,13 @@ namespace HarpHero
             }
 
             // try starting playback 
-            if (CanUsePlayback && !isPlayingSound && currentTimeUs >= 0)
+            if (CanUsePlayback && !isPlayingSound && currentTimeUs >= trackStartTimeUs)
             {
                 isPlayingSound = musicPlayer.StartAt(currentTimeUs);
             }
 
             // update viewer & look for end of track
-            if (currentTimeUs < trackDurationUs)
+            if (currentTimeUs < trackEndTimeUs)
             {
                 musicViewer.SetTimeUs(currentTimeUs);
             }
@@ -387,13 +390,16 @@ namespace HarpHero
 
             if (musicTrack != null)
             {
-                trackDurationUs = musicTrack.GetDurationUs();
+                trackStartTimeUs = musicTrack.GetStartTimeUs();
+                trackEndTimeUs = musicTrack.GetEndTimeUs();
 
                 if (musicTrack.IsOctaveRangeValid(out midOctaveIdx))
                 {
                     musicViewer = new MidiTrackViewer(musicTrack);
                     musicViewer.timeWindowSecondsAhead = NumSecondsFuture;
                     musicViewer.timeWindowSecondsBehind = NumSecondsPast;
+                    musicViewer.startTimeUs = trackStartTimeUs;
+                    musicViewer.endTimeUs = trackEndTimeUs;
                     musicViewer.OnNoteNotify += OnMusicViewerNote;
 
                     SetMetronomeParams();
@@ -401,7 +407,8 @@ namespace HarpHero
             }
             else
             {
-                trackDurationUs = 0;
+                trackStartTimeUs = 0;
+                trackEndTimeUs = 0;
             }
 
             OnTrackChanged?.Invoke(musicViewer != null);
@@ -469,7 +476,8 @@ namespace HarpHero
                 // default range is mid octave: 4
                 // wide mode: octaves 3..5
                 // if track is shifted in either direction, remap pressed note to match (playback will be shifted though)
-                noteNumber += (midOctaveIdx - 4) * 12;
+                const int gameMidOctaveIdx = 4;
+                noteNumber += (midOctaveIdx - gameMidOctaveIdx) * 12;
 
                 lastPressTimeUs = currentTimeUs;
                 lastPressNoteNumber = noteNumber;
@@ -514,12 +522,15 @@ namespace HarpHero
         {
             if (scoreTracker.IsActive)
             {
-                float errorPct = 1.0f * scoreTracker.AccumulatedTimeDiff / trackDurationUs;
-                float accuracyPct = Math.Min(1.0f, Math.Max(0.0f, 1.0f - errorPct));
+                float trackDurationUs = trackEndTimeUs - trackStartTimeUs;
+                if (trackDurationUs > 0.0f)
+                {
+                    float errorPct = 1.0f * scoreTracker.AccumulatedTimeDiff / trackDurationUs;
+                    float accuracyPct = Math.Min(1.0f, Math.Max(0.0f, 1.0f - errorPct));
 
-                OnPerformanceScore?.Invoke(accuracyPct);
+                    OnPerformanceScore?.Invoke(accuracyPct);
+                }
             }
         }
-
     }
 }

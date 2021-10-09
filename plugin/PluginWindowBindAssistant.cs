@@ -307,10 +307,10 @@ namespace HarpHero
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
             var posLineX = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tLX)) * ImGuiHelpers.GlobalScale;
-            
+
             drawList.AddLine(
-                new Vector2(posLineX, Position.Value.Y + 10 + viewportOffset.Y), 
-                new Vector2(posLineX, Position.Value.Y + viewportOffset.Y + (Size.Value.Y - 10) * ImGuiHelpers.GlobalScale), 
+                new Vector2(posLineX, Position.Value.Y + 10 + viewportOffset.Y),
+                new Vector2(posLineX, Position.Value.Y + viewportOffset.Y + (Size.Value.Y - 10) * ImGuiHelpers.GlobalScale),
                 colorPlayingDark);
         }
 

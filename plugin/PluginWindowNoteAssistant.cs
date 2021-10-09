@@ -21,6 +21,7 @@ namespace HarpHero
         private const uint colorNoteLowerOctave = UIColors.colorBlue;
         private const uint colorNoteThisOctave = UIColors.colorGreen;
         private const uint colorNoteHigherOctave = UIColors.colorRed;
+        private const uint colorNoteIgnored = UIColors.colorGray33;
 
         private const uint colorGuideNextRGB = UIColors.colorYellow;
         private const float alphaGuideInactive = 0.05f;
@@ -337,6 +338,10 @@ namespace HarpHero
                     continue;
                 }
 
+                bool isNoteIgnored =
+                    (trackAssistant.TrackStartTimeUs >= 0 && noteInfo.startUs < trackAssistant.TrackStartTimeUs) ||
+                    (trackAssistant.TrackEndTimeUs >= 0 && noteInfo.endUs >= trackAssistant.TrackEndTimeUs);
+
                 float t0 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteInfo.startUs - timeRangeStartUs) / timeRangeUs));
                 float t1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteInfo.endUs - timeRangeStartUs) / timeRangeUs));
 
@@ -344,7 +349,12 @@ namespace HarpHero
                 var posY1 = GetTimeCoordY(t1);
 
                 var posX = cachedNotePosX[mappedNoteIdx];
-                var noteColor = (octaveOffset == 0) ? colorNoteThisOctave : (octaveOffset < 0) ? colorNoteLowerOctave : colorNoteHigherOctave;
+                var noteColor =
+                    isNoteIgnored ? colorNoteIgnored :
+                    (octaveOffset == 0) ? colorNoteThisOctave :
+                    (octaveOffset < 0) ? colorNoteLowerOctave :
+                    colorNoteHigherOctave;
+
                 var noteColorFar = noteColor & 0x40ffffff;
 
                 var useNoteHalfWidth = noteHalfWidth;
@@ -357,7 +367,7 @@ namespace HarpHero
                 if (shownOctaveOffset != octaveOffset)
                 {
                     shownOctaveOffset = octaveOffset;
-                    if (numShownOffsets <= 3)
+                    if (numShownOffsets <= 3 && !isNoteIgnored)
                     {
                         uint octaveShiftColor = (noteColor & 0x00ffffff) | 0xc0000000;
                         uint octaveShiftColorFaded = (noteColor & 0x00ffffff) | 0x10000000;
@@ -388,12 +398,12 @@ namespace HarpHero
                         }
                     }
 
-                    numShownOffsets++;
+                    numShownOffsets += isNoteIgnored ? 0 : 1;
                 }
 
                 drawList.AddRectFilledMultiColor(new Vector2(posX - useNoteHalfWidth, posY0), new Vector2(posX + useNoteHalfWidth, posY1), noteColor, noteColor, noteColorFar, noteColorFar);
 
-                if (minNoteTime[mappedNoteIdx] > t0)
+                if (minNoteTime[mappedNoteIdx] > t0 && !isNoteIgnored)
                 {
                     minNoteTime[mappedNoteIdx] = t0;
                 }
