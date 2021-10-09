@@ -261,7 +261,7 @@ namespace HarpHero
                 try
                 {
                     musicPlayer = new MidiTrackPlayer(musicTrack);
-                    musicPlayer.SetTimeScaling(2.0f);
+                    musicPlayer.SetTimeScaling(timeScaling);
                     musicPlayer.Start();
 
                     isPlayingSound = true;
