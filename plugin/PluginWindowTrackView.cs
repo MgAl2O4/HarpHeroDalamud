@@ -106,7 +106,7 @@ namespace HarpHero
             foreach (var barTimeUs in trackViewer.shownBarLines)
             {
                 float alphaX = 1.0f * (barTimeUs - startTimeUs) / timeRangeUs;
-                if (alphaX >= 0.0f && alphaX <= 1.0f)
+                if (alphaX >= 0.0f && alphaX <= 1.0f && barTimeUs >= 0)
                 {
                     var posX = contentRegionMin.X + (spaceX * alphaX);
                     var barNum = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(new MetricTimeSpan(barTimeUs), shownTrack.tempoMap).Bars;
