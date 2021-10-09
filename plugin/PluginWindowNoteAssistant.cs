@@ -131,6 +131,8 @@ namespace HarpHero
             int numMappedNotes = noteMapper.notes?.Length ?? 0;
             if (numMappedNotes > 0)
             {
+                var viewportOffset = ImGui.GetMainViewport().Pos;
+
                 var uiLowC = uiReader.cachedState.keys[noteMapper.notes[0].uiIndex];
                 var uiHighC = uiReader.cachedState.keys[noteMapper.notes[numMappedNotes - 1].uiIndex];
 
@@ -143,8 +145,8 @@ namespace HarpHero
                 Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X + TrackAssistOctaveShiftX, uiLowC.pos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
                 BgAlpha = upkeepAlpha;
 
-                cachedNoteAppearPosY = Position.Value.Y + 10;
-                cachedNoteActivationPosY = Position.Value.Y + (Size.Value.Y - 20) * ImGuiHelpers.GlobalScale;
+                cachedNoteAppearPosY = Position.Value.Y + 10 + viewportOffset.Y;
+                cachedNoteActivationPosY = Position.Value.Y + ((Size.Value.Y - 20) * ImGuiHelpers.GlobalScale) + viewportOffset.Y;
 
                 if (cachedNotePosX == null || cachedNotePosX.Length != numMappedNotes)
                 {
@@ -163,7 +165,7 @@ namespace HarpHero
                 for (int idx = 0; idx < numMappedNotes; idx++)
                 {
                     var uiKey = uiReader.cachedState.keys[noteMapper.notes[idx].uiIndex];
-                    cachedNotePosX[idx] = uiKey.pos.X + (uiKey.size.X * 0.5f);
+                    cachedNotePosX[idx] = uiKey.pos.X + (uiKey.size.X * 0.5f) + viewportOffset.X;
                 }
             }
             else

@@ -184,6 +184,7 @@ namespace HarpHero
         private void DrawBindTimeline()
         {
             var drawList = ImGui.GetWindowDrawList();
+            var viewportOffset = ImGui.GetMainViewport().Pos;
             var timeRangeStartUs = trackAssistant.musicViewer.TimeRangeStartUs;
             var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
             var bindHints = new List<BindHintDrawInfo>();
@@ -199,10 +200,10 @@ namespace HarpHero
                 float tX1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.endUs - timeRangeStartUs) / timeRangeUs));
                 float tY = Math.Min(1.0f, Math.Max(0.0f, 1.0f * noteBinding.bindingIdx / trackAssistant.musicViewer.maxBindingsToShow));
 
-                var posX0Raw = Position.Value.X + (10 + (Size.Value.X * tX0Raw)) * ImGuiHelpers.GlobalScale;
-                var posX0 = Position.Value.X + (10 + (Size.Value.X * tX0)) * ImGuiHelpers.GlobalScale;
-                var posX1 = Position.Value.X + (10 + (Size.Value.X * tX1)) * ImGuiHelpers.GlobalScale;
-                var posY = Position.Value.Y + (30 + ((Size.Value.Y - 20) * tY)) * ImGuiHelpers.GlobalScale;
+                var posX0Raw = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tX0Raw)) * ImGuiHelpers.GlobalScale;
+                var posX0 = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tX0)) * ImGuiHelpers.GlobalScale;
+                var posX1 = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tX1)) * ImGuiHelpers.GlobalScale;
+                var posY = Position.Value.Y + viewportOffset.Y + (30 + ((Size.Value.Y - 20) * tY)) * ImGuiHelpers.GlobalScale;
 
                 uint colorLight = UIColors.colorGray33;
                 uint colorDark = UIColors.colorGray33;
@@ -305,8 +306,12 @@ namespace HarpHero
             }
 
             float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
-            var posLineX = Position.Value.X + (10 + (Size.Value.X * tLX)) * ImGuiHelpers.GlobalScale;
-            drawList.AddLine(new Vector2(posLineX, Position.Value.Y + 10), new Vector2(posLineX, Position.Value.Y + (Size.Value.Y - 10) * ImGuiHelpers.GlobalScale), colorPlayingDark);
+            var posLineX = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tLX)) * ImGuiHelpers.GlobalScale;
+            
+            drawList.AddLine(
+                new Vector2(posLineX, Position.Value.Y + 10 + viewportOffset.Y), 
+                new Vector2(posLineX, Position.Value.Y + viewportOffset.Y + (Size.Value.Y - 10) * ImGuiHelpers.GlobalScale), 
+                colorPlayingDark);
         }
 
         private void InitGamepadButtonColors()

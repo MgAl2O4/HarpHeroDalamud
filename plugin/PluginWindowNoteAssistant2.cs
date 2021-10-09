@@ -132,6 +132,8 @@ namespace HarpHero
             int numMappedNotes = noteMapper.notes?.Length ?? 0;
             if (numMappedNotes > 0)
             {
+                var viewportOffset = ImGui.GetMainViewport().Pos;
+
                 var uiLowC = uiReader.cachedState.keys[noteMapper.notes[0].uiIndex];
                 var uiHighC = uiReader.cachedState.keys[noteMapper.notes[numMappedNotes - 1].uiIndex];
                 var uiLowCS = uiReader.cachedState.keys[noteMapper.notes[1].uiIndex];
@@ -150,11 +152,11 @@ namespace HarpHero
                 for (int idx = 0; idx < numMappedNotes; idx++)
                 {
                     var uiKey = uiReader.cachedState.keys[noteMapper.notes[idx].uiIndex];
-                    cachedNotePosX[idx] = uiKey.pos.X + (uiKey.size.X * 0.5f);
+                    cachedNotePosX[idx] = uiKey.pos.X + (uiKey.size.X * 0.5f) + viewportOffset.X;
                 }
 
-                cachedWhiteKeyY = uiLowC.pos.Y + uiLowC.size.Y - 25;
-                cachedBlackKeyY = uiLowCS.pos.Y + uiLowCS.size.Y - 25;
+                cachedWhiteKeyY = uiLowC.pos.Y + uiLowC.size.Y - 25 + viewportOffset.Y;
+                cachedBlackKeyY = uiLowCS.pos.Y + uiLowCS.size.Y - 25 + viewportOffset.Y;
                 markerRadius = uiLowC.size.X * 0.3f;
             }
             else
