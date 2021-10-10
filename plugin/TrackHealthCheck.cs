@@ -20,7 +20,7 @@
         private readonly Configuration config;
 
         public Status cachedStatus;
-        
+
         private bool canRefreshBindings;
         private float refreshBindingsTimeRemaining;
 
