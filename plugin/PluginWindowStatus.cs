@@ -535,6 +535,12 @@ namespace HarpHero
                         ImGui.SameLine();
                         ImGui.TextColored(colorYellow, string.Format(locPlayMetronomeSyncError, syncErrorMs));
                     }
+                    else
+                    {
+                        float trackPct = Math.Max(0.0f, 1.0f * (trackAssistant.CurrentTimeUs - trackAssistant.TrackStartTimeUs) / (trackAssistant.TrackEndTimeUs - trackAssistant.TrackStartTimeUs));
+                        ImGui.SameLine();
+                        ImGui.Text($"( {trackPct.ToString("P0").Replace("%", "%%")} )");
+                    }
                 }
                 else
                 {
@@ -563,6 +569,10 @@ namespace HarpHero
                         ImGui.TextColored(colorOk, locStatusPlaying);
                         ImGui.SameLine();
                         ImGui.Text(string.Format(locStatusPlayTime, trackAssistant.CurrentTime));
+
+                        float trackPct = Math.Max(0.0f, 1.0f * (trackAssistant.CurrentTimeUs - trackAssistant.TrackStartTimeUs) / (trackAssistant.TrackEndTimeUs - trackAssistant.TrackStartTimeUs));
+                        ImGui.SameLine();
+                        ImGui.Text($"( {trackPct.ToString("P0").Replace("%", "%%")} )");
                     }
                 }
                 else
