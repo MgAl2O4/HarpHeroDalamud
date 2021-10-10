@@ -250,7 +250,7 @@ namespace MgAl2O4.Utils
         private static void InitializeGamepadMap()
         {
             // font is kind of small, but still better than using mountains for triangle :<
-            bool useUnicodeSouth = true;
+            bool useUnicodeActions = true;
 
             // can't change without client restart
             var styleV = GetGamepadStyleSettings();
@@ -278,7 +278,7 @@ namespace MgAl2O4.Utils
             }
             else
             {
-                if (useUnicodeSouth)
+                if (useUnicodeActions)
                 {
                     mapGamepadButtons.Add(GamepadButtons.North, new InputBindingKey() { gamepadButton = GamepadButtons.North, text = "" + Convert.ToChar(SeIconChar.Triangle), scaleOverride = scaleOverrideSeIcon });
                     mapGamepadButtons.Add(GamepadButtons.South, new InputBindingKey() { gamepadButton = GamepadButtons.South, text = "" + Convert.ToChar(SeIconChar.Cross), scaleOverride = scaleOverrideSeIcon });
