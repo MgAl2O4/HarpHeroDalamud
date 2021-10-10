@@ -41,9 +41,9 @@ namespace HarpHero
         {
             if (active)
             {
-                keyBinds = bindingReader.ReadBindings();
-
+                RefreshKeyBindings();
                 mapNoteBinding.Clear();
+
                 isWideModeCached = uiMapper.isWideMode;
             }
         }
@@ -52,6 +52,11 @@ namespace HarpHero
         {
             isKeyboardMode = isKeyboard;
             mapNoteBinding.Clear();
+        }
+
+        public void RefreshKeyBindings()
+        {
+            keyBinds = bindingReader.ReadBindings();
         }
 
         private bool FindNoteKeyOctaveBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset, out VirtualKey noteKey, out VirtualKey octaveKey)
@@ -248,6 +253,27 @@ namespace HarpHero
             }
 
             return missingBindingKey;
+        }
+
+        public bool HasAllExtendedModeBindings()
+        {
+            if (keyBinds == null ||
+                keyBinds.Value.threeOctaves.octaveDown == VirtualKey.NO_KEY ||
+                keyBinds.Value.threeOctaves.octaveUp == VirtualKey.NO_KEY ||
+                keyBinds.Value.threeOctaves.notes == null)
+            {
+                return false;
+            }
+
+            foreach (var key in keyBinds.Value.threeOctaves.notes)
+            {
+                if (key == VirtualKey.NO_KEY)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

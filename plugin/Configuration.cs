@@ -11,6 +11,7 @@ namespace HarpHero
 
         public bool AutoAdjustEndBar { get; set; } = true;
         public bool AutoAdjustBPM { get; set; } = true;
+        public bool UseExtendedMode { get; set; } = false;
         public float AutoAdjustSpeedThreshold { get; set; } = 2.0f;
 
         public bool UseMetronomeLink { get; set; } = true;

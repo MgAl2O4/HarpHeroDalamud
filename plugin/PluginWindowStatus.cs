@@ -16,6 +16,7 @@ namespace HarpHero
         private readonly TrackAssistant trackAssistant;
         private readonly MidiFileManager fileManager;
         private readonly Configuration config;
+        private readonly TrackHealthCheck trackHealth;
 
         private Vector4 colorErr = new Vector4(0.9f, 0.2f, 0.2f, 1);
         private Vector4 colorOk = new Vector4(0.2f, 0.9f, 0.2f, 1);
@@ -62,12 +63,27 @@ namespace HarpHero
         private string locStatusPlayTime;
         private string locStartPlayingHint;
         private string locStatusPlayNotAvail;
+        private string locStatusPlayNotAvailDefault;
+        private string locStatusPlayNotAvailNeedsWideMode;
+        private string locStatusPlayNotAvailNeedsKeyboard;
+        private string locStatusPlayNotAvailNeedsAllBindings;
+        private string locStatusExtendedMode;
+        private string locStatusExtendedModeActive;
+        private string locStatusExtendedModeHint;
+        private string locStatusWideUIHint;
+        private string locStatusTrackTruncated;
+        private string locStatusTrackTruncatedHint;
+        private string locStatusTrackTruncatedHintNoExtended;
+        private string locStatusTooManyOctaves;
+        private string locStartPlayingExtHint;
+
         private string locConfigBack;
         private string locConfigImport;
         private string locConfigAutoBPM;
         private string locConfigAutoBPMHelp;
         private string locConfigAutoSection;
         private string locConfigAutoSectionHelp;
+        private string locConfigAllowExtendedMode;
         private string locConfigAssist;
         private string locConfigUseMetronome;
         private string locConfigUseMetronomeHelp;
@@ -80,11 +96,12 @@ namespace HarpHero
         private string locConfigAssistNoteNumMarkers;
         private string locConfigAssistNoteWarnMs;
 
-        public PluginWindowStatus(TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config) : base("Harp Hero")
+        public PluginWindowStatus(TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config, TrackHealthCheck trackHealth) : base("Harp Hero")
         {
             this.trackAssistant = trackAssistant;
             this.fileManager = fileManager;
             this.config = config;
+            this.trackHealth = trackHealth;
             fileManager.OnImported += (_) => cachedTrackNames = null;
 
             IsOpen = false;
@@ -122,7 +139,7 @@ namespace HarpHero
             locTrackOctaves = Localization.Localize("ST_TrackOctaves", "Octaves");
             locTrackSection = Localization.Localize("ST_TrackSection", "Section");
             locTrackSectionUnits = Localization.Localize("ST_TrackSectionUnits", "bars");
-            locTrackSectionReset = Localization.Localize("ST_TrackSectionReset", "Reset");
+            locTrackSectionReset = Localization.Localize("ST_TrackSectionReset", "Set full length");
             locPlayMetronomeHint = Localization.Localize("ST_PlayMetronomeHint", "Use game metronome for play controls");
             locPlayMetronome = Localization.Localize("ST_Metronome", "Metronome");
             locPlayMetronomeNotVisible = Localization.Localize("ST_MetronomeNotVis", "not visible");
@@ -134,7 +151,20 @@ namespace HarpHero
             locStatusPlaying = Localization.Localize("ST_StatusPlaying", "Playing");
             locStatusPlayTime = Localization.Localize("ST_StatusPlayTime", "time: {0:0.00}s");
             locStartPlayingHint = Localization.Localize("ST_StartPlayingHint", "Start playing");
-            locStatusPlayNotAvail = Localization.Localize("ST_StatusPlayNotAvail", "Can't play track, see details");
+            locStatusPlayNotAvail = Localization.Localize("ST_StatusPlayNotAvail", "Can't play");
+            locStatusPlayNotAvailDefault = Localization.Localize("ST_StatusPlayNotAvailDefault", "check track details");
+            locStatusPlayNotAvailNeedsWideMode = Localization.Localize("ST_StatusPlayNotAvailNeedsWideMode", "3 octave mode required");
+            locStatusPlayNotAvailNeedsKeyboard = Localization.Localize("ST_StatusPlayNotAvailNeedsKeyboard", "keyboard input required");
+            locStatusPlayNotAvailNeedsAllBindings = Localization.Localize("ST_StatusPlayNotAvailNeedsAllBindings", "all bindings required");
+            locStatusExtendedMode = Localization.Localize("ST_ExtendedMode", "(extended mode required)");
+            locStatusExtendedModeActive = Localization.Localize("ST_ExtendedModeActive", "(extended mode active)");
+            locStatusExtendedModeHint = Localization.Localize("ST_ExtendedModeHint", "Extended mode allows playing notes in 5 octave range.\n- not available for gamepads\n- performance UI must be in wide, 3 octave mode\n- all keybinds must be defined");
+            locStatusWideUIHint = Localization.Localize("ST_ExtendedModeWideHint", "3 octave UI: Settings > Keyboard Control > Assign all notes");
+            locStatusTrackTruncated = Localization.Localize("ST_TrackTruncated", "(track cut to {0:P0})");
+            locStatusTrackTruncatedHint = Localization.Localize("ST_TrackTruncatedHint", "Only part of the selected track will be played, check Section in track details.\nOctave limit: {0}");
+            locStatusTrackTruncatedHintNoExtended = Localization.Localize("ST_TrackTruncatedHintNoExt", "To increase octave limit, please enable extended mode in settings and reload midi file.");
+            locStatusTooManyOctaves = Localization.Localize("ST_TooManyOctaves", "Game doesn't allow more than 5 octaves, sorry :<");
+            locStartPlayingExtHint = Localization.Localize("ST_StartPlayingExtHint", "Start playing (extended mode)");
 
             locConfigBack = Localization.Localize("CFG_Back", "Back to status");
             locConfigImport = Localization.Localize("CFG_Import", "MIDI import");
@@ -142,6 +172,7 @@ namespace HarpHero
             locConfigAutoBPMHelp = Localization.Localize("CFG_AutoBPMHelp", "Lowers tempo to fit in desired key press speed");
             locConfigAutoSection = Localization.Localize("CFG_AutoSection", "Auto adjust end bar");
             locConfigAutoSectionHelp = Localization.Localize("CFG_AutoSectionHelp", "Shorten music track to fit in 3 octave range");
+            locConfigAllowExtendedMode = Localization.Localize("CFG_AllowExtended", "Allow extended, 5 octave mode");
             locConfigAssist = Localization.Localize("CFG_Assist", "Assist panel");
             locConfigUseMetronome = Localization.Localize("CFG_UseMetronome", "Use game metronome");
             locConfigUseMetronomeHelp = Localization.Localize("CFG_UseMetronomeHelp", "Gives control over music start/stop to game's metronome");
@@ -200,6 +231,8 @@ namespace HarpHero
 
         private void DrawStatus()
         {
+            trackHealth.UpdatePlayStatus();
+
             // import & settings
             ImGui.AlignTextToFramePadding();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.FileImport))
@@ -265,10 +298,8 @@ namespace HarpHero
                 var numKeysPerSecond = trackAssistant.GetScaledKeysPerSecond();
                 var colorKeysPerSecond = (numKeysPerSecond <= 1.0f) ? colorOk : (numKeysPerSecond <= 2.0f) ? colorYellow : colorErr;
                 ImGui.TextColored(colorKeysPerSecond, $"( {numKeysPerSecond:0.#} {locKeyPerSecond} )");
-            }
-            else
-            {
-                ImGui.Text(locWaitingForImport);
+
+                DrawTrackHealth();
             }
             ImGui.Unindent(trackIndentSize);
 
@@ -345,7 +376,7 @@ namespace HarpHero
 
                 var statBlock = trackAssistant.musicTrack.stats;
                 var timeSigVarDesc = (statBlock.numTimeSignatures > 1) ? "*" : "";
-                bool isRangeValid = trackAssistant.CanPlay;
+                bool isRangeValid = trackAssistant.CanPlay && (trackAssistant.IsValidBasicMode || (trackAssistant.IsValidExtendedMode && config.UseExtendedMode));
                 bool isSectionValid = statBlock.numBarsTotal > 0;
 
                 ImGui.Text($"{locTrackBPM}:");
@@ -384,21 +415,10 @@ namespace HarpHero
                     // allow invalid values (0 length or start > end) here, most will be coming from in-between typing numbers
                     trackAssistant.SetTrackSection(sectionBars[0], sectionBars[1]);
                 }
-                ImGui.SameLine();
-                ImGui.Text(locTrackSectionUnits);
-
                 ImGui.PopItemWidth();
 
-                float trackLengthPct = (statBlock.numBarsTotal > 0) ? 1.0f * statBlock.numBars / statBlock.numBarsTotal : 0.0f;
-                var trackLengthDesc = $"({trackLengthPct:P0})".Replace("%", "%%");
-                var trackLengthColor =
-                    !isSectionValid ? colorErr :
-                    (trackLengthPct < 0.5f) ? colorErr :
-                    (trackLengthPct < 0.75f) ? colorYellow :
-                    colorOk;
-
                 ImGui.SameLine();
-                ImGui.TextColored(trackLengthColor, trackLengthDesc);
+                ImGui.Text(locTrackSectionUnits);
 
                 ImGui.SameLine();
                 if (ImGui.Button(locTrackSectionReset))
@@ -411,12 +431,69 @@ namespace HarpHero
             }
         }
 
+        private void DrawTrackHealth()
+        {
+            bool needsSameLine = false;
+
+            // show additional info when track is getting cut to fit in limits
+            float lengthPct = trackHealth.GetTrackLengthPct();
+            if (lengthPct < 1.0f)
+            {
+                ImGui.Spacing();
+                ImGui.TextColored(colorYellow, string.Format(locStatusTrackTruncated, lengthPct).Replace("%", "%%"));
+
+                int numAvailableOctaves = config.UseExtendedMode ? 5 : 3;
+                string helpMsg = string.Format(locStatusTrackTruncatedHint, numAvailableOctaves);
+
+                if (!config.UseExtendedMode)
+                {
+                    helpMsg += "\n\n" + locStatusTrackTruncatedHintNoExtended;
+                }
+                else
+                {
+                    if (trackHealth.cachedStatus == TrackHealthCheck.Status.TooManyOctaves)
+                    {
+                        helpMsg += "\n\n" + locStatusTooManyOctaves;
+                    }
+                }
+
+                ImGui.SameLine();
+                ImGuiComponents.HelpMarker(helpMsg);
+                needsSameLine = true;
+            }
+
+            if (trackAssistant.IsValidExtendedMode)
+            {
+                if (needsSameLine) { ImGui.SameLine(); } else { ImGui.Spacing(); }
+
+                if (config.UseExtendedMode)
+                {
+                    ImGui.TextColored(colorDetail, locStatusExtendedModeActive);
+                }
+                else
+                {
+                    ImGui.TextColored(colorYellow, locStatusExtendedMode);
+                }
+
+                ImGui.SameLine();
+                ImGuiComponents.HelpMarker(locStatusExtendedModeHint);
+
+                needsSameLine = true;
+            }
+
+            // too many octaves, full length
+            if (config.UseExtendedMode && trackHealth.cachedStatus == TrackHealthCheck.Status.TooManyOctaves && !needsSameLine)
+            {
+                ImGui.TextColored(colorErr, locStatusTooManyOctaves);
+            }
+        }
+
         private void DrawPlayControls()
         {
             // play is context sensitive:
             // - training mode: no metronome support (game doesn't do pause/resume)
             // - metronome link: use when available
-            // - otherwise just regular play/stop
+            // - otherwise just regular play/stop + al various reasons why it may fail
 
             bool showMetronomeLink = trackAssistant.HasMetronomeLink && !trackAssistant.useWaitingForInput;
             bool showPlayControls = !showMetronomeLink;
@@ -453,7 +530,7 @@ namespace HarpHero
                     ImGui.SameLine();
                     ImGui.Text($"[{metronomeBar}:{metronomeBeat}]");
 
-                    if (syncErrorMs > 100.0f && trackAssistant.musicTrack != null)
+                    if (syncErrorMs > 100.0f && trackAssistant.musicTrack != null && trackAssistant.IsPlaying)
                     {
                         ImGui.SameLine();
                         ImGui.TextColored(colorYellow, string.Format(locPlayMetronomeSyncError, syncErrorMs));
@@ -488,30 +565,58 @@ namespace HarpHero
                         ImGui.Text(string.Format(locStatusPlayTime, trackAssistant.CurrentTime));
                     }
                 }
-                else if (trackAssistant.CanPlay)
-                {
-                    if (ImGuiComponents.IconButton(10, FontAwesomeIcon.Play))
-                    {
-                        trackAssistant.Start();
-                    }
-
-                    ImGui.SameLine();
-                    ImGui.Text(locStartPlayingHint);
-                }
                 else
                 {
-                    ImGuiComponents.DisabledButton(FontAwesomeIcon.Play, 11);
-                    ImGui.SameLine();
-
-                    bool isWaiting = string.IsNullOrEmpty(fileManager.FilePath);
-                    if (isWaiting)
+                    if (trackHealth.cachedStatus == TrackHealthCheck.Status.CanPlayBasic ||
+                        trackHealth.cachedStatus == TrackHealthCheck.Status.CanPlayExtended)
                     {
-                        ImGui.Text(locWaitingForImport);
+                        if (ImGuiComponents.IconButton(10, FontAwesomeIcon.Play))
+                        {
+                            trackAssistant.Start();
+                        }
+
+                        ImGui.SameLine();
+                        ImGui.Text(trackHealth.cachedStatus == TrackHealthCheck.Status.CanPlayBasic ? locStartPlayingHint : locStartPlayingExtHint);
                     }
                     else
                     {
-                        ImGui.TextColored(colorErr, locStatusPlayNotAvail);
+                        ImGuiComponents.DisabledButton(FontAwesomeIcon.Play, 11);
+
+                        if (trackHealth.cachedStatus == TrackHealthCheck.Status.NoTrack)
+                        {
+                            ImGui.SameLine();
+                            ImGui.Text(locWaitingForImport);
+                        }
                     }
+                }
+            }
+
+            bool showCantPlay =
+                (trackHealth.cachedStatus != TrackHealthCheck.Status.CanPlayBasic) &&
+                (trackHealth.cachedStatus != TrackHealthCheck.Status.CanPlayExtended) &&
+                (trackHealth.cachedStatus != TrackHealthCheck.Status.NoTrack);
+
+            if (showCantPlay)
+            {
+                if (!showPlayControls)
+                {
+                    ImGuiComponents.DisabledButton(FontAwesomeIcon.Unlink, 15);
+                }
+
+                ImGui.SameLine();
+                ImGui.Text(locStatusPlayNotAvail);
+                ImGui.SameLine();
+
+                ImGui.TextColored(colorErr,
+                    trackHealth.cachedStatus == TrackHealthCheck.Status.MissingWideMode ? locStatusPlayNotAvailNeedsWideMode :
+                    trackHealth.cachedStatus == TrackHealthCheck.Status.MissingKeyboardMode ? locStatusPlayNotAvailNeedsKeyboard :
+                    trackHealth.cachedStatus == TrackHealthCheck.Status.MissingBindings ? locStatusPlayNotAvailNeedsAllBindings :
+                    locStatusPlayNotAvailDefault);
+
+                if (trackHealth.cachedStatus == TrackHealthCheck.Status.MissingWideMode)
+                {
+                    ImGui.SameLine();
+                    ImGuiComponents.HelpMarker(locStatusWideUIHint);
                 }
             }
         }
@@ -530,6 +635,7 @@ namespace HarpHero
             bool hasChanges = false;
             bool autoAdjustEndBarCopy = config.AutoAdjustEndBar;
             bool autoAdjustBPMCopy = config.AutoAdjustBPM;
+            bool useExtendedModeCopy = config.UseExtendedMode;
             float autoAdjustSpeedThresholdCopy = config.AutoAdjustSpeedThreshold;
 
             ImGui.Spacing();
@@ -553,10 +659,14 @@ namespace HarpHero
             hasChanges = ImGui.Checkbox(locConfigAutoSection, ref autoAdjustEndBarCopy) || hasChanges;
             ImGuiComponents.HelpMarker(locConfigAutoSectionHelp);
 
+            hasChanges = ImGui.Checkbox(locConfigAllowExtendedMode, ref useExtendedModeCopy) || hasChanges;
+            ImGuiComponents.HelpMarker(locStatusExtendedModeHint);
+
             if (hasChanges)
             {
                 config.AutoAdjustEndBar = autoAdjustEndBarCopy;
                 config.AutoAdjustBPM = autoAdjustBPMCopy;
+                config.UseExtendedMode = useExtendedModeCopy;
                 config.AutoAdjustSpeedThreshold = Math.Min(10.0f, Math.Max(0.1f, autoAdjustSpeedThresholdCopy));
                 needsSave = true;
                 hasChanges = false;

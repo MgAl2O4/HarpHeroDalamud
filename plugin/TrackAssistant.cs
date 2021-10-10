@@ -27,6 +27,8 @@ namespace HarpHero
         public bool IsPlaying => isPlaying;
         public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
         public bool IsPausedForInput => notePausedForInput != null;
+        public bool IsValidBasicMode => isValidBasicMode;
+        public bool IsValidExtendedMode => isValidExtendedMode;
         public float CurrentTime => currentTimeUs / 1000000.0f;
         public long CurrentTimeUs => currentTimeUs;
         public long TrackStartTimeUs => trackStartTimeUs;
@@ -48,6 +50,8 @@ namespace HarpHero
         private long currentTimeUs;
         private bool isPlaying;
         private bool isPlayingSound;
+        private bool isValidExtendedMode;
+        private bool isValidBasicMode;
         private Note notePausedForInput;
         private long pausedTimeUs;
         private long lastPressTimeUs;
@@ -81,10 +85,10 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay}, IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
+                PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay} (3O:{IsValidBasicMode}, 5O:{IsValidExtendedMode}), IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
                 if (musicTrack != null)
                 {
-                    PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}, range:{musicTrack.GetStartTimeUs() / 1000000.0f}..{musicTrack.GetEndTimeUs() / 1000000.0f}");
+                    PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}, section:{musicTrack.GetStartTimeUs() / 1000000.0f}..{musicTrack.GetEndTimeUs() / 1000000.0f}");
                 }
                 else
                 {
@@ -114,7 +118,8 @@ namespace HarpHero
 
                 if (config.AutoAdjustEndBar)
                 {
-                    int endBarIdx = track.FindValidEndBar();
+                    int numAvailableOctaves = config.UseExtendedMode ? 5 : 3;
+                    int endBarIdx = track.FindValidEndBar(numAvailableOctaves);
                     if (endBarIdx > 0)
                     {
                         initStartBar = 0;
@@ -188,7 +193,8 @@ namespace HarpHero
 
         public bool Start()
         {
-            if (musicTrack != null && CanPlay)
+            bool hasValidRange = isValidBasicMode || (isValidExtendedMode && config.UseExtendedMode);
+            if (musicTrack != null && CanPlay && hasValidRange)
             {
                 isPlayingSound = false;
                 notePausedForInput = null;
@@ -387,13 +393,18 @@ namespace HarpHero
         private void OnTrackUpdated()
         {
             musicViewer = null;
+            isValidBasicMode = false;
+            isValidExtendedMode = false;
 
             if (musicTrack != null)
             {
                 trackStartTimeUs = musicTrack.GetStartTimeUs();
                 trackEndTimeUs = musicTrack.GetEndTimeUs();
 
-                if (musicTrack.IsOctaveRangeValid(out midOctaveIdx))
+                isValidBasicMode = musicTrack.IsOctaveRangeValid(out midOctaveIdx);
+                isValidExtendedMode = isValidBasicMode ? false : musicTrack.IsOctaveRange5Valid(out midOctaveIdx);
+
+                if (isValidBasicMode || isValidExtendedMode)
                 {
                     musicViewer = new MidiTrackViewer(musicTrack);
                     musicViewer.timeWindowSecondsAhead = NumSecondsFuture;

@@ -329,7 +329,7 @@ namespace HarpHero
 #endif // DEBUG
         }
 
-        public int FindValidEndBar()
+        public int FindValidEndBar(int octaveRange)
         {
             var minNote = SevenBitNumber.MaxValue;
             var maxNote = SevenBitNumber.MinValue;
@@ -348,7 +348,7 @@ namespace HarpHero
                     maxNote = note.NoteNumber;
                 }
 
-                bool isValid = stats.IsOctaveRangeValid(minNote, maxNote, out int dummyId);
+                bool isValid = stats.IsOctaveRangeValid(minNote, maxNote, out int dummyId, octaveRange);
                 if (isValid)
                 {
                     lastValidTick = note.Time;
@@ -385,6 +385,7 @@ namespace HarpHero
         public long GetStartTimeUs() => TimeConverter.ConvertTo<MetricTimeSpan>(stats.startTick, tempoMap).TotalMicroseconds;
         public long GetEndTimeUs() => TimeConverter.ConvertTo<MetricTimeSpan>(stats.endTick, tempoMap).TotalMicroseconds;
 
-        public bool IsOctaveRangeValid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId);
+        public bool IsOctaveRangeValid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId, octaveRange: 3);
+        public bool IsOctaveRange5Valid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId, octaveRange: 5);
     }
 }

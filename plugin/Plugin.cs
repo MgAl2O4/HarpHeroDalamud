@@ -73,8 +73,10 @@ namespace HarpHero
             var fileManager = new MidiFileManager();
             fileManager.OnImported += (_) => { trackAssistant.OnTracksImported(fileManager.tracks); };
 
+            var trackHealthCheck = new TrackHealthCheck(noteInputMapper, trackAssistant, uiReaderPerformance, configuration);
+
             // prep UI
-            statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration);
+            statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration, trackHealthCheck);
             var trackViewWindow = new PluginWindowTrackView(trackAssistant);
             var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
             var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper, configuration);
@@ -82,7 +84,14 @@ namespace HarpHero
             var scoreWindow = new PluginWindowScore(uiReaderPerformance, trackAssistant, configuration);
 
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
-            uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
+            uiReaderPerformance.OnVisibilityChanged += (active) =>
+            {
+                statusWindow.IsOpen = active;
+                if (active)
+                {
+                    noteInputMapper.RefreshKeyBindings();
+                }
+            };
             uiReaderPerformance.OnKeyboardModeChanged += (isKeyboard) => noteInputMapper.OnKeyboardModeChanged(isKeyboard);
             uiReaderPerformance.OnCachedKeysChanged += (_) => noteUiMapper.OnNumKeysChanged(uiReaderPerformance.cachedState);
             trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
