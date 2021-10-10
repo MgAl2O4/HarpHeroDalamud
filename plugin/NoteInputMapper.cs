@@ -20,8 +20,10 @@ namespace HarpHero
 
         private bool isWideModeCached = false;
         private bool isKeyboardMode = true;
+        private bool hasAllExtendedModeBindings = false;
 
         public bool IsKeyboardMode => isKeyboardMode;
+        public bool HasAllExtendedModeBindings => hasAllExtendedModeBindings;
 
         public NoteInputMapper(NoteUIMapper noteMapper, UnsafeReaderPerformanceKeybinds bindingReader)
         {
@@ -255,7 +257,13 @@ namespace HarpHero
             return missingBindingKey;
         }
 
-        public bool HasAllExtendedModeBindings()
+        public void UpdateBindingState()
+        {
+            RefreshKeyBindings();
+            hasAllExtendedModeBindings = HasAllThreeOctaveKeyboardBindings();
+        }
+
+        private bool HasAllThreeOctaveKeyboardBindings()
         {
             if (keyBinds == null ||
                 keyBinds.Value.threeOctaves.octaveDown == VirtualKey.NO_KEY ||

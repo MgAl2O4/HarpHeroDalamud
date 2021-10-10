@@ -20,6 +20,9 @@
         private readonly Configuration config;
 
         public Status cachedStatus;
+        
+        private bool canRefreshBindings;
+        private float refreshBindingsTimeRemaining;
 
         public TrackHealthCheck(NoteInputMapper inputMapper, TrackAssistant trackAssistant, UIReaderBardPerformance uiReaderPerformance, Configuration config)
         {
@@ -29,43 +32,67 @@
             this.config = config;
         }
 
-        public void UpdatePlayStatus()
+        public void UpdatePlayStatus(float deltaTime)
         {
+            if (!canRefreshBindings)
+            {
+                refreshBindingsTimeRemaining -= deltaTime;
+                if (refreshBindingsTimeRemaining <= 0.0f)
+                {
+                    canRefreshBindings = true;
+                }
+            }
+
             cachedStatus = FindPlayStatus();
         }
 
         private Status FindPlayStatus()
         {
-            if (trackAssistant.musicTrack == null)
+            if (!trackAssistant.IsPlaying)
             {
-                return Status.NoTrack;
-            }
+                if (trackAssistant.musicTrack == null)
+                {
+                    return Status.NoTrack;
+                }
 
-            if (!trackAssistant.IsValidBasicMode && !trackAssistant.IsValidExtendedMode)
-            {
-                return Status.TooManyOctaves;
-            }
-
-            if (trackAssistant.IsValidExtendedMode)
-            {
-                if (!config.UseExtendedMode)
+                if (!trackAssistant.IsValidBasicMode && !trackAssistant.IsValidExtendedMode)
                 {
                     return Status.TooManyOctaves;
                 }
 
-                if (!inputMapper.IsKeyboardMode)
+                if (trackAssistant.IsValidExtendedMode)
                 {
-                    return Status.MissingKeyboardMode;
-                }
+                    if (!config.UseExtendedMode)
+                    {
+                        return Status.TooManyOctaves;
+                    }
 
-                if (uiReaderPerformance.status != UIReaderBardPerformance.Status.NoErrorsWide)
-                {
-                    return Status.MissingWideMode;
-                }
+                    if (!inputMapper.IsKeyboardMode)
+                    {
+                        return Status.MissingKeyboardMode;
+                    }
 
-                if (trackAssistant.CanShowBindAssistant && !inputMapper.HasAllExtendedModeBindings())
-                {
-                    return Status.MissingBindings;
+                    if (uiReaderPerformance.status != UIReaderBardPerformance.Status.NoErrorsWide)
+                    {
+                        return Status.MissingWideMode;
+                    }
+
+                    if (trackAssistant.CanShowBindAssistant)
+                    {
+                        // check every few seconds, doesn't need to be same frame
+                        if (canRefreshBindings)
+                        {
+                            canRefreshBindings = false;
+                            refreshBindingsTimeRemaining = 2.0f;
+
+                            inputMapper.UpdateBindingState();
+                        }
+
+                        if (!inputMapper.HasAllExtendedModeBindings)
+                        {
+                            return Status.MissingBindings;
+                        }
+                    }
                 }
             }
 

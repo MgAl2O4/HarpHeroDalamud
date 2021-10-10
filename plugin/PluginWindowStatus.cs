@@ -231,7 +231,7 @@ namespace HarpHero
 
         private void DrawStatus()
         {
-            trackHealth.UpdatePlayStatus();
+            trackHealth.UpdatePlayStatus(ImGui.GetIO().DeltaTime);
 
             // import & settings
             ImGui.AlignTextToFramePadding();
