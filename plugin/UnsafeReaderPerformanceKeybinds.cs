@@ -53,6 +53,7 @@ namespace HarpHero
         private int baseGamepadModifiers = 0;
 
         private Dictionary<byte, GamepadButtons> mapGamepad = new();
+        private Dictionary<byte, VirtualKey> mapKeys = new();
 
         public UnsafeReaderPerformanceKeybinds(GameGui gameGui, SigScanner sigScanner)
         {
@@ -113,6 +114,20 @@ namespace HarpHero
                 mapGamepad.Add(0xB0, GamepadButtons.L2);
                 mapGamepad.Add(0xB2, GamepadButtons.R1);
                 mapGamepad.Add(0xB3, GamepadButtons.R2);
+
+                // non alphanumeric chars are not real virtual keys? SE being SE...
+                mapKeys.Add(0x82, VirtualKey.OEM_PLUS);
+                mapKeys.Add(0x83, VirtualKey.OEM_COMMA);
+                mapKeys.Add(0x84, VirtualKey.OEM_MINUS);
+                mapKeys.Add(0x85, VirtualKey.OEM_PERIOD);
+                mapKeys.Add(0x86, VirtualKey.OEM_2);
+                mapKeys.Add(0x87, VirtualKey.OEM_1);
+                mapKeys.Add(0x88, VirtualKey.OEM_3);
+                mapKeys.Add(0x89, VirtualKey.OEM_4);
+                mapKeys.Add(0x8A, VirtualKey.OEM_5);
+                mapKeys.Add(0x8B, VirtualKey.OEM_6);
+                mapKeys.Add(0x8C, VirtualKey.OEM_7);
+                mapKeys.Add(0x8D, VirtualKey.OEM_8);
             }
 
             Plugin.OnDebugSnapshot += (_) =>
@@ -163,7 +178,13 @@ namespace HarpHero
 
                         VirtualKey ReadKeyBinding(int baseIdx, int offset)
                         {
-                            return (VirtualKey)bindingArr[baseIdx + offset].Key;
+                            var value = bindingArr[baseIdx + offset].Key;
+                            if (mapKeys.TryGetValue(value, out var mappedValue))
+                            {
+                                return mappedValue;
+                            }
+
+                            return (VirtualKey)value;
                         }
 
                         VirtualKey[] ReadKeyBindings(int baseIdx, int count)
