@@ -36,6 +36,7 @@ namespace HarpHero
             ShortenOverlap,
             RemoveOverlap,
             RemoveTooShort,
+            Multi,
         }
 
         public struct NoteProcessingInfo
@@ -177,8 +178,13 @@ namespace HarpHero
             long prevTime = -1;
             long prevDuration = -1;
 
+            // two cases of overlaps:
+            // 1. note is interrupted by next, both are long enough to be audible => cut first one to match
+            // 2. note is interrupted pretty much immediately (chord simulation for auto play tools) AND next note's pitch is lower => keep first, remove second entirely
+
             foreach (var note in midiTrack.GetNotes())
             {
+                bool moveToNextNote = true;
                 if (prevDuration > 0)
                 {
                     if (note.Time < (prevTime + prevDuration))
@@ -186,26 +192,49 @@ namespace HarpHero
                         long newDuration = note.Time - prevTime;
                         bool shouldRemove = (newDuration <= 0);
 
-                        changes.Add(new NoteChangeInfo() { time = prevTime, noteNumber = prevNote.NoteNumber, newDuration = newDuration });
+                        if (!shouldRemove && (newDuration < MinNoteDurationSeconds) && (prevNote.NoteNumber > note.NoteNumber))
+                        {
+                            changes.Add(new NoteChangeInfo() { time = note.Time, noteNumber = note.NoteNumber, newDuration = 0 });
+                            moveToNextNote = false;
+
+                            if (CollectNoteProcessing)
+                            {
+                                noteProcessing.Add(new NoteProcessingInfo()
+                                {
+                                    note = note,
+                                    timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(prevNote.Time, tempoMap).TotalMicroseconds,
+                                    type = NoteProcessingType.RemoveOverlap,
+                                    desc = $"prev:{prevNote}"
+                                });
+                            }
+                        }
+                        else
+                        {
+                            changes.Add(new NoteChangeInfo() { time = prevTime, noteNumber = prevNote.NoteNumber, newDuration = newDuration });
+
+                            if (CollectNoteProcessing)
+                            {
+                                noteProcessing.Add(new NoteProcessingInfo()
+                                {
+                                    note = prevNote,
+                                    timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap).TotalMicroseconds,
+                                    type = shouldRemove ? NoteProcessingType.RemoveOverlap : NoteProcessingType.ShortenOverlap,
+                                    desc = $"next:{note}"
+                                });
+                            }
+                        }
+
                         needsRemove = needsRemove || shouldRemove;
                         needsDurationChange = needsDurationChange || !shouldRemove;
-
-                        if (CollectNoteProcessing)
-                        {
-                            noteProcessing.Add(new NoteProcessingInfo()
-                            {
-                                note = prevNote,
-                                timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap).TotalMicroseconds,
-                                type = shouldRemove ? NoteProcessingType.RemoveOverlap : NoteProcessingType.ShortenOverlap,
-                                desc = $"next:{note}"
-                            });
-                        }
                     }
                 }
 
-                prevNote = note;
-                prevTime = note.Time;
-                prevDuration = note.Length;
+                if (moveToNextNote)
+                {
+                    prevNote = note;
+                    prevTime = note.Time;
+                    prevDuration = note.Length;
+                }
             }
 
             if (needsRemove)
@@ -315,6 +344,38 @@ namespace HarpHero
             }
         }
 
+        private void CombineNoteProcessing()
+        {
+            var combinedList = new List<NoteProcessingInfo>();
+            for (int idx = 0; idx < noteProcessing.Count; idx++)
+            {
+                var multiEventList = noteProcessing.FindAll(x => (x.note.NoteNumber == noteProcessing[idx].note.NoteNumber) && (x.timeUs == noteProcessing[idx].timeUs));
+                if (multiEventList.Count > 1)
+                {
+                    string multiNote = "";
+                    foreach (var info in multiEventList)
+                    {
+                        if (multiNote.Length > 0) { multiNote += ", "; }
+                        multiNote += $"{info.type}: {info.note}";
+                    }
+
+                    combinedList.Add(new NoteProcessingInfo()
+                    {
+                        note = noteProcessing[idx].note,
+                        timeUs = noteProcessing[idx].timeUs,
+                        type = NoteProcessingType.Multi,
+                        desc = multiNote
+                    });
+                }
+            }
+
+            foreach (var info in combinedList)
+            {
+                noteProcessing.RemoveAll(x => (x.note.NoteNumber == info.note.NoteNumber) && (x.timeUs == info.timeUs));
+                noteProcessing.Add(info);
+            }
+        }
+
         private void TransformTrack()
         {
             ResetTrackChanges();
@@ -322,6 +383,7 @@ namespace HarpHero
             int numNotes = midiTrack.GetNotes().Count;
             if (numNotes > 0)
             {
+                FilterTooShort();
                 SimplifyChords();
                 SimplifyOverlaps();
                 FilterTooShort();
@@ -331,6 +393,7 @@ namespace HarpHero
 
             if (CollectNoteProcessing)
             {
+                CombineNoteProcessing();
                 noteProcessing.Sort((a, b) => a.timeUs.CompareTo(b.timeUs));
             }
         }

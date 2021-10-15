@@ -214,31 +214,37 @@ namespace HarpHeroConverter
 
         private void MainForm_MouseMove(object sender, MouseEventArgs e)
         {
+            string newHint = "";
             foreach (var info in noteProcessingBounds)
             {
                 if (info.bounds.Contains(e.Location))
                 {
-                    labelTransformHint.Text = info.info.ToString();
-                    return;
+                    if (newHint.Length > 0) { newHint += ", "; }
+                    newHint += info.info.ToString();
                 }
             }
 
-            if (musicTrack == null)
+            if (string.IsNullOrEmpty(newHint))
             {
-                labelTransformHint.Text = "Load track to do stuff";
+                if (musicTrack == null)
+                {
+                    newHint = "Load track to do stuff";
+                }
+                else if (!isValid5Octave)
+                {
+                    newHint = "Track requires more than 5 octaves, can't play in game";
+                }
+                else if (!isValid3Octave)
+                {
+                    newHint = "Track requires 5 octaves, annoying and not available for gamepads";
+                }
+                else
+                {
+                    newHint = "Mouse over notes for details";
+                }
             }
-            else if (!isValid5Octave)
-            {
-                labelTransformHint.Text = "Track requires more than 5 octaves, can't play in game";
-            }
-            else if (!isValid3Octave)
-            {
-                labelTransformHint.Text = "Track requires 5 octaves, annoying and not available for gamepads";
-            }
-            else
-            {
-                labelTransformHint.Text = "Mouse over notes for details";
-            }
+
+            labelTransformHint.Text = newHint;
         }
 
         private void MainForm_Paint(object sender, PaintEventArgs e)
