@@ -11,6 +11,8 @@ namespace HarpHero
 {
     public class MidiTrackWrapper
     {
+        public static bool CollectNoteProcessing = false;
+
         public const float MinNoteDurationSeconds = 0.100f;
         public const int MaxBarsToCalculateTempo = 10;
 
@@ -28,7 +30,6 @@ namespace HarpHero
         public MidiTrackStats stats = new MidiTrackStats();
         public MidiTrackStats statsOrg = new MidiTrackStats();
 
-#if DEBUG
         public enum NoteProcessingType
         {
             SimplifyChord,
@@ -51,7 +52,6 @@ namespace HarpHero
         }
 
         public List<NoteProcessingInfo> noteProcessing = new List<NoteProcessingInfo>();
-#endif // DEBUG
 
         public MidiTrackWrapper(TrackChunk midiTrack, TempoMap tempoMap)
         {
@@ -113,9 +113,7 @@ namespace HarpHero
         {
             midiTrack = midiTrackOrg.Clone() as TrackChunk;
             tempoMap = tempoMapOrg;
-#if DEBUG
             noteProcessing.Clear();
-#endif // DEBUG
         }
 
         private struct NoteChangeInfo
@@ -146,19 +144,21 @@ namespace HarpHero
                 if (numNotes > 1)
                 {
                     var removeChordNotes = chord.Notes.Where(x => x != keepNote);
-#if DEBUG
-                    var keepNoteTime = TimeConverter.ConvertTo<BarBeatFractionTimeSpan>(keepNote.Time, tempoMap);
-                    foreach (var note in removeChordNotes)
+
+                    if (CollectNoteProcessing)
                     {
-                        noteProcessing.Add(new NoteProcessingInfo()
+                        var keepNoteTime = TimeConverter.ConvertTo<BarBeatFractionTimeSpan>(keepNote.Time, tempoMap);
+                        foreach (var note in removeChordNotes)
                         {
-                            note = note,
-                            timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap).TotalMicroseconds,
-                            type = NoteProcessingType.SimplifyChord,
-                            desc = $"{keepNote} at {keepNoteTime}"
-                        });
+                            noteProcessing.Add(new NoteProcessingInfo()
+                            {
+                                note = note,
+                                timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap).TotalMicroseconds,
+                                type = NoteProcessingType.SimplifyChord,
+                                desc = $"{keepNote} at {keepNoteTime}"
+                            });
+                        }
                     }
-#endif // DEBUG
 
                     removeNotes.AddRange(removeChordNotes);
                 }
@@ -189,15 +189,17 @@ namespace HarpHero
                         changes.Add(new NoteChangeInfo() { time = prevTime, noteNumber = prevNote.NoteNumber, newDuration = newDuration });
                         needsRemove = needsRemove || shouldRemove;
                         needsDurationChange = needsDurationChange || !shouldRemove;
-#if DEBUG
-                        noteProcessing.Add(new NoteProcessingInfo()
+
+                        if (CollectNoteProcessing)
                         {
-                            note = prevNote,
-                            timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap).TotalMicroseconds,
-                            type = shouldRemove ? NoteProcessingType.RemoveOverlap : NoteProcessingType.ShortenOverlap,
-                            desc = $"next:{note}"
-                        });
-#endif // DEBUG
+                            noteProcessing.Add(new NoteProcessingInfo()
+                            {
+                                note = prevNote,
+                                timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap).TotalMicroseconds,
+                                type = shouldRemove ? NoteProcessingType.RemoveOverlap : NoteProcessingType.ShortenOverlap,
+                                desc = $"next:{note}"
+                            });
+                        }
                     }
                 }
 
@@ -238,18 +240,21 @@ namespace HarpHero
 
                 var noteLengthUs = (endTimeMetric - startTimeMetric).TotalMicroseconds;
                 bool shouldRemove = noteLengthUs <= minLengthUs;
-#if DEBUG
-                if (shouldRemove)
+
+                if (CollectNoteProcessing)
                 {
-                    noteProcessing.Add(new NoteProcessingInfo()
+                    if (shouldRemove)
                     {
-                        note = x,
-                        timeUs = startTimeMetric.TotalMicroseconds,
-                        type = NoteProcessingType.RemoveTooShort,
-                        desc = $"duration:{endTimeMetric - startTimeMetric}"
-                    });
+                        noteProcessing.Add(new NoteProcessingInfo()
+                        {
+                            note = x,
+                            timeUs = startTimeMetric.TotalMicroseconds,
+                            type = NoteProcessingType.RemoveTooShort,
+                            desc = $"duration:{endTimeMetric - startTimeMetric}"
+                        });
+                    }
                 }
-#endif // DEBUG
+
                 return shouldRemove;
             });
         }
@@ -324,9 +329,10 @@ namespace HarpHero
                 UnifyTempo();
             }
 
-#if DEBUG
-            noteProcessing.Sort((a, b) => a.timeUs.CompareTo(b.timeUs));
-#endif // DEBUG
+            if (CollectNoteProcessing)
+            {
+                noteProcessing.Sort((a, b) => a.timeUs.CompareTo(b.timeUs));
+            }
         }
 
         public int FindValidEndBar(int octaveRange)

@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Company />
+    <Authors>MgAl2O4</Authors>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\dalamud\utils\MidiFileManager.cs" Link="MidiFileManager.cs" />
+    <Compile Include="..\dalamud\utils\MidiTrackPlayer.cs" Link="MidiTrackPlayer.cs" />
+    <Compile Include="..\dalamud\utils\MidiTrackStats.cs" Link="MidiTrackStats.cs" />
+    <Compile Include="..\dalamud\utils\MidiTrackViewer.cs" Link="MidiTrackViewer.cs" />
+    <Compile Include="..\dalamud\utils\MidiTrackWrapper.cs" Link="MidiTrackWrapper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Melanchall.DryWetMidi" Version="5.2.1" />
+  </ItemGroup>
+
+</Project>

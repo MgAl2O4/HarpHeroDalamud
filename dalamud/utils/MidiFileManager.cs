@@ -17,7 +17,7 @@ namespace HarpHero
             if (!string.IsNullOrEmpty(path))
             {
                 FilePath = path;
-                PluginLog.Log("importing: {0}", path);
+                PluginLog.Log($"importing: {path}");
 
                 try
                 {

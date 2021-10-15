@@ -159,7 +159,7 @@ namespace HarpHero
 
                 foreach (var note in track.GetNotes())
                 {
-                    if (note.Time < beatTimes[currentBeatIdx])
+                    if (currentBeatIdx < beatTimes.Count && note.Time < beatTimes[currentBeatIdx])
                     {
                         continue;
                     }

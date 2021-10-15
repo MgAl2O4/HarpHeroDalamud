@@ -15,14 +15,16 @@ namespace HarpHero
         public bool autoDispose = true;
         private bool isDisposed = false;
 
-        public MidiTrackPlayer(MidiTrackWrapper track)
+        public MidiTrackPlayer(MidiTrackWrapper track, bool useOrgTrack = false)
         {
-            if (track != null && track.midiTrack != null && track.tempoMap != null)
+            if (track != null && track.tempoMap != null)
             {
+                var useTrack = useOrgTrack ? track.midiTrackOrg : track.midiTrack;
+
                 midiDevice = OutputDevice.GetById(0);
-                if (midiDevice != null)
+                if (midiDevice != null && useTrack != null)
                 {
-                    midiPlayback = track.midiTrack.GetPlayback(track.tempoMap, midiDevice);
+                    midiPlayback = useTrack.GetPlayback(track.tempoMap, midiDevice);
 
                     midiPlayback.InterruptNotesOnStop = true;
                     midiPlayback.PlaybackStart = track.sectionStart;
