@@ -16,7 +16,8 @@ MIDI files are not included, look around in net, there's plenty of free ones
 
 ## Standalone tool
 
-MIDI file conversion can be also done via standalone tool, check HarpHeroConverter in Releases.
+MIDI file conversion can be also done via standalone tool, check [latest release](https://github.com/MgAl2O4/HarpHeroDalamud/releases/latest).  
+Program will attempt to auto update on startup from this repository.
 
 
 ## Translation
