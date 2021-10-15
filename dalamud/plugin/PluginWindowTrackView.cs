@@ -1,4 +1,6 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Interaction;
@@ -25,6 +27,9 @@ namespace HarpHero
         private const uint colorNote = UIColors.colorGreenDark;
         private const uint colorNoteInvalid = UIColors.colorRed;
 
+        private string locDetailsHint;
+        private string locDetailsHeader;
+
         public PluginWindowTrackView(TrackAssistant trackAssistant) : base("Track View")
         {
             this.trackAssistant = trackAssistant;
@@ -35,11 +40,20 @@ namespace HarpHero
             SizeCondition = ImGuiCond.FirstUseEver;
             BgAlpha = 1.0f;
             RespectCloseHotkey = false;
+
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            CacheLocalization();
         }
 
         public void Dispose()
         {
             // meh
+        }
+
+        private void CacheLocalization()
+        {
+            locDetailsHeader = Localization.Localize("TW_StandaloneHeader", "Note transform preview. For more in depth inspection, please use converter tool from plugin's git repository.");
+            locDetailsHint = Localization.Localize("TW_StandaloneHint", "Plugin list > Harp Hero > Visit plugin URL");
         }
 
         public void OnShowTrack(MidiTrackWrapper track)
@@ -93,7 +107,11 @@ namespace HarpHero
                 trackViewers[1].SetTimeUs(timeUs);
             }
 
-            var contentRegionMin = ImGui.GetWindowContentRegionMin() + new Vector2(0, 40) + ImGui.GetWindowPos();
+            ImGui.Text(locDetailsHeader);
+            ImGui.SameLine();
+            ImGuiComponents.HelpMarker(locDetailsHint);
+
+            var contentRegionMin = ImGui.GetWindowContentRegionMin() + new Vector2(0, 50) + ImGui.GetWindowPos();
             var contentRegionMax = ImGui.GetWindowContentRegionMax() + ImGui.GetWindowPos();
             var spaceX = contentRegionMax.X - contentRegionMin.X;
             var spaceY = contentRegionMax.Y - contentRegionMin.Y;

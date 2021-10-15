@@ -44,6 +44,8 @@
 	"ST_TrackTruncatedHint": { "message": "Only part of the selected track will be played, check Section in track details.\nOctave limit: {0}" },
 	"ST_TrackTruncatedHintNoExt": { "message": "To increase octave limit, please enable extended mode in settings and reload midi file." },
 	"ST_TooManyOctaves": { "message": "Game doesn't allow more than 5 octaves, sorry :<" },
+	"TW_StandaloneHeader": { "message": "Note transform preview. For more in depth inspection, please use converter tool from plugin's git repository." },
+	"TW_StandaloneHint": { "message": "Plugin list > Harp Hero > Visit plugin URL" },
 	"CFG_Back": { "message": "Back to status" },
 	"CFG_Import": { "message": "MIDI import" },
 	"CFG_AutoBPM": { "message": "Auto adjust BPM" },
