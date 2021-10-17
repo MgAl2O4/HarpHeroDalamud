@@ -98,6 +98,28 @@ namespace HarpHero
 
         private InputBindingKey[] GetNoteOctaveGamepadBindings(int useNoteIdx, int useOctaveOffset)
         {
+            if (isWideModeCached)
+            {
+                // 3 octave mode vs gamepad:
+                // 0..11  = octave - 1
+                // 12..23 = default octave, note: 0..11
+                // 24..37 = octave + 1, note: 0..12
+
+                if (useNoteIdx >= (12 + 12))
+                {
+                    useNoteIdx -= (12 + 12);
+                    useOctaveOffset += 1;
+                }
+                else if (useNoteIdx < 12)
+                {
+                    useOctaveOffset -= 1;
+                }
+                else
+                {
+                    useNoteIdx -= 12;
+                }
+            }
+
             if (useNoteIdx < 0 || useNoteIdx > 12)
             {
                 return null;
