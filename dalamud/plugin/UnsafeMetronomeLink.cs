@@ -90,7 +90,7 @@ namespace HarpHero
                     ptrGetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? f3 0f 10 4e 04 0f b7 c0 66 0f 6e c0");
                     ptrGetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
 
-                    ptrMetronomeStopFunc = sigScanner.ScanText("40 53 48 83 EC 20 48 8B 01 48 8B D9 FF 50 20 84 C0 74 ?? 48 8B CB C6 43 73 00");
+                    ptrMetronomeStopFunc = sigScanner.ScanText("40 53 48 83 EC 20 48 8B 01 48 8B D9 FF 50 20 84 C0 74");
                     //PluginLog.Log($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)sigScanner.Module.BaseAddress):X}");
                 }
                 catch (Exception)
