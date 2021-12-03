@@ -316,7 +316,7 @@ namespace MgAl2O4.Utils
                 var valuePtr = modulePtr->GetValueById(gamepadStyleOption);
                 if (valuePtr != null)
                 {
-                    return (int)valuePtr->Value;
+                    return valuePtr->Int;
                 }
             }
 
