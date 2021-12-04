@@ -153,8 +153,8 @@ namespace HarpHero
                 // 
                 // WritePerformanceBindings: open settings agent in memory view, break on binding byte access, snigle function reading it on save ^
                 //
-                // inputManager = uiModule.vf53()
-                // bindingData = inputManager + 0x848
+                // inputManager = uiModule.vf54()
+                // bindingData = inputManager + 0x9b0
                 //
                 // binding indicies in 5.58:
                 // - 0x243 (0x2e elems = notes)
@@ -167,14 +167,14 @@ namespace HarpHero
                 var uiModulePtr = (gameGui != null) ? gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
                 {
-                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[53]);
+                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[54]);
                     var getInputManager = Marshal.GetDelegateForFunctionPointer<GetInputManagerDelegate>(getInputManagerPtr);
 
                     var inputManager = getInputManager(uiModulePtr);
                     if (inputManager != IntPtr.Zero)
                     {
-                        //PluginLog.Log($"bindings ptr: {(inputManager.ToInt64() + 0x848):X}");
-                        var bindingArr = *((KeybindMemory**)(inputManager.ToInt64() + 0x848));
+                        //PluginLog.Log($"bindings ptr: {(inputManager.ToInt64() + 0x9b0):X}");
+                        var bindingArr = *((KeybindMemory**)(inputManager.ToInt64() + 0x9b0));
 
                         VirtualKey ReadKeyBinding(int baseIdx, int offset)
                         {
