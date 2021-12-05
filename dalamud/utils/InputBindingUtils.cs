@@ -310,7 +310,8 @@ namespace MgAl2O4.Utils
 
         private const short GamepadStyleOptionId = 94;
 
-#if DEBUG
+
+        /// TEMPORARY, used only for debugging / with outdated ClientStruct 
         [StructLayout(LayoutKind.Explicit, Size = 0xD698)]
         unsafe struct ConfigModuleTesting
         {
@@ -319,6 +320,23 @@ namespace MgAl2O4.Utils
             [FieldOffset(0xAC18)] public fixed byte values[0x10 * ConfigOptionCount];
         }
 
+        private static unsafe int GetConfigModuleTestingOption(int optionId)
+        {
+            var configTestPtr = (ConfigModuleTesting*)ConfigModule.Instance();
+            var optionsArr = (Option*)configTestPtr->options;
+            for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
+            {
+                if (optionsArr[idx].OptionID == optionId)
+                {
+                    var valuesArr = (AtkValue*)configTestPtr->values;
+                    return valuesArr[idx].Int;
+                }
+            }
+
+            return 0;
+        }
+
+#if DEBUG
         private static unsafe void LogConfigModuleTesting()
         {
             ConfigModule* modulePtr = ConfigModule.Instance();
@@ -341,24 +359,10 @@ namespace MgAl2O4.Utils
             }
         }
 
-        private static unsafe int GetConfigModuleTestingOption(int optionId)
-        {
-            var configTestPtr = (ConfigModuleTesting*)ConfigModule.Instance();
-            var optionsArr = (Option*)configTestPtr->options;
-            for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
-            {
-                if (optionsArr[idx].OptionID == optionId)
-                {
-                    var valuesArr = (AtkValue*)configTestPtr->values;
-                    return valuesArr[idx].Int;
-                }
-            }
-
-            return 0;
-        }
-
         public static void TestGamepadStyleSettings()
         {
+            PluginLog.Log($"ClientStruct check, num options:{ConfigModule.ConfigOptionCount} (vs {ConfigModuleTesting.ConfigOptionCount})");
+
             PluginLog.Log("Dumping config data:");
             LogConfigModuleTesting();
 
@@ -369,17 +373,27 @@ namespace MgAl2O4.Utils
 
         private static unsafe int GetGamepadStyleSettings()
         {
-            ConfigModule* modulePtr = ConfigModule.Instance();
-            if (modulePtr != null)
+            int settingsValue = 0;
+
+            bool useDefaultConfigs = ConfigModule.ConfigOptionCount >= ConfigModuleTesting.ConfigOptionCount;
+            if (useDefaultConfigs)
             {
-                var valuePtr = modulePtr->GetValueById(GamepadStyleOptionId);
-                if (valuePtr != null)
+                ConfigModule* modulePtr = ConfigModule.Instance();
+                if (modulePtr != null)
                 {
-                    return valuePtr->Int;
+                    var valuePtr = modulePtr->GetValueById(GamepadStyleOptionId);
+                    if (valuePtr != null)
+                    {
+                        settingsValue = valuePtr->Int;
+                    }
                 }
             }
+            else
+            {
+                settingsValue = GetConfigModuleTestingOption(GamepadStyleOptionId);
+            }
 
-            return 0;
+            return settingsValue;
         }
 
         [DllImport("user32.dll")]
