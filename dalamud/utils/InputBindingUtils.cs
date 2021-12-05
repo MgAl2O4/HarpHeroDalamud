@@ -2,13 +2,16 @@
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Text;
 using Dalamud.Interface;
+using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
+using static FFXIVClientStructs.FFXIV.Client.UI.Misc.ConfigModule;
 
 namespace MgAl2O4.Utils
 {
@@ -305,10 +308,60 @@ namespace MgAl2O4.Utils
             }
         }
 
+#if DEBUG
+        [StructLayout(LayoutKind.Explicit, Size = 0xD698)]
+        unsafe struct ConfigModuleTesting
+        {
+            public const int ConfigOptionCount = 680;
+            [FieldOffset(0x2C8)] public fixed byte options[Option.Size * ConfigOptionCount];
+            [FieldOffset(0xAC18)] public fixed byte values[0x10 * ConfigOptionCount];
+        }
+
+        private static unsafe void LogConfigModuleTesting()
+        {
+            ConfigModule* modulePtr = ConfigModule.Instance();
+            if (modulePtr != null)
+            {
+                var configTestPtr = (ConfigModuleTesting*)modulePtr;
+                PluginLog.Log($"module: {(ulong)configTestPtr:X}");
+
+                var optionsArr = (Option*)configTestPtr->options;
+                for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
+                {
+                    PluginLog.Log($"option[{idx}] = {optionsArr[idx].OptionID}");
+                }
+
+                var valuesArr = (AtkValue*)configTestPtr->values;
+                for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
+                {
+                    PluginLog.Log($"value[{idx}] = {valuesArr[idx].Int}");
+                }
+            }
+        }
+
+        private static unsafe int GetConfigModuleTestingOption(int optionId)
+        {
+            var configTestPtr = (ConfigModuleTesting*)ConfigModule.Instance();
+            var optionsArr = (Option*)configTestPtr->options;
+            for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
+            {
+                if (optionsArr[idx].OptionID == optionId)
+                {
+                    var valuesArr = (AtkValue*)configTestPtr->values;
+                    return valuesArr[idx].Int;
+                }
+            }
+
+            return 0;
+        }
+#endif // DEBUG
+
         private static unsafe int GetGamepadStyleSettings()
         {
             // magic number being magical.
-            const short gamepadStyleOption = 91;
+            const short gamepadStyleOption = 75;
+
+            int value = 0;
 
             ConfigModule* modulePtr = ConfigModule.Instance();
             if (modulePtr != null)
@@ -316,11 +369,14 @@ namespace MgAl2O4.Utils
                 var valuePtr = modulePtr->GetValueById(gamepadStyleOption);
                 if (valuePtr != null)
                 {
-                    return valuePtr->Int;
+                    value = valuePtr->Int;
                 }
             }
 
-            return 0;
+#if DEBUG
+            value = GetConfigModuleTestingOption(gamepadStyleOption);
+#endif // DEBUG
+            return value;
         }
 
         [DllImport("user32.dll")]
