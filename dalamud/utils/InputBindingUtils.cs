@@ -308,6 +308,8 @@ namespace MgAl2O4.Utils
             }
         }
 
+        private const short GamepadStyleOptionId = 94;
+
 #if DEBUG
         [StructLayout(LayoutKind.Explicit, Size = 0xD698)]
         unsafe struct ConfigModuleTesting
@@ -354,29 +356,30 @@ namespace MgAl2O4.Utils
 
             return 0;
         }
+
+        public static void TestGamepadStyleSettings()
+        {
+            PluginLog.Log("Dumping config data:");
+            LogConfigModuleTesting();
+
+            int styleSettings = GetConfigModuleTestingOption(GamepadStyleOptionId);
+            PluginLog.Log($"Gamepad style (id: {GamepadStyleOptionId}) = {styleSettings}");
+        }
 #endif // DEBUG
 
         private static unsafe int GetGamepadStyleSettings()
         {
-            // magic number being magical.
-            const short gamepadStyleOption = 75;
-
-            int value = 0;
-
             ConfigModule* modulePtr = ConfigModule.Instance();
             if (modulePtr != null)
             {
-                var valuePtr = modulePtr->GetValueById(gamepadStyleOption);
+                var valuePtr = modulePtr->GetValueById(GamepadStyleOptionId);
                 if (valuePtr != null)
                 {
-                    value = valuePtr->Int;
+                    return valuePtr->Int;
                 }
             }
 
-#if DEBUG
-            value = GetConfigModuleTestingOption(gamepadStyleOption);
-#endif // DEBUG
-            return value;
+            return 0;
         }
 
         [DllImport("user32.dll")]
