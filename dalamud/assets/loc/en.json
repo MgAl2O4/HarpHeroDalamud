@@ -63,6 +63,7 @@
 	"CFG_AssistDisabled": { "message": "Disabled" },
 	"CFG_AssistNote": { "message": "Note" },
 	"CFG_AssistBind": { "message": "Key binding" },
+	"CFG_AssistMixed": { "message": "Note (mixed)" },
 	"CFG_BindScaleKeyboard": { "message": "Scale (keyboard)" },
 	"CFG_BindScaleGamepad": { "message": "Scale (gamepad)" },
 	"CFG_BindNumMarkers": { "message": "Number of hints" },

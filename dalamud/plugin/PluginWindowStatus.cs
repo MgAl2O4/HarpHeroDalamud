@@ -205,6 +205,7 @@ namespace HarpHero
                 new Tuple<int, string>(0, Localization.Localize("CFG_AssistDisabled", "Disabled")),
                 new Tuple<int, string>(1, locConfigModeNote),
                 new Tuple<int, string>(2, locConfigModeBind),
+                new Tuple<int, string>(3, Localization.Localize("CFG_AssistMixed", "Note (mixed)")),
             };
             sortedAssistNames.Sort((a, b) => a.Item2.CompareTo(b.Item2));
 
@@ -786,7 +787,7 @@ namespace HarpHero
             ImGui.Separator();
             ImGui.Text($"{locConfigAssistMode}: {locConfigModeBind}");
             if (ImGui.BeginChild("##detailsAssistMode1", new Vector2(-1.0f, textLineHeight * 4.0f)))
-            { 
+            {
                 ImGui.Columns(2);
 
                 ImGui.AlignTextToFramePadding();
@@ -810,7 +811,7 @@ namespace HarpHero
 
             ImGui.Text($"{locConfigAssistMode}: {locConfigModeNote}");
             if (ImGui.BeginChild("##detailsAssistMode2", new Vector2(-1.0f, textLineHeight * 3.0f)))
-            { 
+            {
                 ImGui.Columns(2);
 
                 ImGui.AlignTextToFramePadding();

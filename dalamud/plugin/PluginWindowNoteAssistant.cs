@@ -3,6 +3,7 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MgAl2O4.Utils;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace HarpHero
@@ -15,6 +16,7 @@ namespace HarpHero
         private const float TrackAssistOffsetY = 20.0f;
         private const float TrackAssistOctaveShiftX = 100.0f;
         private const float NoMusicUpkeepTime = 3.0f;
+        private const int NumBindingsToShow = 5;
 
         private static readonly uint colorTimeLineBeat = UIColors.GetAlphaModulated(UIColors.colorGray25, 0.5f);
         private static readonly uint colorTimeLineBar = UIColors.GetAlphaModulated(UIColors.colorGray50, 0.5f);
@@ -310,6 +312,13 @@ namespace HarpHero
             }
         }
 
+        private class BindHintDrawInfo
+        {
+            public Vector2 notePos;
+            public uint color;
+            public InputBindingChord chord;
+        }
+
         private void DrawNotes()
         {
             var drawList = ImGui.GetWindowDrawList();
@@ -327,6 +336,8 @@ namespace HarpHero
             int shownOctaveOffset = 100;
             int numShownOffsets = 0;
             bool canShowOctaveOffsetKey = showOctaveShiftHints;
+            var listHints = new List<BindHintDrawInfo>();
+            bool canCollectBindings = Service.trackAssistant.CanShowNoteAssistantBind;
 
             foreach (var noteInfo in Service.trackAssistant.musicViewer.shownNotes)
             {
@@ -401,9 +412,46 @@ namespace HarpHero
 
                 drawList.AddRectFilledMultiColor(new Vector2(posX - useNoteHalfWidth, posY0), new Vector2(posX + useNoteHalfWidth, posY1), noteColor, noteColor, noteColorFar, noteColorFar);
 
-                if (minNoteTime[mappedNoteIdx] > t0 && !isNoteIgnored)
+                if (!isNoteIgnored)
                 {
-                    minNoteTime[mappedNoteIdx] = t0;
+                    if (minNoteTime[mappedNoteIdx] > t0)
+                    {
+                        minNoteTime[mappedNoteIdx] = t0;
+                    }
+
+                    if (listHints.Count < NumBindingsToShow && canCollectBindings)
+                    {
+                        var hintInfo = new BindHintDrawInfo()
+                        {
+                            notePos = new Vector2(posX + useNoteHalfWidth + (5 * ImGuiHelpers.GlobalScale), posY0 - (5 * ImGuiHelpers.GlobalScale) - ImGui.GetTextLineHeight()),
+                            color =
+                                (listHints.Count == 0) ? UIColors.colorGreen :
+                                (listHints.Count == 1) ? UIColors.colorYellow :
+                                (listHints.Count == 2) ? UIColors.colorRed :
+                                UIColors.colorGray33,
+                            chord = noteInput.GetNoteKeyBinding(noteInfo.note)
+                        };
+                        listHints.Add(hintInfo);
+                    }
+                }
+            }
+
+            if (canCollectBindings)
+            {
+                var padOfset = 5 * ImGuiHelpers.GlobalScale;
+                uint bindBackground = UIColors.GetAlphaModulated(0xcc000000, Service.config.AssistBgAlpha);
+
+                for (int idx = listHints.Count - 1; idx >= 0; idx--)
+                {
+                    var hint = listHints[idx];
+                    var hintSize = InputBindingUtils.CalcInputChordSize(hint.chord);
+
+                    drawList.AddRectFilled(
+                        new Vector2(hint.notePos.X - padOfset, hint.notePos.Y),
+                        new Vector2(hint.notePos.X + hintSize.X + padOfset, hint.notePos.Y + ImGui.GetTextLineHeight()),
+                        bindBackground);
+
+                    InputBindingUtils.AddToDrawList(drawList, hint.notePos, hint.color, hint.chord);
                 }
             }
         }

@@ -48,9 +48,10 @@ namespace HarpHero
             pluginInterface?.SavePluginConfig(this);
         }
 
-        public bool UseAssistNoteA() => AssistMode == 1;
+        public bool UseAssistNote() => (AssistMode == 1) || (AssistMode == 3);
         public bool UseAssistBind() => AssistMode == 2;
-        public bool UseAssistNoteB() => (AssistMode == 1) && AssistNote2Enabled;
+        public bool UseAssistNoteMarkers() => (AssistMode == 1) && AssistNote2Enabled;
+        public bool UseAssistNoteMixed() => (AssistMode == 3);
 
         public void ApplyVKAliases()
         {
