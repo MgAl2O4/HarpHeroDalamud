@@ -95,7 +95,10 @@ namespace HarpHero
         private string locConfigAssistBindScaleKeyboard;
         private string locConfigAssistBindScaleGamepad;
         private string locConfigAssistNoteNumMarkers;
+        private string locConfigAssistBindNumMarkers;
         private string locConfigAssistNoteWarnMs;
+        private string locConfigModeBind;
+        private string locConfigModeNote;
         private string locConfigAppearanceBgAlpha;
         private string locConfigAppearanceKeyAlias;
         private string locConfigAppearanceAddAlias;
@@ -187,8 +190,11 @@ namespace HarpHero
             locConfigShowScore = Localization.Localize("CFG_ShowScore", "Show score");
             locConfigAssistBindScaleKeyboard = Localization.Localize("CFG_BindScaleKeyboard", "Scale (keyboard)");
             locConfigAssistBindScaleGamepad = Localization.Localize("CFG_BindScaleGamepad", "Scale (gamepad)");
+            locConfigAssistBindNumMarkers = Localization.Localize("CFG_BindNumMarkers", "Number of hints");
             locConfigAssistNoteNumMarkers = Localization.Localize("CFG_NoteNumMarkers", "Number of markers");
             locConfigAssistNoteWarnMs = Localization.Localize("CFG_NoteWarnMs", "Warn time (ms)");
+            locConfigModeBind = Localization.Localize("CFG_AssistBind", "Key binding");
+            locConfigModeNote = Localization.Localize("CFG_AssistNote", "Note");
 
             locConfigAppearanceBgAlpha = Localization.Localize("CFG_BackgroundAlpha", "Background alpha");
             locConfigAppearanceKeyAlias = Localization.Localize("CFG_KeyAlias", "Key name alias");
@@ -197,8 +203,8 @@ namespace HarpHero
             var sortedAssistNames = new List<Tuple<int, string>>
             {
                 new Tuple<int, string>(0, Localization.Localize("CFG_AssistDisabled", "Disabled")),
-                new Tuple<int, string>(1, Localization.Localize("CFG_AssistNote", "Note")),
-                new Tuple<int, string>(2, Localization.Localize("CFG_AssistBind", "Key binding")),
+                new Tuple<int, string>(1, locConfigModeNote),
+                new Tuple<int, string>(2, locConfigModeBind),
             };
             sortedAssistNames.Sort((a, b) => a.Item2.CompareTo(b.Item2));
 
@@ -744,64 +750,6 @@ namespace HarpHero
                 hasChanges = false;
             }
 
-            int numMarkersCopy = Service.config.AssistNote2Markers;
-            int warnTimeCopy = Service.config.AssistNote2WarnMs;
-            float scaleKeyboardCopy = Service.config.AssistBindScaleKeyboard;
-            float scaleGamepadCopy = Service.config.AssistBindScaleGamepad;
-
-            ImGui.Indent();
-            var textHeightScaled = ImGui.GetTextLineHeightWithSpacing();
-            if (ImGui.BeginChild("##assistDetails", new Vector2(-1.0f, textHeightScaled * 2.5f)))
-            {
-                ImGui.Columns(2);
-                if (Service.config.UseAssistBind())
-                {
-                    ImGui.AlignTextToFramePadding();
-                    ImGui.Text(locConfigAssistBindScaleKeyboard);
-                    ImGui.NextColumn();
-                    hasChanges = ImGui.SliderFloat("##scaleKeyboard", ref scaleKeyboardCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
-
-                    ImGui.NextColumn();
-                    ImGui.AlignTextToFramePadding();
-                    ImGui.Text(locConfigAssistBindScaleGamepad);
-                    ImGui.NextColumn();
-                    hasChanges = ImGui.SliderFloat("##scaleGamepad", ref scaleGamepadCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
-                }
-                else if (Service.config.UseAssistNoteA())
-                {
-                    ImGui.AlignTextToFramePadding();
-                    ImGui.Text(locConfigAssistNoteNumMarkers);
-                    ImGui.NextColumn();
-                    if (ImGui.InputInt("##noteMarkers", ref numMarkersCopy))
-                    {
-                        numMarkersCopy = Math.Min(4, Math.Max(0, numMarkersCopy));
-                        hasChanges = true;
-                    }
-
-                    ImGui.NextColumn();
-                    ImGui.AlignTextToFramePadding();
-                    ImGui.Text(locConfigAssistNoteWarnMs);
-                    ImGui.NextColumn();
-                    if (ImGui.InputInt("##noteWarnTime", ref warnTimeCopy))
-                    {
-                        warnTimeCopy = Math.Min(1000, Math.Max(1, warnTimeCopy));
-                        hasChanges = true;
-                    }
-                }
-            }
-            ImGui.EndChild();
-            ImGui.Unindent();
-
-            if (hasChanges)
-            {
-                Service.config.AssistNote2Markers = numMarkersCopy;
-                Service.config.AssistNote2WarnMs = warnTimeCopy;
-                Service.config.AssistBindScaleKeyboard = scaleKeyboardCopy;
-                Service.config.AssistBindScaleGamepad = scaleGamepadCopy;
-                needsSave = true;
-                hasChanges = false;
-            }
-
             ImGui.Unindent();
             if (needsSave)
             {
@@ -826,8 +774,80 @@ namespace HarpHero
                 needsSave = true;
             }
 
-            ImGui.Spacing();
+            int numMarkersCopy = Service.config.AssistNote2Markers;
+            int warnTimeCopy = Service.config.AssistNote2WarnMs;
+            int numBindMarkersCopy = Service.config.AssistBindRows;
+            float scaleKeyboardCopy = Service.config.AssistBindScaleKeyboard;
+            float scaleGamepadCopy = Service.config.AssistBindScaleGamepad;
 
+            var textLineHeight = ImGui.GetTextLineHeightWithSpacing();
+
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Text($"{locConfigAssistMode}: {locConfigModeBind}");
+            if (ImGui.BeginChild("##detailsAssistMode1", new Vector2(-1.0f, textLineHeight * 4.0f)))
+            { 
+                ImGui.Columns(2);
+
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistBindScaleKeyboard);
+                ImGui.NextColumn();
+                hasChanges = ImGui.SliderFloat("##scaleKeyboard", ref scaleKeyboardCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
+
+                ImGui.NextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistBindScaleGamepad);
+                ImGui.NextColumn();
+                hasChanges = ImGui.SliderFloat("##scaleGamepad", ref scaleGamepadCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
+
+                ImGui.NextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistBindNumMarkers);
+                ImGui.NextColumn();
+                hasChanges = ImGui.SliderInt("##numBindHints", ref numBindMarkersCopy, 1, 6) || hasChanges;
+            }
+            ImGui.EndChild();
+
+            ImGui.Text($"{locConfigAssistMode}: {locConfigModeNote}");
+            if (ImGui.BeginChild("##detailsAssistMode2", new Vector2(-1.0f, textLineHeight * 3.0f)))
+            { 
+                ImGui.Columns(2);
+
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistNoteNumMarkers);
+                ImGui.NextColumn();
+                if (ImGui.InputInt("##noteMarkers", ref numMarkersCopy))
+                {
+                    numMarkersCopy = Math.Min(4, Math.Max(0, numMarkersCopy));
+                    hasChanges = true;
+                }
+
+                ImGui.NextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistNoteWarnMs);
+                ImGui.NextColumn();
+                if (ImGui.InputInt("##noteWarnTime", ref warnTimeCopy))
+                {
+                    warnTimeCopy = Math.Min(1000, Math.Max(1, warnTimeCopy));
+                    hasChanges = true;
+                }
+            }
+            ImGui.EndChild();
+
+            if (hasChanges)
+            {
+                Service.config.AssistNote2Markers = numMarkersCopy;
+                Service.config.AssistNote2WarnMs = warnTimeCopy;
+                Service.config.AssistBindScaleKeyboard = scaleKeyboardCopy;
+                Service.config.AssistBindScaleGamepad = scaleGamepadCopy;
+                Service.config.AssistBindRows = numBindMarkersCopy;
+                Service.trackAssistant.UpdateViewerParams();
+                needsSave = true;
+                hasChanges = false;
+            }
+
+            ImGui.Spacing();
+            ImGui.Separator();
             ImGui.Text(locConfigAppearanceKeyAlias);
             if (Service.config.VKAlias.Count > 0)
             {

@@ -94,6 +94,13 @@ namespace HarpHero
             UpdateShownBindings();
         }
 
+        public void SetShownBindings(int numBindsToShow, int numNotesAhead)
+        {
+            maxBindingsToShow = numBindsToShow;
+            maxNotesToHint = numBindsToShow + numNotesAhead;
+            shownBindings.Clear();
+        }
+
         private bool GenerateCachedData(TrackChunk trackChunk, TempoMap tempoMap)
         {
             if (trackChunk == null || tempoMap == null)

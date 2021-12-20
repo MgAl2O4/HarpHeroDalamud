@@ -65,6 +65,7 @@
 	"CFG_AssistBind": { "message": "Key binding" },
 	"CFG_BindScaleKeyboard": { "message": "Scale (keyboard)" },
 	"CFG_BindScaleGamepad": { "message": "Scale (gamepad)" },
+	"CFG_BindNumMarkers": { "message": "Number of hints" },
 	"CFG_NoteNumMarkers": { "message": "Number of markers" },
 	"CFG_NoteWarnMs": { "message": "Warn time (ms)" },
 	"CFG_TabSettings": { "message": "Settings" },

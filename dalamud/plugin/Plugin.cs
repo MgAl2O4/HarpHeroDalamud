@@ -32,8 +32,6 @@ namespace HarpHero
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "en" };
 
-        private Configuration configuration { get; init; }
-
         public Plugin(DalamudPluginInterface pluginInterface)
         {
             pluginInterface.Create<Service>();
@@ -62,7 +60,7 @@ namespace HarpHero
             noteUiMapper = new NoteUIMapper();
             var noteInputMapper = new NoteInputMapper(noteUiMapper, keybindReader);
 
-            Service.trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
+            Service.trackAssistant = new TrackAssistant(uiReaderPerformance, metronome);
 
             var fileManager = new MidiFileManager();
             fileManager.OnImported += (_) => { Service.trackAssistant.OnTracksImported(fileManager.tracks); };
@@ -85,7 +83,7 @@ namespace HarpHero
             Service.trackAssistant.OnPlayChanged += (active) => noteInputMapper.OnPlayChanged(active);
             Service.trackAssistant.OnPerformanceScore += (accuracy) =>
             {
-                if (configuration.ShowScore)
+                if (Service.config.ShowScore)
                 {
                     var accuracyToastOptions = new QuestToastOptions() { Position = QuestToastPosition.Centre, DisplayCheckmark = true, IconId = 0, PlaySound = true };
                     Service.toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);

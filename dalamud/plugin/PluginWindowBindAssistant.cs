@@ -120,7 +120,8 @@ namespace HarpHero
             {
                 float upkeepPct = (noMusicUpkeepRemaining / NoMusicUpkeepTime);
                 float upkeepAlpha = upkeepPct * upkeepPct;
-                float newWindowPosY = Math.Max(50, uiReader.cachedState.keysPos.Y - (TrackAssistSizeMinY + TrackAssistOffsetY) * ImGuiHelpers.GlobalScale);
+                float trackSizePerHints = TrackAssistSizeMinY * (Math.Max(3, Service.config.AssistBindRows) / 3.0f);
+                float newWindowPosY = Math.Max(50, uiReader.cachedState.keysPos.Y - (trackSizePerHints + TrackAssistOffsetY) * ImGuiHelpers.GlobalScale);
 
                 bool isWide = (uiReader.cachedState.keys.Count > 13);
                 float useScale = noteInput.IsKeyboardMode ? Service.config.AssistBindScaleKeyboard : Service.config.AssistBindScaleGamepad;

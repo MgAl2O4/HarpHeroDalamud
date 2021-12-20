@@ -76,8 +76,8 @@ namespace HarpHero
         public const uint colorSonyDPadWest = colorGrayPink;
         public const uint colorSonyDPadWestDark = colorGrayPinkDark;
 
-        public static readonly uint[] colorKeyboardNotes = { colorGreen, colorYellow, colorRed };
-        public static readonly uint[] colorKeyboardNotesDark = { colorGreenDark, colorYellowDark, colorRedDark };
+        public static readonly uint[] colorKeyboardNotes = { colorGreen, colorYellow, colorRed, colorPink, colorYellow, colorGreen };
+        public static readonly uint[] colorKeyboardNotesDark = { colorGreenDark, colorYellowDark, colorRedDark, colorPinkDark, colorYellowDark, colorGreenDark };
 
         public static uint GetAlphaModulated(uint color, float alphaScale = 1.0f)
         {

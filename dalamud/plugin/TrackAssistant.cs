@@ -11,18 +11,17 @@ namespace HarpHero
         public readonly UnsafeMetronomeLink metronomeLink;
         public readonly TrackScore scoreTracker;
         private readonly UIReaderBardPerformance uiReader;
-        private readonly Configuration config;
 
         public MidiTrackWrapper musicTrack;
         public MidiTrackViewer musicViewer;
         public MidiTrackPlayer musicPlayer;
 
-        public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors && config.UseMetronomeLink;
+        public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors && Service.config.UseMetronomeLink;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null) && (trackEndTimeUs > trackStartTimeUs);
-        public bool CanUsePlayback => config.UsePlayback && !useWaitingForInput;
-        public bool CanShowNoteAssistant => config.UseAssistNoteA();
-        public bool CanShowNoteAssistant2 => config.UseAssistNoteB();
-        public bool CanShowBindAssistant => config.UseAssistBind();
+        public bool CanUsePlayback => Service.config.UsePlayback && !useWaitingForInput;
+        public bool CanShowNoteAssistant => Service.config.UseAssistNoteA();
+        public bool CanShowNoteAssistant2 => Service.config.UseAssistNoteB();
+        public bool CanShowBindAssistant => Service.config.UseAssistBind();
         public int TargetBPM => targetBPM;
         public bool IsPlaying => isPlaying;
         public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
@@ -61,14 +60,13 @@ namespace HarpHero
         public Action<bool> OnTrackChanged;
         public Action<float> OnPerformanceScore;
 
-        public TrackAssistant(UIReaderBardPerformance uiReader, UnsafeMetronomeLink metronomeLink, Configuration config)
+        public TrackAssistant(UIReaderBardPerformance uiReader, UnsafeMetronomeLink metronomeLink)
         {
             this.uiReader = uiReader;
             this.metronomeLink = metronomeLink;
-            this.config = config;
             this.scoreTracker = new TrackScore();
 
-            useWaitingForInput = config?.UseTrainingMode ?? true;
+            useWaitingForInput = Service.config?.UseTrainingMode ?? true;
 
             if (uiReader != null)
             {
@@ -116,9 +114,9 @@ namespace HarpHero
                 int initStartBar = -1;
                 int initEndBar = -1;
 
-                if (config.AutoAdjustEndBar)
+                if (Service.config.AutoAdjustEndBar)
                 {
-                    int numAvailableOctaves = config.UseExtendedMode ? 5 : 3;
+                    int numAvailableOctaves = Service.config.UseExtendedMode ? 5 : 3;
                     int endBarIdx = track.FindValidEndBar(numAvailableOctaves);
                     if (endBarIdx > 0)
                     {
@@ -128,9 +126,9 @@ namespace HarpHero
                 }
                 SetTrackSection(initStartBar, initEndBar, false);
 
-                if (config.AutoAdjustBPM)
+                if (Service.config.AutoAdjustBPM)
                 {
-                    float targetBeatsPerSecond = config.AutoAdjustSpeedThreshold / track.stats.notesPerBeat;
+                    float targetBeatsPerSecond = Service.config.AutoAdjustSpeedThreshold / track.stats.notesPerBeat;
                     int newTargetBPM = (int)(targetBeatsPerSecond * 60);
                     if (newTargetBPM < track.stats.beatsPerMinute)
                     {
@@ -193,7 +191,7 @@ namespace HarpHero
 
         public bool Start()
         {
-            bool hasValidRange = isValidBasicMode || (isValidExtendedMode && config.UseExtendedMode);
+            bool hasValidRange = isValidBasicMode || (isValidExtendedMode && Service.config.UseExtendedMode);
             if (musicTrack != null && CanPlay && hasValidRange)
             {
                 isPlayingSound = false;
@@ -213,7 +211,7 @@ namespace HarpHero
                     catch (Exception ex)
                     {
                         PluginLog.Error(ex, "Failed to start midi player, turning off playback!");
-                        config.UsePlayback = false;
+                        Service.config.UsePlayback = false;
                         return false;
                     }
                 }
@@ -413,6 +411,7 @@ namespace HarpHero
                     musicViewer.endTimeUs = trackEndTimeUs;
                     musicViewer.OnNoteNotify += OnMusicViewerNote;
 
+                    UpdateViewerParams();
                     SetMetronomeParams();
                 }
             }
@@ -432,10 +431,18 @@ namespace HarpHero
 
         public void OnTrainingModeChanged()
         {
-            config.UseTrainingMode = useWaitingForInput;
-            config.Save();
+            Service.config.UseTrainingMode = useWaitingForInput;
+            Service.config.Save();
 
             Stop();
+        }
+
+        public void UpdateViewerParams()
+        {
+            if (musicViewer != null)
+            {
+                musicViewer.SetShownBindings(Service.config.AssistBindRows, 2);
+            }
         }
 
         public void Dispose()

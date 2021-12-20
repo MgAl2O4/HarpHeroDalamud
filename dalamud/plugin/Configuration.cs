@@ -26,6 +26,7 @@ namespace HarpHero
         public bool AssistNote2Enabled { get; set; } = true;
         public float AssistBindScaleKeyboard { get; set; } = 1.0f;
         public float AssistBindScaleGamepad { get; set; } = 1.5f;
+        public int AssistBindRows { get; set; } = 3;
 
         public bool UseTrainingMode { get; set; } = true;
         public bool ShowScore { get; set; } = true;
