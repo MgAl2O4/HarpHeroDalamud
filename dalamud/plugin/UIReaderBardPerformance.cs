@@ -82,6 +82,23 @@ namespace HarpHero
             isWideMode = isWide;
         }
 
+        public void ApplyTestSetup()
+        {
+            cachedState.keysPos = new Vector2(100, 300);
+            cachedState.keysSize = new Vector2(800, 200);
+
+            for (int idx = 0; idx <= 12; idx++)
+            {
+                var keyData = new UIStateBardPerformance.KeyNode();
+                keyData.pos = new Vector2(100 + (idx * 50), 300);
+                keyData.size = new Vector2(50, 100);
+                cachedState.keys.Add(keyData);
+            }
+
+            SetStatus(Status.NoErrors);
+            SetCachedNumKeys(12);
+        }
+
         public unsafe void OnAddonUpdate(IntPtr addonPtr)
         {
             if (cachedState.keys.Count == 0)

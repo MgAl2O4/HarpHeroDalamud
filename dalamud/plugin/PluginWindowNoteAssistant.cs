@@ -33,6 +33,7 @@ namespace HarpHero
         private readonly NoteUIMapper noteMapper;
         private readonly NoteInputMapper noteInput;
         private readonly TrackAssistant trackAssistant;
+        private readonly Configuration config;
 
         public bool showOctaveShiftHints = true;
         public bool showBars = false;
@@ -45,12 +46,13 @@ namespace HarpHero
 
         private float noMusicUpkeepRemaining = 0.0f;
 
-        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Note Assistant")
+        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput, Configuration config) : base("Note Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
             this.noteInput = noteInput;
             this.trackAssistant = trackAssistant;
+            this.config = config;
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
             trackAssistant.OnPlayChanged += OnPlayChanged;
@@ -144,7 +146,7 @@ namespace HarpHero
 
                 Position = new Vector2(uiLowC.pos.X, newWindowPosY);
                 Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X + TrackAssistOctaveShiftX, uiLowC.pos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
-                BgAlpha = upkeepAlpha;
+                BgAlpha = upkeepAlpha * config.AssistBgAlpha;
 
                 cachedNoteAppearPosY = Position.Value.Y + 10 + viewportOffset.Y;
                 cachedNoteActivationPosY = Position.Value.Y + ((Size.Value.Y - 20) * ImGuiHelpers.GlobalScale) + viewportOffset.Y;

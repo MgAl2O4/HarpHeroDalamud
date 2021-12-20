@@ -78,7 +78,7 @@ namespace HarpHero
             // prep UI
             statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration, trackHealthCheck);
             var trackViewWindow = new PluginWindowTrackView(trackAssistant);
-            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper);
+            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper, configuration);
             var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper, configuration);
             var noteAssistant2Window = new PluginWindowNoteAssistant2(uiReaderPerformance, trackAssistant, noteUiMapper, configuration);
             var scoreWindow = new PluginWindowScore(uiReaderPerformance, trackAssistant, configuration);
@@ -97,6 +97,8 @@ namespace HarpHero
                     toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);
                 }
             };
+
+            //uiReaderPerformance.ApplyTestSetup();
 
             windowSystem.AddWindow(statusWindow);
             windowSystem.AddWindow(trackViewWindow);

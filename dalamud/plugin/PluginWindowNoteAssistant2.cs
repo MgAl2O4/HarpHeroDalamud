@@ -142,7 +142,7 @@ namespace HarpHero
                 var uiLowCS = uiReader.cachedState.keys[noteMapper.notes[1].uiIndex];
 
                 float upkeepPct = (noMusicUpkeepRemaining / NoMusicUpkeepTime);
-                cachedOverlayAlpha = upkeepPct * upkeepPct;
+                cachedOverlayAlpha = upkeepPct * upkeepPct * config.AssistBgAlpha;
 
                 Position = new Vector2(uiLowC.pos.X, uiLowC.pos.Y);
                 Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, uiLowC.size.Y) / ImGuiHelpers.GlobalScale;

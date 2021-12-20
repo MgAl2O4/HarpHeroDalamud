@@ -1,6 +1,9 @@
 ﻿using Dalamud.Configuration;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin;
+using MgAl2O4.Utils;
 using System;
+using System.Collections.Generic;
 
 namespace HarpHero
 {
@@ -27,12 +30,16 @@ namespace HarpHero
         public bool UseTrainingMode { get; set; } = true;
         public bool ShowScore { get; set; } = true;
 
+        public List<Tuple<ushort, string>> VKAlias { get; set; } = new();
+        public float AssistBgAlpha = 1.0f;
+
         [NonSerialized]
         private DalamudPluginInterface pluginInterface;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
             this.pluginInterface = pluginInterface;
+            ApplyVKAliases();
         }
 
         public void Save()
@@ -43,5 +50,15 @@ namespace HarpHero
         public bool UseAssistNoteA() => AssistMode == 1;
         public bool UseAssistBind() => AssistMode == 2;
         public bool UseAssistNoteB() => (AssistMode == 1) && AssistNote2Enabled;
+
+        public void ApplyVKAliases()
+        {
+            InputBindingUtils.mapVKAliases.Clear();
+            foreach (var alias in VKAlias)
+            {
+                var vk = (VirtualKey)alias.Item1;
+                InputBindingUtils.mapVKAliases.TryAdd(vk, alias.Item2);
+            }
+        }
     }
 }

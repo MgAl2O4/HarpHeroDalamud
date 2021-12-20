@@ -48,6 +48,8 @@ namespace MgAl2O4.Utils
 
     public class InputBindingUtils
     {
+        public static Dictionary<VirtualKey, string> mapVKAliases = new();
+
         private static Dictionary<VirtualKey, InputBindingKey> mapVirtualKeys = new();
         private static Dictionary<GamepadButtons, InputBindingKey> mapGamepadButtons = new();
 
@@ -75,6 +77,11 @@ namespace MgAl2O4.Utils
 
         public static InputBindingKey GetVirtualKeyData(VirtualKey key)
         {
+            if (mapVKAliases.TryGetValue(key, out var aliasText))
+            {
+                return new InputBindingKey() { virtualKey = key, text = aliasText };
+            }
+
             if (mapVirtualKeys.TryGetValue(key, out var keyData))
             {
                 return keyData;

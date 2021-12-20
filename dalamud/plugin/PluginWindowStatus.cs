@@ -1,4 +1,5 @@
 ﻿using Dalamud;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiFileDialog;
@@ -77,6 +78,8 @@ namespace HarpHero
         private string locStatusTooManyOctaves;
         private string locStartPlayingExtHint;
 
+        private string locConfigSettingsTab;
+        private string locConfigAppearanceTab;
         private string locConfigBack;
         private string locConfigImport;
         private string locConfigAutoBPM;
@@ -95,6 +98,9 @@ namespace HarpHero
         private string locConfigAssistBindScaleGamepad;
         private string locConfigAssistNoteNumMarkers;
         private string locConfigAssistNoteWarnMs;
+        private string locConfigAppearanceBgAlpha;
+        private string locConfigAppearanceKeyAlias;
+        private string locConfigAppearanceAddAlias;
 
         public PluginWindowStatus(TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config, TrackHealthCheck trackHealth) : base("Harp Hero")
         {
@@ -166,6 +172,9 @@ namespace HarpHero
             locStatusTooManyOctaves = Localization.Localize("ST_TooManyOctaves", "Game doesn't allow more than 5 octaves, sorry :<");
             locStartPlayingExtHint = Localization.Localize("ST_StartPlayingExtHint", "Start playing (extended mode)");
 
+            locConfigSettingsTab = Localization.Localize("CFG_TabSettings", "Settings");
+            locConfigAppearanceTab = Localization.Localize("CFG_TabAppearance", "Appearance");
+
             locConfigBack = Localization.Localize("CFG_Back", "Back to status");
             locConfigImport = Localization.Localize("CFG_Import", "MIDI import");
             locConfigAutoBPM = Localization.Localize("CFG_AutoBPM", "Auto adjust BPM");
@@ -184,6 +193,10 @@ namespace HarpHero
             locConfigAssistBindScaleGamepad = Localization.Localize("CFG_BindScaleGamepad", "Scale (gamepad)");
             locConfigAssistNoteNumMarkers = Localization.Localize("CFG_NoteNumMarkers", "Number of markers");
             locConfigAssistNoteWarnMs = Localization.Localize("CFG_NoteWarnMs", "Warn time (ms)");
+
+            locConfigAppearanceBgAlpha = Localization.Localize("CFG_BackgroundAlpha", "Background alpha");
+            locConfigAppearanceKeyAlias = Localization.Localize("CFG_KeyAlias", "Key name alias");
+            locConfigAppearanceAddAlias = Localization.Localize("CFG_KeyAliasAdd", "Add new alias");
 
             var sortedAssistNames = new List<Tuple<int, string>>
             {
@@ -641,6 +654,26 @@ namespace HarpHero
             ImGui.SameLine();
             ImGui.Text(locConfigBack);
 
+            if (ImGui.BeginTabBar("##settings"))
+            {
+                if (ImGui.BeginTabItem(locConfigSettingsTab))
+                {
+                    DrawSettingsBehavior();
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.BeginTabItem(locConfigAppearanceTab))
+                {
+                    DrawSettingsAppearance();
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.EndTabBar();
+            }
+        }
+
+        private void DrawSettingsBehavior()
+        {
             bool needsSave = false;
             bool hasChanges = false;
             bool autoAdjustEndBarCopy = config.AutoAdjustEndBar;
@@ -648,8 +681,6 @@ namespace HarpHero
             bool useExtendedModeCopy = config.UseExtendedMode;
             float autoAdjustSpeedThresholdCopy = config.AutoAdjustSpeedThreshold;
 
-            ImGui.Spacing();
-            ImGui.Separator();
             ImGui.Text($"{locConfigImport}:");
             ImGui.Indent();
 
@@ -723,41 +754,46 @@ namespace HarpHero
             float scaleGamepadCopy = config.AssistBindScaleGamepad;
 
             ImGui.Indent();
-            ImGui.Columns(2);
-            if (config.UseAssistBind())
+            var textHeightScaled = ImGui.GetTextLineHeightWithSpacing();
+            if (ImGui.BeginChild("##assistDetails", new Vector2(-1.0f, textHeightScaled * 2.5f)))
             {
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text(locConfigAssistBindScaleKeyboard);
-                ImGui.NextColumn();
-                hasChanges = ImGui.SliderFloat("##scaleKeyboard", ref scaleKeyboardCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
-
-                ImGui.NextColumn();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text(locConfigAssistBindScaleGamepad);
-                ImGui.NextColumn();
-                hasChanges = ImGui.SliderFloat("##scaleGamepad", ref scaleGamepadCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
-            }
-            else if (config.UseAssistNoteA())
-            {
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text(locConfigAssistNoteNumMarkers);
-                ImGui.NextColumn();
-                if (ImGui.InputInt("##noteMarkers", ref numMarkersCopy))
+                ImGui.Columns(2);
+                if (config.UseAssistBind())
                 {
-                    numMarkersCopy = Math.Min(4, Math.Max(0, numMarkersCopy));
-                    hasChanges = true;
-                }
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.Text(locConfigAssistBindScaleKeyboard);
+                    ImGui.NextColumn();
+                    hasChanges = ImGui.SliderFloat("##scaleKeyboard", ref scaleKeyboardCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
 
-                ImGui.NextColumn();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text(locConfigAssistNoteWarnMs);
-                ImGui.NextColumn();
-                if (ImGui.InputInt("##noteWarnTime", ref warnTimeCopy))
+                    ImGui.NextColumn();
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.Text(locConfigAssistBindScaleGamepad);
+                    ImGui.NextColumn();
+                    hasChanges = ImGui.SliderFloat("##scaleGamepad", ref scaleGamepadCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
+                }
+                else if (config.UseAssistNoteA())
                 {
-                    warnTimeCopy = Math.Min(1000, Math.Max(1, warnTimeCopy));
-                    hasChanges = true;
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.Text(locConfigAssistNoteNumMarkers);
+                    ImGui.NextColumn();
+                    if (ImGui.InputInt("##noteMarkers", ref numMarkersCopy))
+                    {
+                        numMarkersCopy = Math.Min(4, Math.Max(0, numMarkersCopy));
+                        hasChanges = true;
+                    }
+
+                    ImGui.NextColumn();
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.Text(locConfigAssistNoteWarnMs);
+                    ImGui.NextColumn();
+                    if (ImGui.InputInt("##noteWarnTime", ref warnTimeCopy))
+                    {
+                        warnTimeCopy = Math.Min(1000, Math.Max(1, warnTimeCopy));
+                        hasChanges = true;
+                    }
                 }
             }
+            ImGui.EndChild();
             ImGui.Unindent();
 
             if (hasChanges)
@@ -774,6 +810,105 @@ namespace HarpHero
             if (needsSave)
             {
                 config.Save();
+            }
+        }
+
+        private void DrawSettingsAppearance()
+        {
+            float alphaCopy = config.AssistBgAlpha;
+            bool hasChanges = false;
+            bool needsSave = false;
+
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text(locConfigAppearanceBgAlpha);
+            ImGui.SameLine();
+            hasChanges = ImGui.SliderFloat("##alpha", ref alphaCopy, 0.1f, 1.0f) || hasChanges;
+
+            if (hasChanges)
+            {
+                config.AssistBgAlpha = alphaCopy;
+                needsSave = true;
+            }
+
+            ImGui.Spacing();
+
+            ImGui.Text(locConfigAppearanceKeyAlias);
+            if (config.VKAlias.Count > 0)
+            {
+                var colorRed = new Vector4(0.9f, 0.0f, 0.0f, 1.0f);
+                int removeIdx = -1;
+
+                if (ImGui.BeginTable("##keyaliases", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersH))
+                {
+                    ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthStretch, 0.5f);
+                    ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthStretch, 0.5f);
+                    ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 20.0f * ImGuiHelpers.GlobalScale);
+
+                    for (int aliasIdx = 0; aliasIdx < config.VKAlias.Count; aliasIdx++)
+                    {
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
+
+                        var aliasVK = (VirtualKey)config.VKAlias[aliasIdx].Item1;
+                        ushort newVK = (ushort)aliasVK;
+                        string newDesc = config.VKAlias[aliasIdx].Item2;
+                        bool needsUpdate = false;
+
+                        ImGui.SetNextItemWidth(-1.0f);
+                        if (ImGui.BeginCombo($"##vkCombo{aliasIdx}", aliasVK.GetFancyName()))
+                        {
+                            foreach (var key in Enum.GetValues<VirtualKey>())
+                            {
+                                if (ImGui.Selectable(key.GetFancyName(), key == aliasVK))
+                                {
+                                    newVK = (ushort)key;
+                                    needsUpdate = true;
+                                }
+                            }
+
+                            ImGui.EndCombo();
+                        }
+
+                        ImGui.TableNextColumn();
+                        ImGui.SetNextItemWidth(-1.0f);
+                        if (ImGui.InputText($"##vkText{aliasIdx}", ref newDesc, 16))
+                        {
+                            needsUpdate = true;
+                        }
+
+                        ImGui.TableNextColumn();
+                        if (ImGuiComponents.IconButton(100 + aliasIdx, FontAwesomeIcon.Times, colorRed))
+                        {
+                            removeIdx = aliasIdx;
+                        }
+
+                        if (needsUpdate)
+                        {
+                            config.VKAlias[aliasIdx] = new Tuple<ushort, string>(newVK, newDesc);
+                            needsSave = true;
+                        }
+                    }
+
+                    ImGui.EndTable();
+                }
+
+                if (removeIdx >= 0)
+                {
+                    config.VKAlias.RemoveAt(removeIdx);
+                    needsSave = true;
+                }
+            }
+
+            if (ImGui.Button(locConfigAppearanceAddAlias))
+            {
+                config.VKAlias.Add(new Tuple<ushort, string>((ushort)VirtualKey.KEY_0, VirtualKey.KEY_0.GetFancyName()));
+                needsSave = true;
+            }
+
+            if (needsSave)
+            {
+                config.Save();
+                config.ApplyVKAliases();
             }
         }
 

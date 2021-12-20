@@ -133,7 +133,7 @@ namespace HarpHero
 
                 Position = new Vector2(newWindowPosX, newWindowPosY);
                 Size = new Vector2(newWindowSizeX, uiReader.cachedState.keysPos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
-                BgAlpha = upkeepAlpha;
+                BgAlpha = upkeepAlpha * config.AssistBgAlpha;
             }
         }
 
@@ -280,7 +280,8 @@ namespace HarpHero
 
             // draw from furthest to most current for proper occlusions
             var padOfset = 5 * ImGuiHelpers.GlobalScale;
-            uint bindBackground = 0xcc000000;
+            uint bindBackground = UIColors.GetAlphaModulated(0xcc000000, config.AssistBgAlpha);
+
             for (int hintIdx = bindHints.Count - 1; hintIdx >= 0; hintIdx--)
             {
                 var hintInfo = bindHints[hintIdx];

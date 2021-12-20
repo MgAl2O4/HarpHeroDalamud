@@ -66,5 +66,10 @@
 	"CFG_BindScaleKeyboard": { "message": "Scale (keyboard)" },
 	"CFG_BindScaleGamepad": { "message": "Scale (gamepad)" },
 	"CFG_NoteNumMarkers": { "message": "Number of markers" },
-	"CFG_NoteWarnMs": { "message": "Warn time (ms)" }
+	"CFG_NoteWarnMs": { "message": "Warn time (ms)" },
+	"CFG_TabSettings": { "message": "Settings" },
+	"CFG_TabAppearance": { "message": "Appearance" },
+	"CFG_BackgroundAlpha": { "message": "Background alpha" },
+	"CFG_KeyAlias": { "message": "Key name alias" },
+	"CFG_KeyAliasAdd": { "message": "Add new alias" }
 }
