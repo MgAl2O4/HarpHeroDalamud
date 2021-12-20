@@ -19,8 +19,6 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
         private readonly NoteInputMapper noteInput;
-        private readonly TrackAssistant trackAssistant;
-        private readonly Configuration config;
 
         private float noMusicUpkeepRemaining;
 
@@ -34,16 +32,14 @@ namespace HarpHero
         }
         private Dictionary<GamepadButtons, GamepadColors> mapGamepadColors = new();
 
-        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput, Configuration config) : base("Bind Assistant")
+        public PluginWindowBindAssistant(UIReaderBardPerformance uiReader, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Bind Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
             this.noteInput = noteInput;
-            this.trackAssistant = trackAssistant;
-            this.config = config;
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
-            trackAssistant.OnPlayChanged += OnPlayChanged;
+            Service.trackAssistant.OnPlayChanged += OnPlayChanged;
 
             IsOpen = false;
 
@@ -67,13 +63,13 @@ namespace HarpHero
             Plugin.OnDebugSnapshot += (_) =>
             {
                 int drawErrState =
-                    (trackAssistant == null) ? 1 :
-                    (trackAssistant.musicViewer == null) ? 2 :
+                    (Service.trackAssistant == null) ? 1 :
+                    (Service.trackAssistant.musicViewer == null) ? 2 :
                     !Size.HasValue ? 3 :
-                    !trackAssistant.IsPlaying ? 4 :
+                    !Service.trackAssistant.IsPlaying ? 4 :
                     0;
 
-                Dalamud.Logging.PluginLog.Log($"PluginWindowBindAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{trackAssistant.CanShowBindAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
+                Dalamud.Logging.PluginLog.Log($"PluginWindowBindAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant.CanShowBindAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
             };
         }
 
@@ -90,7 +86,7 @@ namespace HarpHero
                 IsOpen = false;
                 noMusicUpkeepRemaining = 0.0f;
             }
-            else if (trackAssistant?.IsPlaying ?? false)
+            else if (Service.trackAssistant?.IsPlaying ?? false)
             {
                 OnPlayChanged(true);
             }
@@ -98,7 +94,7 @@ namespace HarpHero
 
         public void OnPlayChanged(bool active)
         {
-            if (trackAssistant.CanShowBindAssistant)
+            if (Service.trackAssistant.CanShowBindAssistant)
             {
                 if (active && uiReader.IsVisible)
                 {
@@ -127,19 +123,19 @@ namespace HarpHero
                 float newWindowPosY = Math.Max(50, uiReader.cachedState.keysPos.Y - (TrackAssistSizeMinY + TrackAssistOffsetY) * ImGuiHelpers.GlobalScale);
 
                 bool isWide = (uiReader.cachedState.keys.Count > 13);
-                float useScale = noteInput.IsKeyboardMode ? config.AssistBindScaleKeyboard : config.AssistBindScaleGamepad;
+                float useScale = noteInput.IsKeyboardMode ? Service.config.AssistBindScaleKeyboard : Service.config.AssistBindScaleGamepad;
                 float newWindowSizeX = useScale * uiReader.cachedState.keysSize.X / (isWide ? 3 : 1);
                 float newWindowPosX = uiReader.cachedState.keysPos.X + (uiReader.cachedState.keysSize.X - newWindowSizeX) * 0.5f;
 
                 Position = new Vector2(newWindowPosX, newWindowPosY);
                 Size = new Vector2(newWindowSizeX, uiReader.cachedState.keysPos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
-                BgAlpha = upkeepAlpha * config.AssistBgAlpha;
+                BgAlpha = upkeepAlpha * Service.config.AssistBgAlpha;
             }
         }
 
         public bool Tick(float deltaSeconds)
         {
-            bool canFadeOut = IsOpen && (trackAssistant == null || !trackAssistant.IsPlaying);
+            bool canFadeOut = IsOpen && (Service.trackAssistant == null || !Service.trackAssistant.IsPlaying);
             if (canFadeOut)
             {
                 noMusicUpkeepRemaining -= deltaSeconds;
@@ -155,14 +151,14 @@ namespace HarpHero
 
         public override void OnClose()
         {
-            trackAssistant?.Stop();
+            Service.trackAssistant?.Stop();
         }
 
         public override void Draw()
         {
-            if (trackAssistant != null && trackAssistant.musicViewer != null && Size.HasValue)
+            if (Service.trackAssistant != null && Service.trackAssistant.musicViewer != null && Size.HasValue)
             {
-                if (trackAssistant.IsPlaying)
+                if (Service.trackAssistant.IsPlaying)
                 {
                     noMusicUpkeepRemaining = NoMusicUpkeepTime;
 
@@ -185,20 +181,20 @@ namespace HarpHero
         {
             var drawList = ImGui.GetWindowDrawList();
             var viewportOffset = ImGui.GetMainViewport().Pos;
-            var timeRangeStartUs = trackAssistant.musicViewer.TimeRangeStartUs;
-            var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
+            var timeRangeStartUs = Service.trackAssistant.musicViewer.TimeRangeStartUs;
+            var timeRangeUs = Service.trackAssistant.musicViewer.TimeRangeUs;
             var bindHints = new List<BindHintDrawInfo>();
 
             float noteHalfHeight = 5.0f;
             uint colorFarMask = 0x40ffffff;
             uint colorPlayingDark = 0xffffffff;
 
-            foreach (var noteBinding in trackAssistant.musicViewer.GetShownNotesBindings())
+            foreach (var noteBinding in Service.trackAssistant.musicViewer.GetShownNotesBindings())
             {
                 float tX0Raw = 1.0f * (noteBinding.noteInfo.startUs - timeRangeStartUs) / timeRangeUs;
                 float tX0 = Math.Min(1.0f, Math.Max(0.0f, tX0Raw));
                 float tX1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.endUs - timeRangeStartUs) / timeRangeUs));
-                float tY = Math.Min(1.0f, Math.Max(0.0f, 1.0f * noteBinding.bindingIdx / trackAssistant.musicViewer.maxBindingsToShow));
+                float tY = Math.Min(1.0f, Math.Max(0.0f, 1.0f * noteBinding.bindingIdx / Service.trackAssistant.musicViewer.maxBindingsToShow));
 
                 var posX0Raw = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tX0Raw)) * ImGuiHelpers.GlobalScale;
                 var posX0 = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tX0)) * ImGuiHelpers.GlobalScale;
@@ -222,7 +218,7 @@ namespace HarpHero
 
                     canDraw = false;
                 }
-                else if (noteBinding.pressIdx < trackAssistant.musicViewer.maxBindingsToShow)
+                else if (noteBinding.pressIdx < Service.trackAssistant.musicViewer.maxBindingsToShow)
                 {
                     // note colors:
                     // - keyboard: colorKeyboardNotes[noteBinding.bindingIdx]
@@ -280,7 +276,7 @@ namespace HarpHero
 
             // draw from furthest to most current for proper occlusions
             var padOfset = 5 * ImGuiHelpers.GlobalScale;
-            uint bindBackground = UIColors.GetAlphaModulated(0xcc000000, config.AssistBgAlpha);
+            uint bindBackground = UIColors.GetAlphaModulated(0xcc000000, Service.config.AssistBgAlpha);
 
             for (int hintIdx = bindHints.Count - 1; hintIdx >= 0; hintIdx--)
             {
@@ -306,7 +302,7 @@ namespace HarpHero
                 InputBindingUtils.AddToDrawList(drawList, hintInfo.pos, useHintColor, hintInfo.chord);
             }
 
-            float tLX = 1.0f * trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
+            float tLX = 1.0f * Service.trackAssistant.musicViewer.TimeRangeNowOffset / timeRangeUs;
             var posLineX = Position.Value.X + viewportOffset.X + (10 + (Size.Value.X * tLX)) * ImGuiHelpers.GlobalScale;
 
             drawList.AddLine(

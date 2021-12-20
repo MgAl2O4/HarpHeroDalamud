@@ -25,8 +25,6 @@ namespace HarpHero
 
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
-        private readonly TrackAssistant trackAssistant;
-        private readonly Configuration config;
 
         private float[] cachedNotePosX = null;
         private float cachedWhiteKeyY = 0;
@@ -57,15 +55,13 @@ namespace HarpHero
         }
         private Dictionary<long, NoteMarker> activeNoteMarkers = new();
 
-        public PluginWindowNoteAssistant2(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, Configuration config) : base("Piano Overlay")
+        public PluginWindowNoteAssistant2(UIReaderBardPerformance uiReader, NoteUIMapper noteMapper) : base("Piano Overlay")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
-            this.trackAssistant = trackAssistant;
-            this.config = config;
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
-            trackAssistant.OnPlayChanged += OnPlayChanged;
+            Service.trackAssistant.OnPlayChanged += OnPlayChanged;
 
             IsOpen = false;
 
@@ -99,7 +95,7 @@ namespace HarpHero
                 IsOpen = false;
                 noMusicUpkeepRemaining = 0.0f;
             }
-            else if (trackAssistant?.IsPlaying ?? false)
+            else if (Service.trackAssistant?.IsPlaying ?? false)
             {
                 OnPlayChanged(true);
             }
@@ -107,7 +103,7 @@ namespace HarpHero
 
         public void OnPlayChanged(bool active)
         {
-            if (trackAssistant.CanShowNoteAssistant2)
+            if (Service.trackAssistant.CanShowNoteAssistant2)
             {
                 if (active && uiReader.IsVisible)
                 {
@@ -126,8 +122,8 @@ namespace HarpHero
         {
             Plugin.TickScheduler.Register(this);
 
-            maxMarkersToShow = Math.Min(4, Math.Max(0, config.AssistNote2Markers));
-            markerWarnTimeUs = Math.Min(1000, Math.Max(1, config.AssistNote2WarnMs)) * 1000;
+            maxMarkersToShow = Math.Min(4, Math.Max(0, Service.config.AssistNote2Markers));
+            markerWarnTimeUs = Math.Min(1000, Math.Max(1, Service.config.AssistNote2WarnMs)) * 1000;
         }
 
         public override void PreDraw()
@@ -142,7 +138,7 @@ namespace HarpHero
                 var uiLowCS = uiReader.cachedState.keys[noteMapper.notes[1].uiIndex];
 
                 float upkeepPct = (noMusicUpkeepRemaining / NoMusicUpkeepTime);
-                cachedOverlayAlpha = upkeepPct * upkeepPct * config.AssistBgAlpha;
+                cachedOverlayAlpha = upkeepPct * upkeepPct * Service.config.AssistBgAlpha;
 
                 Position = new Vector2(uiLowC.pos.X, uiLowC.pos.Y);
                 Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X, uiLowC.size.Y) / ImGuiHelpers.GlobalScale;
@@ -172,7 +168,7 @@ namespace HarpHero
         {
             if (IsOpen)
             {
-                if (trackAssistant == null || !trackAssistant.IsPlaying)
+                if (Service.trackAssistant == null || !Service.trackAssistant.IsPlaying)
                 {
                     noMusicUpkeepRemaining -= deltaSeconds;
                     if (noMusicUpkeepRemaining <= 0.0f)
@@ -222,7 +218,7 @@ namespace HarpHero
             if (cachedNotePosX != null && maxMarkersToShow > 0)
             {
                 var drawList = ImGui.GetWindowDrawList();
-                var currentTimeUs = trackAssistant.musicViewer?.TimeUs ?? 0;
+                var currentTimeUs = Service.trackAssistant.musicViewer?.TimeUs ?? 0;
 
                 for (int idx = 0; idx < noteMapper.notes.Length; idx++)
                 {
@@ -277,19 +273,19 @@ namespace HarpHero
 
         private void UpdateNoteMarkers()
         {
-            if (trackAssistant == null || trackAssistant.musicViewer == null || maxMarkersToShow <= 0)
+            if (Service.trackAssistant == null || Service.trackAssistant.musicViewer == null || maxMarkersToShow <= 0)
             {
                 return;
             }
 
             // find next MaxMarkersToShow unique markers for notes
-            var currentTimeUs = trackAssistant.CurrentTimeUs;
-            var maxMarkerTime = currentTimeUs + (trackAssistant.musicViewer.TimeRangeUs / 2);
+            var currentTimeUs = Service.trackAssistant.CurrentTimeUs;
+            var maxMarkerTime = currentTimeUs + (Service.trackAssistant.musicViewer.TimeRangeUs / 2);
             long lastPlayingTimeUs = 0;
             int noteCounter = 0;
             bool foundLastPlayingNote = false;
 
-            foreach (var noteInfo in trackAssistant.musicViewer.shownNotes)
+            foreach (var noteInfo in Service.trackAssistant.musicViewer.shownNotes)
             {
                 if (!noteMapper.GetMappedNoteIdx(noteInfo.note, out int mappedNoteIdx, out int octaveOffset))
                 {
@@ -297,8 +293,8 @@ namespace HarpHero
                 }
 
                 bool isNoteIgnored =
-                    (trackAssistant.TrackStartTimeUs >= 0 && noteInfo.startUs < trackAssistant.TrackStartTimeUs) ||
-                    (trackAssistant.TrackEndTimeUs >= 0 && noteInfo.endUs >= trackAssistant.TrackEndTimeUs);
+                    (Service.trackAssistant.TrackStartTimeUs >= 0 && noteInfo.startUs < Service.trackAssistant.TrackStartTimeUs) ||
+                    (Service.trackAssistant.TrackEndTimeUs >= 0 && noteInfo.endUs >= Service.trackAssistant.TrackEndTimeUs);
                 if (isNoteIgnored)
                 {
                     continue;

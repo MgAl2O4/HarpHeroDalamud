@@ -1,6 +1,4 @@
-﻿using Dalamud.Game;
-using Dalamud.Game.Gui;
-using Dalamud.Logging;
+﻿using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using System.Runtime.InteropServices;
@@ -27,7 +25,6 @@ namespace HarpHero
         private StopMetronomeDelegate StopMetronomeFn;
 
         public readonly UIReaderBardMetronome uiReader;
-        private readonly GameGui gameGui;
 
         public Action<int> OnBPMChanged;
         public Action<int> OnMeasureChanged;
@@ -55,11 +52,9 @@ namespace HarpHero
 
         public bool IsActive => uiReader.AgentPtr != IntPtr.Zero;
 
-        public UnsafeMetronomeLink(GameGui gameGui, SigScanner sigScanner)
+        public UnsafeMetronomeLink()
         {
-            this.gameGui = gameGui;
-
-            uiReader = new UIReaderBardMetronome(gameGui);
+            uiReader = new UIReaderBardMetronome();
             uiReader.updateNotify = this;
 
             var ptrSetMeasureFunc = IntPtr.Zero;
@@ -69,7 +64,7 @@ namespace HarpHero
             var ptrMetronomeStopFunc = IntPtr.Zero;
             bool hasException = false;
 
-            if (sigScanner != null)
+            if (Service.sigScanner != null)
             {
                 // find both on agent's value write break
                 // single function for each
@@ -84,14 +79,14 @@ namespace HarpHero
 
                 try
                 {
-                    ptrSetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 48 63 06 48 8d 54 24 30 48 69 c8 e8 03");
-                    ptrSetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 48 8b 43 48 48 8b 48 10 48 8b 01 ff 90 d0");
+                    ptrSetMeasureFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 48 63 06 48 8d 54 24 30 48 69 c8 e8 03");
+                    ptrSetBPMFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 48 8b 43 48 48 8b 48 10 48 8b 01 ff 90 d0");
 
-                    ptrGetBPMFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? f3 0f 10 4e 04 0f b7 c0 66 0f 6e c0");
-                    ptrGetMeasureFunc = sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
+                    ptrGetBPMFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? f3 0f 10 4e 04 0f b7 c0 66 0f 6e c0");
+                    ptrGetMeasureFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
 
-                    ptrMetronomeStopFunc = sigScanner.ScanText("40 53 48 83 EC 20 48 8B 01 48 8B D9 FF 50 20 84 C0 74");
-                    //PluginLog.Log($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)sigScanner.Module.BaseAddress):X}");
+                    ptrMetronomeStopFunc = Service.sigScanner.ScanText("40 53 48 83 EC 20 48 8B 01 48 8B D9 FF 50 20 84 C0 74");
+                    //PluginLog.Log($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)Service.sigScanner.Module.BaseAddress):X}");
                 }
                 catch (Exception)
                 {
@@ -117,7 +112,7 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                Dalamud.Logging.PluginLog.Log($"UnsafeMetronomeLink: error:{HasErrors} (F1:{ptrSetMeasureFunc:X}, F2:{ptrSetBPMFunc:X}, F3:{ptrGetBPMFunc:X}, F4:{ptrGetMeasureFunc:X}, F5:{ptrMetronomeStopFunc:X}, ex:{hasException})");
+                PluginLog.Log($"UnsafeMetronomeLink: error:{HasErrors} (F1:{ptrSetMeasureFunc:X}, F2:{ptrSetBPMFunc:X}, F3:{ptrGetBPMFunc:X}, F4:{ptrGetMeasureFunc:X}, F5:{ptrMetronomeStopFunc:X}, ex:{hasException})");
             };
         }
 
@@ -131,7 +126,7 @@ namespace HarpHero
             {
                 newIsPlaying = statePtr->IsPlaying != 0;
 
-                var uiModulePtr = (gameGui != null) ? gameGui.GetUIModule() : IntPtr.Zero;
+                var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
                 {
                     var getMetronomeManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[26]);

@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using MgAl2O4.Utils;
+﻿using MgAl2O4.Utils;
 using System;
 using System.Runtime.InteropServices;
 
@@ -20,16 +19,13 @@ namespace HarpHero
             // LastWrite* are not usable (not initialized, write defaults on window close)
         }
 
-        private readonly GameGui gameGui;
         private IntPtr cachedAgentPtr;
 
         public UnsafeMetronomeLink updateNotify;
         public IntPtr AgentPtr => cachedAgentPtr;
 
-        public UIReaderBardMetronome(GameGui gameGui)
+        public UIReaderBardMetronome()
         {
-            this.gameGui = gameGui;
-
             Plugin.OnDebugSnapshot += (_) =>
             {
                 Dalamud.Logging.PluginLog.Log($"UIReaderBardMetronome: active:{AgentPtr != IntPtr.Zero}");
@@ -49,7 +45,7 @@ namespace HarpHero
 
         public void OnAddonShown(IntPtr addonPtr)
         {
-            cachedAgentPtr = gameGui.FindAgentInterface(addonPtr);
+            cachedAgentPtr = Service.gameGui.FindAgentInterface(addonPtr);
             // don't update now, will get OnAddonUpdate() in the same tick
         }
 

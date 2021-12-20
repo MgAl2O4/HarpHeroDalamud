@@ -14,9 +14,7 @@ namespace HarpHero
 {
     public class PluginWindowStatus : Window, IDisposable
     {
-        private readonly TrackAssistant trackAssistant;
         private readonly MidiFileManager fileManager;
-        private readonly Configuration config;
         private readonly TrackHealthCheck trackHealth;
 
         private Vector4 colorErr = new Vector4(0.9f, 0.2f, 0.2f, 1);
@@ -102,11 +100,9 @@ namespace HarpHero
         private string locConfigAppearanceKeyAlias;
         private string locConfigAppearanceAddAlias;
 
-        public PluginWindowStatus(TrackAssistant trackAssistant, MidiFileManager fileManager, Configuration config, TrackHealthCheck trackHealth) : base("Harp Hero")
+        public PluginWindowStatus(MidiFileManager fileManager, TrackHealthCheck trackHealth) : base("Harp Hero")
         {
-            this.trackAssistant = trackAssistant;
             this.fileManager = fileManager;
-            this.config = config;
             this.trackHealth = trackHealth;
             fileManager.OnImported += (_) => cachedTrackNames = null;
 
@@ -286,29 +282,29 @@ namespace HarpHero
 
             // tempo overrides
             ImGui.Indent(trackIndentSize);
-            if (trackAssistant.musicTrack != null)
+            if (Service.trackAssistant.musicTrack != null)
             {
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text($"{locPlayBPM}:");
                 ImGui.SameLine();
                 ImGui.PushItemWidth(100 * ImGuiHelpers.GlobalScale);
 
-                int targetBPM = trackAssistant.TargetBPM;
+                int targetBPM = Service.trackAssistant.TargetBPM;
                 if (targetBPM == 0)
                 {
-                    targetBPM = trackAssistant.musicTrack.stats.beatsPerMinute;
+                    targetBPM = Service.trackAssistant.musicTrack.stats.beatsPerMinute;
                 }
 
                 if (ImGui.InputInt("##targetBPM", ref targetBPM))
                 {
                     targetBPM = Math.Max(10, Math.Min(200, targetBPM));
-                    trackAssistant.SetTargetBPM(targetBPM);
+                    Service.trackAssistant.SetTargetBPM(targetBPM);
                 }
 
                 ImGui.PopItemWidth();
                 ImGui.SameLine();
 
-                var numKeysPerSecond = trackAssistant.GetScaledKeysPerSecond();
+                var numKeysPerSecond = Service.trackAssistant.GetScaledKeysPerSecond();
                 var colorKeysPerSecond = (numKeysPerSecond <= 1.0f) ? colorOk : (numKeysPerSecond <= 2.0f) ? colorYellow : colorErr;
                 ImGui.TextColored(colorKeysPerSecond, $"( {numKeysPerSecond:0.#} {locKeyPerSecond} )");
 
@@ -317,9 +313,9 @@ namespace HarpHero
             ImGui.Unindent(trackIndentSize);
 
             ImGui.Separator();
-            if (ImGui.Checkbox(locTrainingMode, ref trackAssistant.useWaitingForInput))
+            if (ImGui.Checkbox(locTrainingMode, ref Service.trackAssistant.useWaitingForInput))
             {
-                trackAssistant.OnTrainingModeChanged();
+                Service.trackAssistant.OnTrainingModeChanged();
             }
 
             DrawPlayControls();
@@ -327,7 +323,7 @@ namespace HarpHero
 
         private void DrawTrackDetails(float indentSize)
         {
-            if (trackAssistant.musicTrack == null)
+            if (Service.trackAssistant.musicTrack == null)
             {
                 return;
             }
@@ -337,7 +333,7 @@ namespace HarpHero
                 UpdateCachedTrackNames();
             }
 
-            if (ImGui.CollapsingHeader($"{locTrackHeader}: {GetTrimmedName(trackAssistant.musicTrack.name)}"))
+            if (ImGui.CollapsingHeader($"{locTrackHeader}: {GetTrimmedName(Service.trackAssistant.musicTrack.name)}"))
             {
                 ImGui.Indent(indentSize);
 
@@ -346,12 +342,12 @@ namespace HarpHero
                 ImGui.SameLine();
 
                 ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
-                int selectedIdx = fileManager.tracks.IndexOf(trackAssistant.musicTrack);
+                int selectedIdx = fileManager.tracks.IndexOf(Service.trackAssistant.musicTrack);
                 if (ImGui.Combo("##trackCombo", ref selectedIdx, cachedTrackNames, cachedTrackNames.Length))
                 {
                     if (selectedIdx >= 0 && selectedIdx < fileManager.tracks.Count)
                     {
-                        trackAssistant.SetTrack(fileManager.tracks[selectedIdx]);
+                        Service.trackAssistant.SetTrack(fileManager.tracks[selectedIdx]);
                     }
                 }
 
@@ -360,7 +356,7 @@ namespace HarpHero
                 ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (46 * ImGuiHelpers.GlobalScale));
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
                 {
-                    OnShowTrack?.Invoke(trackAssistant.musicTrack);
+                    OnShowTrack?.Invoke(Service.trackAssistant.musicTrack);
                 }
                 if (ImGui.IsItemHovered())
                 {
@@ -368,18 +364,18 @@ namespace HarpHero
                 }
 
                 ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (18 * ImGuiHelpers.GlobalScale));
-                if (trackAssistant.IsPlayingPreview)
+                if (Service.trackAssistant.IsPlayingPreview)
                 {
                     if (ImGuiComponents.IconButton(21, FontAwesomeIcon.Stop))
                     {
-                        trackAssistant.Stop();
+                        Service.trackAssistant.Stop();
                     }
                 }
                 else
                 {
                     if (ImGuiComponents.IconButton(20, FontAwesomeIcon.Play))
                     {
-                        trackAssistant.PlayPreview();
+                        Service.trackAssistant.PlayPreview();
                     }
                     if (ImGui.IsItemHovered())
                     {
@@ -387,9 +383,9 @@ namespace HarpHero
                     }
                 }
 
-                var statBlock = trackAssistant.musicTrack.stats;
+                var statBlock = Service.trackAssistant.musicTrack.stats;
                 var timeSigVarDesc = (statBlock.numTimeSignatures > 1) ? "*" : "";
-                bool isRangeValid = trackAssistant.CanPlay && (trackAssistant.IsValidBasicMode || (trackAssistant.IsValidExtendedMode && config.UseExtendedMode));
+                bool isRangeValid = Service.trackAssistant.CanPlay && (Service.trackAssistant.IsValidBasicMode || (Service.trackAssistant.IsValidExtendedMode && Service.config.UseExtendedMode));
                 bool isSectionValid = statBlock.numBarsTotal > 0;
 
                 ImGui.Text($"{locTrackBPM}:");
@@ -423,10 +419,10 @@ namespace HarpHero
                 if (ImGui.InputInt2("##section", ref sectionBars[0]))
                 {
                     sectionBars[0] = Math.Max(0, sectionBars[0]);
-                    sectionBars[1] = Math.Min(trackAssistant.musicTrack.statsOrg.numBarsTotal, sectionBars[1]);
+                    sectionBars[1] = Math.Min(Service.trackAssistant.musicTrack.statsOrg.numBarsTotal, sectionBars[1]);
 
                     // allow invalid values (0 length or start > end) here, most will be coming from in-between typing numbers
-                    trackAssistant.SetTrackSection(sectionBars[0], sectionBars[1]);
+                    Service.trackAssistant.SetTrackSection(sectionBars[0], sectionBars[1]);
                 }
                 ImGui.PopItemWidth();
 
@@ -436,7 +432,7 @@ namespace HarpHero
                 ImGui.SameLine();
                 if (ImGui.Button(locTrackSectionReset))
                 {
-                    trackAssistant.SetTrackSection(-1, -1);
+                    Service.trackAssistant.SetTrackSection(-1, -1);
                 }
 
                 ImGui.Unindent(indentSize);
@@ -455,10 +451,10 @@ namespace HarpHero
                 ImGui.Spacing();
                 ImGui.TextColored(colorYellow, string.Format(locStatusTrackTruncated, lengthPct).Replace("%", "%%"));
 
-                int numAvailableOctaves = config.UseExtendedMode ? 5 : 3;
+                int numAvailableOctaves = Service.config.UseExtendedMode ? 5 : 3;
                 string helpMsg = string.Format(locStatusTrackTruncatedHint, numAvailableOctaves);
 
-                if (!config.UseExtendedMode)
+                if (!Service.config.UseExtendedMode)
                 {
                     helpMsg += "\n\n" + locStatusTrackTruncatedHintNoExtended;
                 }
@@ -475,11 +471,11 @@ namespace HarpHero
                 needsSameLine = true;
             }
 
-            if (trackAssistant.IsValidExtendedMode)
+            if (Service.trackAssistant.IsValidExtendedMode)
             {
                 if (needsSameLine) { ImGui.SameLine(); } else { ImGui.Spacing(); }
 
-                if (config.UseExtendedMode)
+                if (Service.config.UseExtendedMode)
                 {
                     ImGui.TextColored(colorDetail, locStatusExtendedModeActive);
                 }
@@ -495,7 +491,7 @@ namespace HarpHero
             }
 
             // too many octaves, full length
-            if (config.UseExtendedMode && trackHealth.cachedStatus == TrackHealthCheck.Status.TooManyOctaves && !needsSameLine)
+            if (Service.config.UseExtendedMode && trackHealth.cachedStatus == TrackHealthCheck.Status.TooManyOctaves && !needsSameLine)
             {
                 ImGui.TextColored(colorErr, locStatusTooManyOctaves);
             }
@@ -508,7 +504,7 @@ namespace HarpHero
             // - metronome link: use when available
             // - otherwise just regular play/stop + al various reasons why it may fail
 
-            bool showMetronomeLink = trackAssistant.HasMetronomeLink && !trackAssistant.useWaitingForInput;
+            bool showMetronomeLink = Service.trackAssistant.HasMetronomeLink && !Service.trackAssistant.useWaitingForInput;
             bool showPlayControls = !showMetronomeLink;
 
             if (showMetronomeLink)
@@ -524,33 +520,33 @@ namespace HarpHero
                 ImGui.Text($"{locPlayMetronome}:");
                 ImGui.SameLine();
 
-                if (!trackAssistant.metronomeLink.IsActive)
+                if (!Service.trackAssistant.metronomeLink.IsActive)
                 {
                     ImGui.TextColored(colorErr, locPlayMetronomeNotVisible);
                     ImGui.SameLine();
                     ImGui.Text(locPlayMetronomeNotVisibleHint);
                     showPlayControls = true;
                 }
-                else if (trackAssistant.metronomeLink.IsPlaying)
+                else if (Service.trackAssistant.metronomeLink.IsPlaying)
                 {
                     ImGui.TextColored(colorOk, locPlayMetronomePlaying);
 
-                    trackAssistant.metronomeLink.GetCurrentTime(out int metronomeBar, out int metronomeBeat, out long metronomeTimeUs);
-                    float metronomeScaledMs = metronomeTimeUs * trackAssistant.timeScaling / 1000.0f;
-                    float trackScaledMs = trackAssistant.CurrentTime * 1000.0f;
+                    Service.trackAssistant.metronomeLink.GetCurrentTime(out int metronomeBar, out int metronomeBeat, out long metronomeTimeUs);
+                    float metronomeScaledMs = metronomeTimeUs * Service.trackAssistant.timeScaling / 1000.0f;
+                    float trackScaledMs = Service.trackAssistant.CurrentTime * 1000.0f;
                     float syncErrorMs = Math.Abs(metronomeScaledMs - trackScaledMs);
 
                     ImGui.SameLine();
                     ImGui.Text($"[{metronomeBar}:{metronomeBeat}]");
 
-                    if (syncErrorMs > 100.0f && trackAssistant.musicTrack != null && trackAssistant.IsPlaying)
+                    if (syncErrorMs > 100.0f && Service.trackAssistant.musicTrack != null && Service.trackAssistant.IsPlaying)
                     {
                         ImGui.SameLine();
                         ImGui.TextColored(colorYellow, string.Format(locPlayMetronomeSyncError, syncErrorMs));
                     }
                     else
                     {
-                        float trackPct = Math.Max(0.0f, 1.0f * (trackAssistant.CurrentTimeUs - trackAssistant.TrackStartTimeUs) / (trackAssistant.TrackEndTimeUs - trackAssistant.TrackStartTimeUs));
+                        float trackPct = Math.Max(0.0f, 1.0f * (Service.trackAssistant.CurrentTimeUs - Service.trackAssistant.TrackStartTimeUs) / (Service.trackAssistant.TrackEndTimeUs - Service.trackAssistant.TrackStartTimeUs));
                         ImGui.SameLine();
                         ImGui.Text($"( {trackPct.ToString("P0").Replace("%", "%%")} )");
                     }
@@ -559,21 +555,21 @@ namespace HarpHero
                 {
                     ImGui.TextColored(colorYellow, locPlayMetronomeStopped);
                     ImGui.SameLine();
-                    ImGui.Text($"{locTrackBPM}:{trackAssistant.metronomeLink.BPM}, {locTrackMeasure}:{trackAssistant.metronomeLink.Measure}");
+                    ImGui.Text($"{locTrackBPM}:{Service.trackAssistant.metronomeLink.BPM}, {locTrackMeasure}:{Service.trackAssistant.metronomeLink.Measure}");
                 }
             }
 
             if (showPlayControls)
             {
-                if (trackAssistant.IsPlaying)
+                if (Service.trackAssistant.IsPlaying)
                 {
                     if (ImGuiComponents.IconButton(12, FontAwesomeIcon.Stop))
                     {
-                        trackAssistant.Stop();
+                        Service.trackAssistant.Stop();
                     }
 
                     ImGui.SameLine();
-                    if (trackAssistant.IsPausedForInput)
+                    if (Service.trackAssistant.IsPausedForInput)
                     {
                         ImGui.TextColored(colorYellow, locTrainingWaits);
                     }
@@ -581,9 +577,9 @@ namespace HarpHero
                     {
                         ImGui.TextColored(colorOk, locStatusPlaying);
                         ImGui.SameLine();
-                        ImGui.Text(string.Format(locStatusPlayTime, trackAssistant.CurrentTime));
+                        ImGui.Text(string.Format(locStatusPlayTime, Service.trackAssistant.CurrentTime));
 
-                        float trackPct = Math.Max(0.0f, 1.0f * (trackAssistant.CurrentTimeUs - trackAssistant.TrackStartTimeUs) / (trackAssistant.TrackEndTimeUs - trackAssistant.TrackStartTimeUs));
+                        float trackPct = Math.Max(0.0f, 1.0f * (Service.trackAssistant.CurrentTimeUs - Service.trackAssistant.TrackStartTimeUs) / (Service.trackAssistant.TrackEndTimeUs - Service.trackAssistant.TrackStartTimeUs));
                         ImGui.SameLine();
                         ImGui.Text($"( {trackPct.ToString("P0").Replace("%", "%%")} )");
                     }
@@ -595,7 +591,7 @@ namespace HarpHero
                     {
                         if (ImGuiComponents.IconButton(10, FontAwesomeIcon.Play))
                         {
-                            trackAssistant.Start();
+                            Service.trackAssistant.Start();
                         }
 
                         ImGui.SameLine();
@@ -676,10 +672,10 @@ namespace HarpHero
         {
             bool needsSave = false;
             bool hasChanges = false;
-            bool autoAdjustEndBarCopy = config.AutoAdjustEndBar;
-            bool autoAdjustBPMCopy = config.AutoAdjustBPM;
-            bool useExtendedModeCopy = config.UseExtendedMode;
-            float autoAdjustSpeedThresholdCopy = config.AutoAdjustSpeedThreshold;
+            bool autoAdjustEndBarCopy = Service.config.AutoAdjustEndBar;
+            bool autoAdjustBPMCopy = Service.config.AutoAdjustBPM;
+            bool useExtendedModeCopy = Service.config.UseExtendedMode;
+            float autoAdjustSpeedThresholdCopy = Service.config.AutoAdjustSpeedThreshold;
 
             ImGui.Text($"{locConfigImport}:");
             ImGui.Indent();
@@ -705,10 +701,10 @@ namespace HarpHero
 
             if (hasChanges)
             {
-                config.AutoAdjustEndBar = autoAdjustEndBarCopy;
-                config.AutoAdjustBPM = autoAdjustBPMCopy;
-                config.UseExtendedMode = useExtendedModeCopy;
-                config.AutoAdjustSpeedThreshold = Math.Min(10.0f, Math.Max(0.1f, autoAdjustSpeedThresholdCopy));
+                Service.config.AutoAdjustEndBar = autoAdjustEndBarCopy;
+                Service.config.AutoAdjustBPM = autoAdjustBPMCopy;
+                Service.config.UseExtendedMode = useExtendedModeCopy;
+                Service.config.AutoAdjustSpeedThreshold = Math.Min(10.0f, Math.Max(0.1f, autoAdjustSpeedThresholdCopy));
                 needsSave = true;
                 hasChanges = false;
             }
@@ -719,10 +715,10 @@ namespace HarpHero
             ImGui.Text($"{locConfigAssist}:");
             ImGui.Indent();
 
-            int assistModeIdx = Math.Max(0, Array.IndexOf(cachedAssistIds, config.AssistMode));
-            bool useMetronomeLinkCopy = config.UseMetronomeLink;
-            bool usePlaybackCopy = config.UsePlayback;
-            bool showScoreCopy = config.ShowScore;
+            int assistModeIdx = Math.Max(0, Array.IndexOf(cachedAssistIds, Service.config.AssistMode));
+            bool useMetronomeLinkCopy = Service.config.UseMetronomeLink;
+            bool usePlaybackCopy = Service.config.UsePlayback;
+            bool showScoreCopy = Service.config.ShowScore;
 
             hasChanges = ImGui.Checkbox(locConfigUseMetronome, ref useMetronomeLinkCopy) || hasChanges;
             ImGuiComponents.HelpMarker(locConfigUseMetronomeHelp);
@@ -740,25 +736,25 @@ namespace HarpHero
 
             if (hasChanges)
             {
-                config.AssistMode = cachedAssistIds[assistModeIdx];
-                config.UseMetronomeLink = useMetronomeLinkCopy;
-                config.UsePlayback = usePlaybackCopy;
-                config.ShowScore = showScoreCopy;
+                Service.config.AssistMode = cachedAssistIds[assistModeIdx];
+                Service.config.UseMetronomeLink = useMetronomeLinkCopy;
+                Service.config.UsePlayback = usePlaybackCopy;
+                Service.config.ShowScore = showScoreCopy;
                 needsSave = true;
                 hasChanges = false;
             }
 
-            int numMarkersCopy = config.AssistNote2Markers;
-            int warnTimeCopy = config.AssistNote2WarnMs;
-            float scaleKeyboardCopy = config.AssistBindScaleKeyboard;
-            float scaleGamepadCopy = config.AssistBindScaleGamepad;
+            int numMarkersCopy = Service.config.AssistNote2Markers;
+            int warnTimeCopy = Service.config.AssistNote2WarnMs;
+            float scaleKeyboardCopy = Service.config.AssistBindScaleKeyboard;
+            float scaleGamepadCopy = Service.config.AssistBindScaleGamepad;
 
             ImGui.Indent();
             var textHeightScaled = ImGui.GetTextLineHeightWithSpacing();
             if (ImGui.BeginChild("##assistDetails", new Vector2(-1.0f, textHeightScaled * 2.5f)))
             {
                 ImGui.Columns(2);
-                if (config.UseAssistBind())
+                if (Service.config.UseAssistBind())
                 {
                     ImGui.AlignTextToFramePadding();
                     ImGui.Text(locConfigAssistBindScaleKeyboard);
@@ -771,7 +767,7 @@ namespace HarpHero
                     ImGui.NextColumn();
                     hasChanges = ImGui.SliderFloat("##scaleGamepad", ref scaleGamepadCopy, 1.0f, 2.5f, "%.2f") || hasChanges;
                 }
-                else if (config.UseAssistNoteA())
+                else if (Service.config.UseAssistNoteA())
                 {
                     ImGui.AlignTextToFramePadding();
                     ImGui.Text(locConfigAssistNoteNumMarkers);
@@ -798,10 +794,10 @@ namespace HarpHero
 
             if (hasChanges)
             {
-                config.AssistNote2Markers = numMarkersCopy;
-                config.AssistNote2WarnMs = warnTimeCopy;
-                config.AssistBindScaleKeyboard = scaleKeyboardCopy;
-                config.AssistBindScaleGamepad = scaleGamepadCopy;
+                Service.config.AssistNote2Markers = numMarkersCopy;
+                Service.config.AssistNote2WarnMs = warnTimeCopy;
+                Service.config.AssistBindScaleKeyboard = scaleKeyboardCopy;
+                Service.config.AssistBindScaleGamepad = scaleGamepadCopy;
                 needsSave = true;
                 hasChanges = false;
             }
@@ -809,13 +805,13 @@ namespace HarpHero
             ImGui.Unindent();
             if (needsSave)
             {
-                config.Save();
+                Service.config.Save();
             }
         }
 
         private void DrawSettingsAppearance()
         {
-            float alphaCopy = config.AssistBgAlpha;
+            float alphaCopy = Service.config.AssistBgAlpha;
             bool hasChanges = false;
             bool needsSave = false;
 
@@ -826,14 +822,14 @@ namespace HarpHero
 
             if (hasChanges)
             {
-                config.AssistBgAlpha = alphaCopy;
+                Service.config.AssistBgAlpha = alphaCopy;
                 needsSave = true;
             }
 
             ImGui.Spacing();
 
             ImGui.Text(locConfigAppearanceKeyAlias);
-            if (config.VKAlias.Count > 0)
+            if (Service.config.VKAlias.Count > 0)
             {
                 var colorRed = new Vector4(0.9f, 0.0f, 0.0f, 1.0f);
                 int removeIdx = -1;
@@ -844,14 +840,14 @@ namespace HarpHero
                     ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthStretch, 0.5f);
                     ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 20.0f * ImGuiHelpers.GlobalScale);
 
-                    for (int aliasIdx = 0; aliasIdx < config.VKAlias.Count; aliasIdx++)
+                    for (int aliasIdx = 0; aliasIdx < Service.config.VKAlias.Count; aliasIdx++)
                     {
                         ImGui.TableNextRow();
                         ImGui.TableNextColumn();
 
-                        var aliasVK = (VirtualKey)config.VKAlias[aliasIdx].Item1;
+                        var aliasVK = (VirtualKey)Service.config.VKAlias[aliasIdx].Item1;
                         ushort newVK = (ushort)aliasVK;
-                        string newDesc = config.VKAlias[aliasIdx].Item2;
+                        string newDesc = Service.config.VKAlias[aliasIdx].Item2;
                         bool needsUpdate = false;
 
                         ImGui.SetNextItemWidth(-1.0f);
@@ -884,7 +880,7 @@ namespace HarpHero
 
                         if (needsUpdate)
                         {
-                            config.VKAlias[aliasIdx] = new Tuple<ushort, string>(newVK, newDesc);
+                            Service.config.VKAlias[aliasIdx] = new Tuple<ushort, string>(newVK, newDesc);
                             needsSave = true;
                         }
                     }
@@ -894,21 +890,21 @@ namespace HarpHero
 
                 if (removeIdx >= 0)
                 {
-                    config.VKAlias.RemoveAt(removeIdx);
+                    Service.config.VKAlias.RemoveAt(removeIdx);
                     needsSave = true;
                 }
             }
 
             if (ImGui.Button(locConfigAppearanceAddAlias))
             {
-                config.VKAlias.Add(new Tuple<ushort, string>((ushort)VirtualKey.KEY_0, VirtualKey.KEY_0.GetFancyName()));
+                Service.config.VKAlias.Add(new Tuple<ushort, string>((ushort)VirtualKey.KEY_0, VirtualKey.KEY_0.GetFancyName()));
                 needsSave = true;
             }
 
             if (needsSave)
             {
-                config.Save();
-                config.ApplyVKAliases();
+                Service.config.Save();
+                Service.config.ApplyVKAliases();
             }
         }
 

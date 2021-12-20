@@ -1,7 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
@@ -15,10 +14,6 @@ namespace HarpHero
     {
         public string Name => "Harp Hero";
 
-        private readonly DalamudPluginInterface pluginInterface;
-        private readonly CommandManager commandManager;
-        private readonly Framework framework;
-
         private readonly WindowSystem windowSystem = new("HarpHero");
 
         private readonly PluginWindowStatus statusWindow;
@@ -26,7 +21,6 @@ namespace HarpHero
 
         private readonly UIReaderBardPerformance uiReaderPerformance;
         private readonly UnsafeReaderPerformanceKeybinds keybindReader;
-        private readonly TrackAssistant trackAssistant;
         private readonly UnsafeMetronomeLink metronome;
         private readonly NoteUIMapper noteUiMapper;
         private readonly Localization locManager;
@@ -40,14 +34,14 @@ namespace HarpHero
 
         private Configuration configuration { get; init; }
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, SigScanner sigScanner, ToastGui toastGui)
+        public Plugin(DalamudPluginInterface pluginInterface)
         {
-            this.pluginInterface = pluginInterface;
-            this.commandManager = commandManager;
-            this.framework = framework;
+            pluginInterface.Create<Service>();
 
-            configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            configuration.Initialize(pluginInterface);
+            Service.plugin = this;
+
+            Service.config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            Service.config.Initialize(pluginInterface);
 
             var myAssemblyName = GetType().Assembly.GetName().Name;
             locManager = new Localization($"{myAssemblyName}.assets.loc.", "", true);            // res stream format: HarpHero.assets.loc.en.json
@@ -55,11 +49,11 @@ namespace HarpHero
             CurrentLocManager = locManager;
 
             // prep data scrapers
-            uiReaderPerformance = new UIReaderBardPerformance(gameGui);
-            keybindReader = new UnsafeReaderPerformanceKeybinds(gameGui, sigScanner);
-            metronome = new UnsafeMetronomeLink(gameGui, sigScanner);
+            uiReaderPerformance = new UIReaderBardPerformance();
+            keybindReader = new UnsafeReaderPerformanceKeybinds();
+            metronome = new UnsafeMetronomeLink();
 
-            uiReaderScheduler = new UIReaderScheduler(gameGui);
+            uiReaderScheduler = new UIReaderScheduler(Service.gameGui);
             uiReaderScheduler.AddObservedAddon(uiReaderPerformance.uiReaderShort);
             uiReaderScheduler.AddObservedAddon(uiReaderPerformance.uiReaderWide);
             uiReaderScheduler.AddObservedAddon(metronome.uiReader);
@@ -68,33 +62,33 @@ namespace HarpHero
             noteUiMapper = new NoteUIMapper();
             var noteInputMapper = new NoteInputMapper(noteUiMapper, keybindReader);
 
-            trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
+            Service.trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, configuration);
 
             var fileManager = new MidiFileManager();
-            fileManager.OnImported += (_) => { trackAssistant.OnTracksImported(fileManager.tracks); };
+            fileManager.OnImported += (_) => { Service.trackAssistant.OnTracksImported(fileManager.tracks); };
 
-            var trackHealthCheck = new TrackHealthCheck(noteInputMapper, trackAssistant, uiReaderPerformance, configuration);
+            var trackHealthCheck = new TrackHealthCheck(noteInputMapper, Service.trackAssistant, uiReaderPerformance);
 
             // prep UI
-            statusWindow = new PluginWindowStatus(trackAssistant, fileManager, configuration, trackHealthCheck);
-            var trackViewWindow = new PluginWindowTrackView(trackAssistant);
-            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper, configuration);
-            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, trackAssistant, noteUiMapper, noteInputMapper, configuration);
-            var noteAssistant2Window = new PluginWindowNoteAssistant2(uiReaderPerformance, trackAssistant, noteUiMapper, configuration);
-            var scoreWindow = new PluginWindowScore(uiReaderPerformance, trackAssistant, configuration);
+            statusWindow = new PluginWindowStatus(fileManager, trackHealthCheck);
+            var trackViewWindow = new PluginWindowTrackView();
+            var noteAssistantWindow = new PluginWindowNoteAssistant(uiReaderPerformance, noteUiMapper, noteInputMapper);
+            var bindAssistantWindow = new PluginWindowBindAssistant(uiReaderPerformance, noteUiMapper, noteInputMapper);
+            var noteAssistant2Window = new PluginWindowNoteAssistant2(uiReaderPerformance, noteUiMapper);
+            var scoreWindow = new PluginWindowScore(uiReaderPerformance);
 
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
             uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
             uiReaderPerformance.OnKeyboardModeChanged += (isKeyboard) => noteInputMapper.OnKeyboardModeChanged(isKeyboard);
             uiReaderPerformance.OnCachedKeysChanged += (_) => noteUiMapper.OnNumKeysChanged(uiReaderPerformance.cachedState);
-            trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(trackAssistant);
-            trackAssistant.OnPlayChanged += (active) => noteInputMapper.OnPlayChanged(active);
-            trackAssistant.OnPerformanceScore += (accuracy) =>
+            Service.trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(Service.trackAssistant);
+            Service.trackAssistant.OnPlayChanged += (active) => noteInputMapper.OnPlayChanged(active);
+            Service.trackAssistant.OnPerformanceScore += (accuracy) =>
             {
                 if (configuration.ShowScore)
                 {
                     var accuracyToastOptions = new QuestToastOptions() { Position = QuestToastPosition.Centre, DisplayCheckmark = true, IconId = 0, PlaySound = true };
-                    toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);
+                    Service.toastGui.ShowQuest(string.Format(Localization.Localize("Toast_PerformanceAccuracy", "Accuracy: {0:P0}"), accuracy), accuracyToastOptions);
                 }
             };
 
@@ -109,13 +103,13 @@ namespace HarpHero
 
             // prep plugin hooks
             statusCommand = new(OnCommand);
-            commandManager.AddHandler("/harphero", statusCommand);
+            Service.commandManager.AddHandler("/harphero", statusCommand);
 
             pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
-            framework.Update += Framework_OnUpdateEvent;
+            Service.framework.Update += Framework_OnUpdateEvent;
 
             // keep at the end to update everything created here
             locManager.LocalizationChanged += (_) => CacheLocalization();
@@ -142,10 +136,10 @@ namespace HarpHero
 
         public void Dispose()
         {
-            trackAssistant.Dispose();
-            commandManager.RemoveHandler("/harphero");
+            Service.trackAssistant.Dispose();
+            Service.commandManager.RemoveHandler("/harphero");
             windowSystem.RemoveAllWindows();
-            framework.Update -= Framework_OnUpdateEvent;
+            Service.framework.Update -= Framework_OnUpdateEvent;
         }
 
         private static int debugSnapshotCounter = 0;

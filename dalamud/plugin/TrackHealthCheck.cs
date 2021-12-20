@@ -17,19 +17,17 @@
         private readonly NoteInputMapper inputMapper;
         private readonly TrackAssistant trackAssistant;
         private readonly UIReaderBardPerformance uiReaderPerformance;
-        private readonly Configuration config;
 
         public Status cachedStatus;
 
         private bool canRefreshBindings;
         private float refreshBindingsTimeRemaining;
 
-        public TrackHealthCheck(NoteInputMapper inputMapper, TrackAssistant trackAssistant, UIReaderBardPerformance uiReaderPerformance, Configuration config)
+        public TrackHealthCheck(NoteInputMapper inputMapper, TrackAssistant trackAssistant, UIReaderBardPerformance uiReaderPerformance)
         {
             this.inputMapper = inputMapper;
             this.trackAssistant = trackAssistant;
             this.uiReaderPerformance = uiReaderPerformance;
-            this.config = config;
         }
 
         public void UpdatePlayStatus(float deltaTime)
@@ -62,7 +60,7 @@
 
                 if (trackAssistant.IsValidExtendedMode)
                 {
-                    if (!config.UseExtendedMode)
+                    if (!Service.config.UseExtendedMode)
                     {
                         return Status.TooManyOctaves;
                     }

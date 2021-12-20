@@ -1,8 +1,6 @@
 ﻿using Dalamud;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
@@ -42,7 +40,6 @@ namespace HarpHero
             [FieldOffset(0x2)] public byte Gamepad;
         }
 
-        private readonly GameGui gameGui;
         public bool HasErrors { get; private set; }
 
         private int baseShortNotes = 0;
@@ -55,10 +52,8 @@ namespace HarpHero
         private Dictionary<byte, GamepadButtons> mapGamepad = new();
         private Dictionary<byte, VirtualKey> mapKeys = new();
 
-        public UnsafeReaderPerformanceKeybinds(GameGui gameGui, SigScanner sigScanner)
+        public UnsafeReaderPerformanceKeybinds()
         {
-            this.gameGui = gameGui;
-
             var ptrShortNotes = IntPtr.Zero;
             var ptrShortOctaves = IntPtr.Zero;
             var ptrWideNotes = IntPtr.Zero;
@@ -66,17 +61,17 @@ namespace HarpHero
             var ptrGamepadNotes = IntPtr.Zero;
             var ptrGamepadModifiers = IntPtr.Zero;
 
-            if (sigScanner != null)
+            if (Service.sigScanner != null)
             {
                 // use LEA opcode from setting loops in WritePerformanceBindingsWide/WritePerformanceBindingsSingleOctave
                 try
                 {
-                    ptrShortNotes = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 16");
-                    ptrWideNotes = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 2e");
-                    ptrShortOctaves = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 84 00 00 00 bd 02 00");
-                    ptrWideOctaves = sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 44 01 00 00 bd 02 00");
-                    ptrGamepadNotes = sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 33 db 4c 8d 3d ?? ?? ?? ?? 66 0f");
-                    ptrGamepadModifiers = sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 66 66 0f 1f 84 00 00 00 00 00 48 8b 4e 10");
+                    ptrShortNotes = Service.sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 16");
+                    ptrWideNotes = Service.sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 4c 8b e1 4c 2b e6 4c 8d 71 10 48 8b e9 41 bf 2e");
+                    ptrShortOctaves = Service.sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 84 00 00 00 bd 02 00");
+                    ptrWideOctaves = Service.sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 44 01 00 00 bd 02 00");
+                    ptrGamepadNotes = Service.sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 33 db 4c 8d 3d ?? ?? ?? ?? 66 0f");
+                    ptrGamepadModifiers = Service.sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 66 66 0f 1f 84 00 00 00 00 00 48 8b 4e 10");
                 }
                 catch (Exception ex)
                 {
@@ -132,7 +127,7 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                Dalamud.Logging.PluginLog.Log($"UnsafeReaderPerformanceKeybinds: error:{HasErrors} (S:{baseShortNotes}:{baseShortOctave}, W:{baseWideNotes}:{baseWideOctave}, G:{baseGamepadNotes}:{baseGamepadModifiers})");
+                PluginLog.Log($"UnsafeReaderPerformanceKeybinds: error:{HasErrors} (S:{baseShortNotes}:{baseShortOctave}, W:{baseWideNotes}:{baseWideOctave}, G:{baseGamepadNotes}:{baseGamepadModifiers})");
             };
         }
 
@@ -164,7 +159,7 @@ namespace HarpHero
                 // - 0x22b (0x16 elems = gamepad notes)
                 // - 0x227 (0x4 elems = gamepad modifiers)
 
-                var uiModulePtr = (gameGui != null) ? gameGui.GetUIModule() : IntPtr.Zero;
+                var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
                 {
                     var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[54]);

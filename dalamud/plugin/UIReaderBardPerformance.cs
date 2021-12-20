@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using Dalamud.Game.Text.SeStringHandling;
+﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -42,7 +41,6 @@ namespace HarpHero
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
         public bool HasErrors => false;
 
-        private GameGui gameGui;
         private IntPtr cachedAgentPtr;
         private int cachedNumKeys;
         private bool isWideMode;
@@ -50,16 +48,14 @@ namespace HarpHero
         public UIReaderBardPerformanceShort uiReaderShort = new();
         public UIReaderBardPerformanceWide uiReaderWide = new();
 
-        public UIReaderBardPerformance(GameGui gameGui)
+        public UIReaderBardPerformance()
         {
-            this.gameGui = gameGui;
-
             uiReaderShort.parentReader = this;
             uiReaderWide.parentReader = this;
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                Dalamud.Logging.PluginLog.Log($"UIReaderBardPerformance: status:{status}, numKeys:{cachedNumKeys}, isWide:{isWideMode}, useGamepad:{cachedState.isGamepad}");
+                PluginLog.Log($"UIReaderBardPerformance: status:{status}, numKeys:{cachedNumKeys}, isWide:{isWideMode}, useGamepad:{cachedState.isGamepad}");
             };
         }
 
@@ -78,7 +74,7 @@ namespace HarpHero
 
         public void OnAddonShown(IntPtr addonPtr, bool isWide)
         {
-            cachedAgentPtr = gameGui.FindAgentInterface(addonPtr);
+            cachedAgentPtr = Service.gameGui.FindAgentInterface(addonPtr);
             isWideMode = isWide;
         }
 

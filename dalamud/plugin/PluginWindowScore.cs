@@ -9,7 +9,6 @@ namespace HarpHero
     public class PluginWindowScore : Window, IDisposable
     {
         private readonly UIReaderBardPerformance uiReader;
-        private readonly TrackAssistant trackAssistant;
 
         private int lastShownRankMajor;
         private Vector2[] cachedRankMinorPos;
@@ -17,13 +16,12 @@ namespace HarpHero
         private uint colorMinorEmpty = UIColors.colorGray33;
         private uint[] colorMinor = { UIColors.colorGreen, UIColors.colorYellow, UIColors.colorRed };
 
-        public PluginWindowScore(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, Configuration config) : base("Track score")
+        public PluginWindowScore(UIReaderBardPerformance uiReader) : base("Track score")
         {
             this.uiReader = uiReader;
-            this.trackAssistant = trackAssistant;
 
-            trackAssistant.OnTrackChanged += (_) => IsOpen = false;
-            trackAssistant.OnPlayChanged += (active) => IsOpen = (uiReader.IsVisible && config.ShowScore);
+            Service.trackAssistant.OnTrackChanged += (_) => IsOpen = false;
+            Service.trackAssistant.OnPlayChanged += (active) => IsOpen = (uiReader.IsVisible && Service.config.ShowScore);
             uiReader.OnVisibilityChanged += (_) => IsOpen = false;
 
             IsOpen = false;
@@ -83,7 +81,7 @@ namespace HarpHero
 
             ImGui.SetWindowFontScale(3.0f);
 
-            var rankText = trackAssistant.scoreTracker.RankName;
+            var rankText = Service.trackAssistant.scoreTracker.RankName;
             var rankTextSize = ImGui.CalcTextSize(rankText);
             ImGui.SetCursorScreenPos(centerPos - (rankTextSize * 0.5f));
             ImGui.Text(rankText);
@@ -95,7 +93,7 @@ namespace HarpHero
                 int numThr2 = Math.Max(2, cachedRankMinorPos.Length * 3 / 10); ;
                 int thr2 = cachedRankMinorPos.Length - numThr2;
 
-                int numToShow = trackAssistant.scoreTracker.RankMinor;
+                int numToShow = Service.trackAssistant.scoreTracker.RankMinor;
                 var markerRadius = 5.0f;
 
                 for (int idx = 0; idx < numToShow; idx++)
@@ -110,22 +108,22 @@ namespace HarpHero
             }
 
             // TODO: fx for rank changes?
-            lastShownRankMajor = trackAssistant.scoreTracker.RankMajor;
+            lastShownRankMajor = Service.trackAssistant.scoreTracker.RankMajor;
         }
 
         private void UpdateRankMinorSlots(float radius)
         {
             if (cachedRankMinorPos == null ||
-                trackAssistant.scoreTracker.RankMinorMax != cachedRankMinorPos.Length)
+                Service.trackAssistant.scoreTracker.RankMinorMax != cachedRankMinorPos.Length)
             {
-                if (trackAssistant.scoreTracker.RankMinorMax > 0)
+                if (Service.trackAssistant.scoreTracker.RankMinorMax > 0)
                 {
-                    cachedRankMinorPos = new Vector2[trackAssistant.scoreTracker.RankMinorMax];
+                    cachedRankMinorPos = new Vector2[Service.trackAssistant.scoreTracker.RankMinorMax];
 
                     float angle = (float)(-Math.PI / 2);
-                    float angleInc = (float)(Math.PI * 2 / trackAssistant.scoreTracker.RankMinorMax);
+                    float angleInc = (float)(Math.PI * 2 / Service.trackAssistant.scoreTracker.RankMinorMax);
 
-                    for (int idx = 0; idx < trackAssistant.scoreTracker.RankMinorMax; idx++)
+                    for (int idx = 0; idx < Service.trackAssistant.scoreTracker.RankMinorMax; idx++)
                     {
                         cachedRankMinorPos[idx] = new Vector2((float)Math.Cos(angle) * radius, (float)Math.Sin(angle) * radius);
                         angle += angleInc;

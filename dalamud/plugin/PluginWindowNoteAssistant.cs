@@ -32,8 +32,6 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
         private readonly NoteInputMapper noteInput;
-        private readonly TrackAssistant trackAssistant;
-        private readonly Configuration config;
 
         public bool showOctaveShiftHints = true;
         public bool showBars = false;
@@ -46,16 +44,14 @@ namespace HarpHero
 
         private float noMusicUpkeepRemaining = 0.0f;
 
-        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, TrackAssistant trackAssistant, NoteUIMapper noteMapper, NoteInputMapper noteInput, Configuration config) : base("Note Assistant")
+        public PluginWindowNoteAssistant(UIReaderBardPerformance uiReader, NoteUIMapper noteMapper, NoteInputMapper noteInput) : base("Note Assistant")
         {
             this.uiReader = uiReader;
             this.noteMapper = noteMapper;
             this.noteInput = noteInput;
-            this.trackAssistant = trackAssistant;
-            this.config = config;
 
             uiReader.OnVisibilityChanged += OnPerformanceActive;
-            trackAssistant.OnPlayChanged += OnPlayChanged;
+            Service.trackAssistant.OnPlayChanged += OnPlayChanged;
 
             IsOpen = false;
 
@@ -77,14 +73,14 @@ namespace HarpHero
             Plugin.OnDebugSnapshot += (_) =>
             {
                 int drawErrState =
-                    (trackAssistant == null) ? 1 :
-                    (trackAssistant.musicViewer == null) ? 2 :
+                    (Service.trackAssistant == null) ? 1 :
+                    (Service.trackAssistant.musicViewer == null) ? 2 :
                     !Size.HasValue ? 3 :
-                    !trackAssistant.IsPlaying ? 4 :
+                    !Service.trackAssistant.IsPlaying ? 4 :
                     (cachedNotePosX == null) ? 5 :
                     0;
 
-                Dalamud.Logging.PluginLog.Log($"PluginWindowNoteAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{trackAssistant.CanShowNoteAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
+                Dalamud.Logging.PluginLog.Log($"PluginWindowNoteAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant.CanShowNoteAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
             };
         }
 
@@ -101,7 +97,7 @@ namespace HarpHero
                 IsOpen = false;
                 noMusicUpkeepRemaining = 0.0f;
             }
-            else if (trackAssistant?.IsPlaying ?? false)
+            else if (Service.trackAssistant?.IsPlaying ?? false)
             {
                 OnPlayChanged(true);
             }
@@ -109,7 +105,7 @@ namespace HarpHero
 
         public void OnPlayChanged(bool active)
         {
-            if (trackAssistant.CanShowNoteAssistant)
+            if (Service.trackAssistant.CanShowNoteAssistant)
             {
                 if (active && uiReader.IsVisible)
                 {
@@ -146,7 +142,7 @@ namespace HarpHero
 
                 Position = new Vector2(uiLowC.pos.X, newWindowPosY);
                 Size = new Vector2(uiHighC.pos.X + uiHighC.size.X - uiLowC.pos.X + TrackAssistOctaveShiftX, uiLowC.pos.Y - newWindowPosY) / ImGuiHelpers.GlobalScale;
-                BgAlpha = upkeepAlpha * config.AssistBgAlpha;
+                BgAlpha = upkeepAlpha * Service.config.AssistBgAlpha;
 
                 cachedNoteAppearPosY = Position.Value.Y + 10 + viewportOffset.Y;
                 cachedNoteActivationPosY = Position.Value.Y + ((Size.Value.Y - 20) * ImGuiHelpers.GlobalScale) + viewportOffset.Y;
@@ -179,7 +175,7 @@ namespace HarpHero
 
         public bool Tick(float deltaSeconds)
         {
-            bool canFadeOut = IsOpen && (trackAssistant == null || !trackAssistant.IsPlaying);
+            bool canFadeOut = IsOpen && (Service.trackAssistant == null || !Service.trackAssistant.IsPlaying);
             if (canFadeOut)
             {
                 noMusicUpkeepRemaining -= deltaSeconds;
@@ -195,7 +191,7 @@ namespace HarpHero
 
         public override void OnClose()
         {
-            trackAssistant?.Stop();
+            Service.trackAssistant?.Stop();
         }
 
         public override void Draw()
@@ -204,9 +200,9 @@ namespace HarpHero
             {
                 DrawKeyGuides();
 
-                if (trackAssistant != null && trackAssistant.musicViewer != null)
+                if (Service.trackAssistant != null && Service.trackAssistant.musicViewer != null)
                 {
-                    if (trackAssistant.IsPlaying)
+                    if (Service.trackAssistant.IsPlaying)
                     {
                         noMusicUpkeepRemaining = NoMusicUpkeepTime;
 
@@ -288,10 +284,10 @@ namespace HarpHero
             var posStartX = Position.Value.X + 10;
             var posEndX = Position.Value.X + (Size.Value.X - 10) * ImGuiHelpers.GlobalScale;
 
-            var timeRangeStartUs = trackAssistant.musicViewer.TimeRangeStartUs;
-            var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
+            var timeRangeStartUs = Service.trackAssistant.musicViewer.TimeRangeStartUs;
+            var timeRangeUs = Service.trackAssistant.musicViewer.TimeRangeUs;
 
-            foreach (var lineTimeUs in trackAssistant.musicViewer.shownBarLines)
+            foreach (var lineTimeUs in Service.trackAssistant.musicViewer.shownBarLines)
             {
                 // no clamping, ignore when moved outside view window
                 var timeAlpha = 1.0f * (lineTimeUs - timeRangeStartUs) / timeRangeUs;
@@ -302,7 +298,7 @@ namespace HarpHero
                 }
             }
 
-            foreach (var lineTimeUs in trackAssistant.musicViewer.shownBeatLines)
+            foreach (var lineTimeUs in Service.trackAssistant.musicViewer.shownBeatLines)
             {
                 // no clamping, ignore when moved outside view window
                 var timeAlpha = 1.0f * (lineTimeUs - timeRangeStartUs) / timeRangeUs;
@@ -317,8 +313,8 @@ namespace HarpHero
         private void DrawNotes()
         {
             var drawList = ImGui.GetWindowDrawList();
-            var timeRangeStartUs = trackAssistant.musicViewer.TimeRangeStartUs;
-            var timeRangeUs = trackAssistant.musicViewer.TimeRangeUs;
+            var timeRangeStartUs = Service.trackAssistant.musicViewer.TimeRangeStartUs;
+            var timeRangeUs = Service.trackAssistant.musicViewer.TimeRangeUs;
 
             float noteHalfWidth = 5.0f;
 
@@ -332,7 +328,7 @@ namespace HarpHero
             int numShownOffsets = 0;
             bool canShowOctaveOffsetKey = showOctaveShiftHints;
 
-            foreach (var noteInfo in trackAssistant.musicViewer.shownNotes)
+            foreach (var noteInfo in Service.trackAssistant.musicViewer.shownNotes)
             {
                 if (!noteMapper.GetMappedNoteIdx(noteInfo.note, out int mappedNoteIdx, out int octaveOffset))
                 {
@@ -341,8 +337,8 @@ namespace HarpHero
                 }
 
                 bool isNoteIgnored =
-                    (trackAssistant.TrackStartTimeUs >= 0 && noteInfo.startUs < trackAssistant.TrackStartTimeUs) ||
-                    (trackAssistant.TrackEndTimeUs >= 0 && noteInfo.endUs >= trackAssistant.TrackEndTimeUs);
+                    (Service.trackAssistant.TrackStartTimeUs >= 0 && noteInfo.startUs < Service.trackAssistant.TrackStartTimeUs) ||
+                    (Service.trackAssistant.TrackEndTimeUs >= 0 && noteInfo.endUs >= Service.trackAssistant.TrackEndTimeUs);
 
                 float t0 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteInfo.startUs - timeRangeStartUs) / timeRangeUs));
                 float t1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteInfo.endUs - timeRangeStartUs) / timeRangeUs));

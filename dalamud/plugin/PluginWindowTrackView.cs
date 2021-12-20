@@ -11,8 +11,6 @@ namespace HarpHero
 {
     public class PluginWindowTrackView : Window, IDisposable
     {
-        private readonly TrackAssistant trackAssistant;
-
         private MidiTrackWrapper shownTrack;
         private MidiTrackViewer[] trackViewers;
         private int shownSecond;
@@ -30,10 +28,8 @@ namespace HarpHero
         private string locDetailsHint;
         private string locDetailsHeader;
 
-        public PluginWindowTrackView(TrackAssistant trackAssistant) : base("Track View")
+        public PluginWindowTrackView() : base("Track View")
         {
-            this.trackAssistant = trackAssistant;
-
             IsOpen = false;
 
             SizeConstraints = new WindowSizeConstraints() { MinimumSize = new Vector2(600, 400), MaximumSize = new Vector2(2000, 1000) };
