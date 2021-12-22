@@ -35,6 +35,7 @@ namespace HarpHero
         public float timeWindowSecondsBehind = 1.0f;
         public int maxBindingsToShow = 3;
         public int maxNotesToHint = 5;
+        public int highPassFilterThr = 0;
 
         public bool generateBarData = true;
         public bool generateBindingData = true;
@@ -115,12 +116,15 @@ namespace HarpHero
             var cacheBuilder = new List<NoteInfo>();
             foreach (var note in trackChunk.GetNotes())
             {
-                cacheBuilder.Add(new NoteInfo()
+                if (note.NoteNumber >= highPassFilterThr)
                 {
-                    note = note,
-                    startUs = note.TimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds,
-                    endUs = note.EndTimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds
-                });
+                    cacheBuilder.Add(new NoteInfo()
+                    {
+                        note = note,
+                        startUs = note.TimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds,
+                        endUs = note.EndTimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds
+                    });
+                }
             }
 
             cachedNotes = cacheBuilder.ToArray();
@@ -193,6 +197,8 @@ namespace HarpHero
                 }
 
                 var itTimeInc = new BarBeatTicksTimeSpan(0, 1);
+                var numBeatsRemaining = MidiTrackStats.MaxBeatsToProcess;
+
                 for (var itTimeBar = new BarBeatTicksTimeSpan(startTimeBar.Bars, startTimeBar.Beats); itTimeBar < endTimeBar; itTimeBar += itTimeInc)
                 {
                     var itTimeMetric = TimeConverter.ConvertTo<MetricTimeSpan>(itTimeBar, tempoMap);
@@ -205,6 +211,12 @@ namespace HarpHero
                     else
                     {
                         shownBeatLines.Add(itTimeMetric.TotalMicroseconds);
+                    }
+
+                    numBeatsRemaining--;
+                    if (numBeatsRemaining <= 0)
+                    {
+                        break;
                     }
                 }
             }

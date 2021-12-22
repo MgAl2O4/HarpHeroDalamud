@@ -13,8 +13,8 @@ namespace HarpHero
     {
         public static bool CollectNoteProcessing = false;
 
-        public const float MinNoteDurationSeconds = 0.100f;
-        public const int MaxBarsToCalculateTempo = 10;
+        public static float MinNoteDurationSeconds = 0.101f;
+        public static int MaxBarsToCalculateTempo = 10;
 
         public string name;
 
@@ -29,6 +29,8 @@ namespace HarpHero
 
         public MidiTrackStats stats = new MidiTrackStats();
         public MidiTrackStats statsOrg = new MidiTrackStats();
+
+        public float MedianTooShortMs = -1.0f;
 
         public enum NoteProcessingType
         {
@@ -83,7 +85,10 @@ namespace HarpHero
                     trackOb.name = $"#{list.Count + 1}";
                 }
 
-                list.Add(trackOb);
+                if (trackOb.stats.numNotes > 0)
+                {
+                    list.Add(trackOb);
+                }
             }
 
             return list;
@@ -258,9 +263,10 @@ namespace HarpHero
             }
         }
 
-        private void FilterTooShort()
+        private void FilterTooShort(bool collectDurations)
         {
             long minLengthUs = (long)(MinNoteDurationSeconds * 1000 * 1000);
+            var listTooShort = new List<long>();
 
             midiTrack.RemoveNotes(x =>
             {
@@ -268,7 +274,11 @@ namespace HarpHero
                 var endTimeMetric = x.EndTimeAs<MetricTimeSpan>(tempoMap);
 
                 var noteLengthUs = (endTimeMetric - startTimeMetric).TotalMicroseconds;
-                bool shouldRemove = noteLengthUs <= minLengthUs;
+                bool shouldRemove = noteLengthUs < minLengthUs;
+                if (shouldRemove && collectDurations)
+                {
+                    listTooShort.Add(noteLengthUs);
+                }
 
                 if (CollectNoteProcessing)
                 {
@@ -286,6 +296,24 @@ namespace HarpHero
 
                 return shouldRemove;
             });
+
+            if (listTooShort.Count > 0)
+            {
+                listTooShort.Sort();
+                
+                if ((listTooShort.Count % 2) == 1)
+                {
+                    MedianTooShortMs = listTooShort[listTooShort.Count / 2] / 1000.0f;
+                }
+                else
+                {
+                    int medianIdx1 = listTooShort.Count / 2;
+                    MedianTooShortMs = (listTooShort[medianIdx1 - 1] + listTooShort[medianIdx1]) / 2000.0f;
+                }
+#if DEBUG
+                PluginLog.Log($"Median of too short notes: {MedianTooShortMs} ms");
+#endif // DEBUG
+            }
         }
 
         private void UnifyTempo()
@@ -327,20 +355,23 @@ namespace HarpHero
                 int roundedBPM = (int)Math.Round(60000000.0 / newQuarterNoteTimeUs);
                 long roundedQuarterNoteTimeUs = 60000000 / roundedBPM;
 
-                var lastNote = midiTrack.GetNotes().Last();
-                var trackDuration = lastNote.EndTimeAs<MidiTimeSpan>(tempoMap).TimeSpan;
-
-                var tracksToUpdate = new TrackChunk[] { midiTrack };
-                using (var tempoManager = TempoMapManagingUtilities.ManageTempoMap(tracksToUpdate, tempoMap.TimeDivision))
+                var lastNote = midiTrack.GetNotes().LastOrDefault();
+                if (lastNote != null)
                 {
-                    tempoManager.ClearTempo(0, trackDuration);
-                    tempoManager.SetTempo(0, new Tempo(roundedQuarterNoteTimeUs));
-                    tempoMap = tempoManager.TempoMap;
-                }
+                    var trackDuration = lastNote.EndTimeAs<MidiTimeSpan>(tempoMap).TimeSpan;
+
+                    var tracksToUpdate = new TrackChunk[] { midiTrack };
+                    using (var tempoManager = TempoMapManagingUtilities.ManageTempoMap(tracksToUpdate, tempoMap.TimeDivision))
+                    {
+                        tempoManager.ClearTempo(0, trackDuration);
+                        tempoManager.SetTempo(0, new Tempo(roundedQuarterNoteTimeUs));
+                        tempoMap = tempoManager.TempoMap;
+                    }
 
 #if DEBUG
-                PluginLog.Log($"Unified tempo: {roundedBPM} BPM");
+                    PluginLog.Log($"Unified tempo: {roundedBPM} BPM");
 #endif // DEBUG
+                }
             }
         }
 
@@ -383,10 +414,10 @@ namespace HarpHero
             int numNotes = midiTrack.GetNotes().Count;
             if (numNotes > 0)
             {
-                FilterTooShort();
+                FilterTooShort(true);
                 SimplifyChords();
                 SimplifyOverlaps();
-                FilterTooShort();
+                FilterTooShort(false);
 
                 UnifyTempo();
             }

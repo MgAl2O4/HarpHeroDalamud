@@ -9,6 +9,8 @@ namespace HarpHero
 {
     public class MidiTrackStats
     {
+        public const int MaxBeatsToProcess = 100 * 1000;
+
         public SevenBitNumber minNote;
         public SevenBitNumber maxNote;
         public int notesPerBeat;
@@ -141,12 +143,19 @@ namespace HarpHero
             var endTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(endTick, tempoMap);
 
             var itTimeInc = new BarBeatTicksTimeSpan(0, 1);
+            var numBeatsRemaining = MaxBeatsToProcess;
             for (var itTimeBeat = new BarBeatTicksTimeSpan(startTimeBar.Bars, startTimeBar.Beats); itTimeBeat < endTimeBar; itTimeBeat += itTimeInc)
             {
                 long itTicks = TimeConverter.ConvertFrom(itTimeBeat, tempoMap);
                 itTimeBeat = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(itTicks, tempoMap);   // convert back from raw ticks to resolve time signature dependency
 
                 beatTimes.Add(itTicks);
+
+                numBeatsRemaining--;
+                if (numBeatsRemaining <= 0)
+                {
+                    break;
+                }
             }
 
             if (beatTimes.Count >= 2)
