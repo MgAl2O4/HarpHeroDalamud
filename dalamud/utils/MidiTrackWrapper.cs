@@ -30,7 +30,7 @@ namespace HarpHero
         public MidiTrackStats stats = new MidiTrackStats();
         public MidiTrackStats statsOrg = new MidiTrackStats();
 
-        public float MedianTooShortMs = -1.0f;
+        public float medianTooShortMs = -1.0f;
 
         public enum NoteProcessingType
         {
@@ -303,15 +303,15 @@ namespace HarpHero
                 
                 if ((listTooShort.Count % 2) == 1)
                 {
-                    MedianTooShortMs = listTooShort[listTooShort.Count / 2] / 1000.0f;
+                    medianTooShortMs = listTooShort[listTooShort.Count / 2] / 1000.0f;
                 }
                 else
                 {
                     int medianIdx1 = listTooShort.Count / 2;
-                    MedianTooShortMs = (listTooShort[medianIdx1 - 1] + listTooShort[medianIdx1]) / 2000.0f;
+                    medianTooShortMs = (listTooShort[medianIdx1 - 1] + listTooShort[medianIdx1]) / 2000.0f;
                 }
 #if DEBUG
-                PluginLog.Log($"Median of too short notes: {MedianTooShortMs} ms");
+                PluginLog.Log($"Median of too short notes: {medianTooShortMs} ms");
 #endif // DEBUG
             }
         }

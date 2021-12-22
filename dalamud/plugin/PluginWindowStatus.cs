@@ -50,6 +50,7 @@ namespace HarpHero
         private string locTrackSection;
         private string locTrackSectionUnits;
         private string locTrackSectionReset;
+        private string locTrackTooShortMedian;
         private string locPlayMetronomeHint;
         private string locPlayMetronome;
         private string locPlayMetronomeNotVisible;
@@ -84,6 +85,8 @@ namespace HarpHero
         private string locConfigAutoBPMHelp;
         private string locConfigAutoSection;
         private string locConfigAutoSectionHelp;
+        private string locConfigTooShortFilter;
+        private string locConfigTooShortFilterHelp;
         private string locConfigAllowExtendedMode;
         private string locConfigAssist;
         private string locConfigUseMetronome;
@@ -145,6 +148,7 @@ namespace HarpHero
             locTrackSection = Localization.Localize("ST_TrackSection", "Section");
             locTrackSectionUnits = Localization.Localize("ST_TrackSectionUnits", "bars");
             locTrackSectionReset = Localization.Localize("ST_TrackSectionReset", "Set full length");
+            locTrackTooShortMedian = Localization.Localize("ST_TrackShortNoteMedian", "Duration filter median:");
             locPlayMetronomeHint = Localization.Localize("ST_PlayMetronomeHint", "Use game metronome for play controls");
             locPlayMetronome = Localization.Localize("ST_Metronome", "Metronome");
             locPlayMetronomeNotVisible = Localization.Localize("ST_MetronomeNotVis", "not visible");
@@ -180,6 +184,8 @@ namespace HarpHero
             locConfigAutoBPMHelp = Localization.Localize("CFG_AutoBPMHelp", "Lowers tempo to fit in desired key press speed");
             locConfigAutoSection = Localization.Localize("CFG_AutoSection", "Auto adjust end bar");
             locConfigAutoSectionHelp = Localization.Localize("CFG_AutoSectionHelp", "Shorten music track to fit in 3 octave range");
+            locConfigTooShortFilter = Localization.Localize("CFG_MinDuration", "Min note duration (ms)");
+            locConfigTooShortFilterHelp = Localization.Localize("CFG_MinDurationHelp", "All notes shorter than threshold will be removed during import");
             locConfigAllowExtendedMode = Localization.Localize("CFG_AllowExtended", "Allow extended, 5 octave mode");
             locConfigAssist = Localization.Localize("CFG_Assist", "Assist panel");
             locConfigUseMetronome = Localization.Localize("CFG_UseMetronome", "Use game metronome");
@@ -253,7 +259,14 @@ namespace HarpHero
             ImGui.AlignTextToFramePadding();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.FileImport))
             {
-                dlgManager.OpenFileDialog(locImportHint, ".mid,.midi", (found, path) => { if (found) { fileManager.ImportFile(path); } });
+                dlgManager.OpenFileDialog(locImportHint, ".mid,.midi", (found, path) => 
+                { 
+                    if (found) 
+                    {
+                        MidiTrackWrapper.MinNoteDurationSeconds = Service.config.MinNoteDurationMs * 0.001f;
+                        fileManager.ImportFile(path); 
+                    } 
+                });
             }
             if (ImGui.IsItemHovered())
             {
@@ -417,6 +430,18 @@ namespace HarpHero
                 {
                     ImGui.TextColored(isRangeValid ? colorDetail : colorErr, statBlock.GetOctaveRange().ToString());
                 }
+
+                ImGui.Text(locTrackTooShortMedian);
+                ImGui.SameLine();
+                if (Service.trackAssistant.musicTrack.medianTooShortMs < 0.0f)
+                {
+                    ImGui.TextColored(colorDetail, "--");
+                }
+                else
+                {
+                    ImGui.TextColored(colorDetail, $"{Service.trackAssistant.musicTrack.medianTooShortMs} ms");
+                }
+                ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp);
 
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text($"{locTrackSection}:");
@@ -683,6 +708,7 @@ namespace HarpHero
             bool autoAdjustBPMCopy = Service.config.AutoAdjustBPM;
             bool useExtendedModeCopy = Service.config.UseExtendedMode;
             float autoAdjustSpeedThresholdCopy = Service.config.AutoAdjustSpeedThreshold;
+            int minDurationCopy = Service.config.MinNoteDurationMs;
 
             ImGui.Text($"{locConfigImport}:");
             ImGui.Indent();
@@ -706,12 +732,20 @@ namespace HarpHero
             hasChanges = ImGui.Checkbox(locConfigAllowExtendedMode, ref useExtendedModeCopy) || hasChanges;
             ImGuiComponents.HelpMarker(locStatusExtendedModeHint);
 
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text(locConfigTooShortFilter);
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(100);
+            hasChanges = ImGui.InputInt("##tooShortFilter", ref minDurationCopy, 1, 25) || hasChanges;
+            ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp);
+
             if (hasChanges)
             {
                 Service.config.AutoAdjustEndBar = autoAdjustEndBarCopy;
                 Service.config.AutoAdjustBPM = autoAdjustBPMCopy;
                 Service.config.UseExtendedMode = useExtendedModeCopy;
                 Service.config.AutoAdjustSpeedThreshold = Math.Min(10.0f, Math.Max(0.1f, autoAdjustSpeedThresholdCopy));
+                Service.config.MinNoteDurationMs = Math.Min(500, Math.Max(10, minDurationCopy));
                 needsSave = true;
                 hasChanges = false;
             }
