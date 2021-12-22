@@ -201,8 +201,15 @@ namespace HarpHero
 
                 for (var itTimeBar = new BarBeatTicksTimeSpan(startTimeBar.Bars, startTimeBar.Beats); itTimeBar < endTimeBar; itTimeBar += itTimeInc)
                 {
+                    var prevItBar = itTimeBar;
                     var itTimeMetric = TimeConverter.ConvertTo<MetricTimeSpan>(itTimeBar, tempoMap);
                     itTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(itTimeMetric, tempoMap);
+                    if (prevItBar.CompareTo(itTimeBar) > 0)
+                    {
+                        // how???
+                        itTimeBar = prevItBar;
+                        itTimeBar += itTimeInc;
+                    }
 
                     if (itTimeBar.Beats == 0)
                     {

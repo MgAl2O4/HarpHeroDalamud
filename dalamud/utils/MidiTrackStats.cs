@@ -146,8 +146,15 @@ namespace HarpHero
             var numBeatsRemaining = MaxBeatsToProcess;
             for (var itTimeBeat = new BarBeatTicksTimeSpan(startTimeBar.Bars, startTimeBar.Beats); itTimeBeat < endTimeBar; itTimeBeat += itTimeInc)
             {
+                var prevItBeat = itTimeBeat;
                 long itTicks = TimeConverter.ConvertFrom(itTimeBeat, tempoMap);
                 itTimeBeat = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(itTicks, tempoMap);   // convert back from raw ticks to resolve time signature dependency
+                if (prevItBeat.CompareTo(itTimeBeat) > 0)
+                {
+                    // how???
+                    itTimeBeat = prevItBeat;
+                    itTimeBeat += itTimeInc;
+                }
 
                 beatTimes.Add(itTicks);
 
