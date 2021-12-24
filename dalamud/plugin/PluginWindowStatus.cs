@@ -259,13 +259,13 @@ namespace HarpHero
             ImGui.AlignTextToFramePadding();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.FileImport))
             {
-                dlgManager.OpenFileDialog(locImportHint, ".mid,.midi", (found, path) => 
-                { 
-                    if (found) 
+                dlgManager.OpenFileDialog(locImportHint, ".mid,.midi", (found, path) =>
+                {
+                    if (found)
                     {
                         MidiTrackWrapper.MinNoteDurationSeconds = Service.config.MinNoteDurationMs * 0.001f;
-                        fileManager.ImportFile(path); 
-                    } 
+                        fileManager.ImportFile(path);
+                    }
                 });
             }
             if (ImGui.IsItemHovered())

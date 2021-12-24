@@ -300,7 +300,7 @@ namespace HarpHero
             if (listTooShort.Count > 0)
             {
                 listTooShort.Sort();
-                
+
                 if ((listTooShort.Count % 2) == 1)
                 {
                     medianTooShortMs = listTooShort[listTooShort.Count / 2] / 1000.0f;
