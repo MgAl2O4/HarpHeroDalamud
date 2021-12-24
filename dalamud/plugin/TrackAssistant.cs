@@ -61,7 +61,7 @@ namespace HarpHero
         public Action<bool> OnTrackChanged;
         public Action<float> OnPerformanceScore;
 
-        public TrackAssistant(UIReaderBardPerformance uiReader, UnsafeMetronomeLink metronomeLink)
+        public TrackAssistant(UIReaderBardPerformance uiReader, UnsafeMetronomeLink metronomeLink, UnsafePerformanceHook performanceHook)
         {
             this.uiReader = uiReader;
             this.metronomeLink = metronomeLink;
@@ -69,7 +69,11 @@ namespace HarpHero
 
             useWaitingForInput = Service.config?.UseTrainingMode ?? true;
 
-            if (uiReader != null)
+            if (performanceHook != null && performanceHook.IsValid)
+            {
+                performanceHook.OnPlayingNoteChanged += OnPlayingNoteChanged;
+            }
+            else if (uiReader != null)
             {
                 uiReader.OnPlayingNoteChanged += OnPlayingNoteChanged;
             }

@@ -22,6 +22,7 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReaderPerformance;
         private readonly UnsafeReaderPerformanceKeybinds keybindReader;
         private readonly UnsafeMetronomeLink metronome;
+        private readonly UnsafePerformanceHook performanceHook;
         private readonly NoteUIMapper noteUiMapper;
         private readonly Localization locManager;
 
@@ -50,6 +51,7 @@ namespace HarpHero
             uiReaderPerformance = new UIReaderBardPerformance();
             keybindReader = new UnsafeReaderPerformanceKeybinds();
             metronome = new UnsafeMetronomeLink();
+            performanceHook = new UnsafePerformanceHook();
 
             uiReaderScheduler = new UIReaderScheduler(Service.gameGui);
             uiReaderScheduler.AddObservedAddon(uiReaderPerformance.uiReaderShort);
@@ -60,7 +62,7 @@ namespace HarpHero
             noteUiMapper = new NoteUIMapper();
             var noteInputMapper = new NoteInputMapper(noteUiMapper, keybindReader);
 
-            Service.trackAssistant = new TrackAssistant(uiReaderPerformance, metronome);
+            Service.trackAssistant = new TrackAssistant(uiReaderPerformance, metronome, performanceHook);
 
             var fileManager = new MidiFileManager();
             fileManager.OnImported += (_) => { Service.trackAssistant.OnTracksImported(fileManager.tracks); };
@@ -134,6 +136,7 @@ namespace HarpHero
 
         public void Dispose()
         {
+            performanceHook.Dispose();
             Service.trackAssistant.Dispose();
             Service.commandManager.RemoveHandler("/harphero");
             windowSystem.RemoveAllWindows();
