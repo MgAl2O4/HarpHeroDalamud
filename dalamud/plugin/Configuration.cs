@@ -20,6 +20,7 @@ namespace HarpHero
 
         public bool UseMetronomeLink { get; set; } = true;
         public bool UsePlayback { get; set; } = true;
+        public bool AutoResume { get; set; } = false;
         public int AssistMode { get; set; } = 2;
 
         public int AssistNote2Markers { get; set; } = 1;

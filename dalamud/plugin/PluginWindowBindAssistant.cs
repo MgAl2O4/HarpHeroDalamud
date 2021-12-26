@@ -152,7 +152,12 @@ namespace HarpHero
 
         public override void OnClose()
         {
-            Service.trackAssistant?.Stop();
+            Service.trackAssistant?.OnAssistantWindowClosed();
+        }
+
+        public override void OnOpen()
+        {
+            Service.trackAssistant?.OnAssistantWindowOpened();
         }
 
         public override void Draw()

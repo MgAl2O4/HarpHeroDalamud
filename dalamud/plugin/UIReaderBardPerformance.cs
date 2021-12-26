@@ -83,7 +83,8 @@ namespace HarpHero
             cachedState.keysPos = new Vector2(100, 300);
             cachedState.keysSize = new Vector2(800, 200);
 
-            for (int idx = 0; idx <= 12; idx++)
+            int numKeys = 12 + 12 + 12 + 1;
+            for (int idx = 0; idx < numKeys; idx++)
             {
                 var keyData = new UIStateBardPerformance.KeyNode();
                 keyData.pos = new Vector2(100 + (idx * 50), 300);
@@ -91,8 +92,8 @@ namespace HarpHero
                 cachedState.keys.Add(keyData);
             }
 
-            SetStatus(Status.NoErrors);
-            SetCachedNumKeys(12);
+            SetStatus(Status.NoErrorsWide);
+            SetCachedNumKeys(numKeys);
         }
 
         public unsafe void OnAddonUpdate(IntPtr addonPtr)

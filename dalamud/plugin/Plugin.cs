@@ -78,7 +78,7 @@ namespace HarpHero
             var scoreWindow = new PluginWindowScore(uiReaderPerformance);
 
             statusWindow.OnShowTrack += (track) => trackViewWindow.OnShowTrack(track);
-            uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.IsOpen = active;
+            uiReaderPerformance.OnVisibilityChanged += (active) => statusWindow.OnPerformanceVisibilityChanged(active);
             uiReaderPerformance.OnKeyboardModeChanged += (isKeyboard) => noteInputMapper.OnKeyboardModeChanged(isKeyboard);
             uiReaderPerformance.OnCachedKeysChanged += (_) => noteUiMapper.OnNumKeysChanged(uiReaderPerformance.cachedState);
             Service.trackAssistant.OnTrackChanged += (valid) => noteUiMapper.OnTrackChanged(Service.trackAssistant);

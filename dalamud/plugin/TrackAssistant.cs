@@ -27,6 +27,7 @@ namespace HarpHero
         public bool IsPlaying => isPlaying;
         public bool IsPlayingPreview => !isPlaying && (musicPlayer?.IsPlaying ?? false);
         public bool IsPausedForInput => notePausedForInput != null;
+        public bool IsPausedForUI => isPaused;
         public bool IsValidBasicMode => isValidBasicMode;
         public bool IsValidExtendedMode => isValidExtendedMode;
         public float CurrentTime => currentTimeUs / 1000000.0f;
@@ -50,6 +51,7 @@ namespace HarpHero
         private long currentTimeUs;
         private bool isPlaying;
         private bool isPlayingSound;
+        private bool isPaused;
         private bool isValidExtendedMode;
         private bool isValidBasicMode;
         private Note notePausedForInput;
@@ -200,6 +202,7 @@ namespace HarpHero
             if (musicTrack != null && CanPlay && hasValidRange)
             {
                 isPlayingSound = false;
+                isPaused = false;
                 notePausedForInput = null;
                 pausedTimeUs = 0;
 
@@ -244,6 +247,7 @@ namespace HarpHero
             bool wasPlaying = isPlaying;
             isPlaying = false;
             isPlayingSound = false;
+            isPaused = false;
             notePausedForInput = null;
 
             if (musicPlayer != null)
@@ -261,6 +265,46 @@ namespace HarpHero
             if (HasMetronomeLink && metronomeLink.IsPlaying)
             {
                 metronomeLink.Stop();
+            }
+        }
+
+        public void Pause()
+        {
+            if (isPlaying)
+            {
+                isPaused = true;
+                isPlayingSound = false;
+
+                if (musicPlayer != null)
+                {
+                    musicPlayer.Stop();
+                    musicPlayer = null;
+                }
+            }
+        }
+
+        public void Resume()
+        {
+            if (isPaused)
+            {
+                if (CanUsePlayback)
+                {
+                    try
+                    {
+                        musicPlayer = new MidiTrackPlayer(musicTrack);
+                        musicPlayer.SetTimeScaling(timeScaling);
+
+                        // this can throw exception when device is in use
+                        musicPlayer.WarmupDevice();
+                    }
+                    catch (Exception ex)
+                    {
+                        PluginLog.Error(ex, "Failed to start midi player, turning off playback!");
+                        Service.config.UsePlayback = false;
+                    }
+                }
+
+                isPaused = false;
             }
         }
 
@@ -314,6 +358,10 @@ namespace HarpHero
                 long deltaUs = (long)(deltaSeconds * timeScaling * 1000 * 1000);
                 pausedTimeUs = Math.Min(pausedTimeUs + deltaUs, 1000 * 1000 * 60);
             }
+            else if (IsPausedForUI)
+            {
+                // no updates
+            }
             else
             {
                 // keep int64 for accuracy, floats will gradually degrade
@@ -346,7 +394,7 @@ namespace HarpHero
             }
 
             // try starting playback 
-            if (CanUsePlayback && !isPlayingSound && currentTimeUs >= trackStartTimeUs)
+            if (CanUsePlayback && !isPlayingSound && !isPaused && currentTimeUs >= trackStartTimeUs)
             {
                 isPlayingSound = musicPlayer.StartAt(currentTimeUs);
             }
@@ -364,6 +412,22 @@ namespace HarpHero
 
             // can tick? only if still playing
             return isPlaying;
+        }
+
+        public void OnAssistantWindowClosed()
+        {
+            if (!IsPausedForUI)
+            {
+                Stop();
+            }
+        }
+
+        public void OnAssistantWindowOpened()
+        {
+            if (IsPausedForUI && Service.config.AutoResume)
+            {
+                Resume();
+            }
         }
 
         public bool GetNextPlayingNote(out int noteNumber, out long startTimeUs, int offset = 0)
@@ -524,6 +588,11 @@ namespace HarpHero
 
         private void OnMusicViewerNote(MidiTrackViewer.NoteInfo noteInfo)
         {
+            if (noteInfo.startUs < trackStartTimeUs)
+            {
+                return;
+            }
+
             if (useWaitingForInput)
             {
                 bool isPressedNow = uiReader.cachedState.ActiveNoteNumber == noteInfo.note.NoteNumber;

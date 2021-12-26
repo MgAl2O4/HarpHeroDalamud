@@ -31,6 +31,7 @@ namespace HarpHero
         private string[] cachedAssistNames;
         private int[] cachedAssistIds;
         private FileDialogManager dlgManager = new();
+        private bool isPerformanceActive = false;
 
         private string locImportHint;
         private string locSettingsHint;
@@ -60,6 +61,7 @@ namespace HarpHero
         private string locPlayMetronomeStopped;
         private string locTrainingWaits;
         private string locStatusPlaying;
+        private string locStatusPaused;
         private string locStatusPlayTime;
         private string locStartPlayingHint;
         private string locStatusPlayNotAvail;
@@ -93,6 +95,8 @@ namespace HarpHero
         private string locConfigUseMetronomeHelp;
         private string locConfigUsePlayback;
         private string locConfigUsePlaybackHelp;
+        private string locConfigAutoResume;
+        private string locConfigAutoResumeHelp;
         private string locConfigAssistMode;
         private string locConfigShowScore;
         private string locConfigAssistBindScaleKeyboard;
@@ -158,6 +162,7 @@ namespace HarpHero
             locPlayMetronomeStopped = Localization.Localize("ST_MetronomeStopped", "Stopped");
             locTrainingWaits = Localization.Localize("ST_TrainingWaits", "Waiting for key press...");
             locStatusPlaying = Localization.Localize("ST_StatusPlaying", "Playing");
+            locStatusPaused = Localization.Localize("ST_StatusPaused", "Paused");
             locStatusPlayTime = Localization.Localize("ST_StatusPlayTime", "time: {0:0.00}s");
             locStartPlayingHint = Localization.Localize("ST_StartPlayingHint", "Start playing");
             locStatusPlayNotAvail = Localization.Localize("ST_StatusPlayNotAvail", "Can't play");
@@ -192,6 +197,8 @@ namespace HarpHero
             locConfigUseMetronomeHelp = Localization.Localize("CFG_UseMetronomeHelp", "Gives control over music start/stop to game's metronome");
             locConfigUsePlayback = Localization.Localize("CFG_UsePlayback", "Use playback");
             locConfigUsePlaybackHelp = Localization.Localize("CFG_UsePlaybackHelp", "Play music track during performance, not available in training mode. This doesn't send any input to game, just makes hitting correct beats easier.");
+            locConfigAutoResume = Localization.Localize("CFG_AutoResume", "Auto resume");
+            locConfigAutoResumeHelp = Localization.Localize("CFG_AutoResumeHelp", "Automatically resume paused play when entering performance mode.");
             locConfigAssistMode = Localization.Localize("CFG_AssistMode", "Assist mode");
             locConfigShowScore = Localization.Localize("CFG_ShowScore", "Show score");
             locConfigAssistBindScaleKeyboard = Localization.Localize("CFG_BindScaleKeyboard", "Scale (keyboard)");
@@ -601,13 +608,44 @@ namespace HarpHero
                     }
 
                     ImGui.SameLine();
-                    if (Service.trackAssistant.IsPausedForInput)
+                    if (Service.trackAssistant.IsPausedForUI)
+                    {
+                        if (isPerformanceActive)
+                        {
+                            if (ImGuiComponents.IconButton(13, FontAwesomeIcon.Play))
+                            {
+                                Service.trackAssistant.Resume();
+                            }
+                        }
+                        else
+                        {
+                            ImGuiComponents.DisabledButton(FontAwesomeIcon.Play, 13);
+                        }
+                    }
+                    else
+                    {
+                        if (ImGuiComponents.IconButton(13, FontAwesomeIcon.Pause))
+                        {
+                            Service.trackAssistant.Pause();
+                        }
+                    }
+
+                    ImGui.SameLine();
+                    if (Service.trackAssistant.IsPausedForInput && !Service.trackAssistant.IsPausedForUI)
                     {
                         ImGui.TextColored(colorYellow, locTrainingWaits);
                     }
                     else
                     {
-                        ImGui.TextColored(colorOk, locStatusPlaying);
+                        if (Service.trackAssistant.IsPausedForUI)
+                        {
+                            ImGui.TextColored(colorYellow, locStatusPaused);
+                        }
+                        else
+                        {
+                            ImGui.TextColored(colorOk, locStatusPlaying);
+                        }
+
                         ImGui.SameLine();
                         ImGui.Text(string.Format(locStatusPlayTime, Service.trackAssistant.CurrentTime));
 
@@ -759,6 +797,7 @@ namespace HarpHero
             int assistModeIdx = Math.Max(0, Array.IndexOf(cachedAssistIds, Service.config.AssistMode));
             bool useMetronomeLinkCopy = Service.config.UseMetronomeLink;
             bool usePlaybackCopy = Service.config.UsePlayback;
+            bool autoResumeCopy = Service.config.AutoResume;
             bool showScoreCopy = Service.config.ShowScore;
 
             hasChanges = ImGui.Checkbox(locConfigUseMetronome, ref useMetronomeLinkCopy) || hasChanges;
@@ -766,6 +805,9 @@ namespace HarpHero
 
             hasChanges = ImGui.Checkbox(locConfigUsePlayback, ref usePlaybackCopy) || hasChanges;
             ImGuiComponents.HelpMarker(locConfigUsePlaybackHelp);
+
+            hasChanges = ImGui.Checkbox(locConfigAutoResume, ref autoResumeCopy) || hasChanges;
+            ImGuiComponents.HelpMarker(locConfigAutoResumeHelp);
 
             hasChanges = ImGui.Checkbox(locConfigShowScore, ref showScoreCopy) || hasChanges;
 
@@ -780,6 +822,7 @@ namespace HarpHero
                 Service.config.AssistMode = cachedAssistIds[assistModeIdx];
                 Service.config.UseMetronomeLink = useMetronomeLinkCopy;
                 Service.config.UsePlayback = usePlaybackCopy;
+                Service.config.AutoResume = autoResumeCopy;
                 Service.config.ShowScore = showScoreCopy;
                 needsSave = true;
                 hasChanges = false;
@@ -982,6 +1025,19 @@ namespace HarpHero
                 {
                     cachedTrackNames[idx] = GetTrimmedName(fileManager.tracks[idx].name);
                 }
+            }
+        }
+
+        public void OnPerformanceVisibilityChanged(bool isVisible)
+        {
+            isPerformanceActive = isVisible;
+            if (isVisible)
+            {
+                IsOpen = true;
+            }
+            else if (!Service.trackAssistant.IsPausedForUI)
+            {
+                IsOpen = false;
             }
         }
     }
