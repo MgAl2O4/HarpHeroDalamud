@@ -519,6 +519,7 @@ namespace HarpHeroConverter
             try
             {
                 var midiFile = new MidiFile();
+                midiFile.TimeDivision = loadedFile.TimeDivision;
                 midiFile.Chunks.Add(musicTrack.midiTrack);
                 midiFile.Write(path, true, MidiFileFormat.SingleTrack);
             }
