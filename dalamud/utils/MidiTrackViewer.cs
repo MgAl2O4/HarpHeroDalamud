@@ -35,7 +35,6 @@ namespace HarpHero
         public float timeWindowSecondsBehind = 1.0f;
         public int maxBindingsToShow = 3;
         public int maxNotesToHint = 5;
-        public int highPassFilterThr = 0;
 
         public bool generateBarData = true;
         public bool generateBindingData = true;
@@ -116,15 +115,12 @@ namespace HarpHero
             var cacheBuilder = new List<NoteInfo>();
             foreach (var note in trackChunk.GetNotes())
             {
-                if (note.NoteNumber >= highPassFilterThr)
+                cacheBuilder.Add(new NoteInfo()
                 {
-                    cacheBuilder.Add(new NoteInfo()
-                    {
-                        note = note,
-                        startUs = note.TimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds,
-                        endUs = note.EndTimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds
-                    });
-                }
+                    note = note,
+                    startUs = note.TimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds,
+                    endUs = note.EndTimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds
+                });
             }
 
             cachedNotes = cacheBuilder.ToArray();

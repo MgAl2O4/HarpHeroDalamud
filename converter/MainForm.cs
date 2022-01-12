@@ -1,4 +1,5 @@
 ﻿using HarpHero;
+using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using MgAl2O4.Utils;
@@ -210,6 +211,8 @@ namespace HarpHeroConverter
         {
             OnFileChanged();
             OnTrackLoaded();
+
+            numericMinDuration.Value = (int)(MidiTrackWrapper.MinNoteDurationSeconds * 1000);
         }
 
         private void MainForm_MouseMove(object sender, MouseEventArgs e)
@@ -446,6 +449,9 @@ namespace HarpHeroConverter
                 buttonPlay.Enabled = true;
                 buttonSave.Enabled = true;
                 numericTargetBPM.Enabled = true;
+
+                labelMedianRemoved.Text =
+                    (musicTrack.medianTooShortMs < 0) ? "--" : musicTrack.medianTooShortMs.ToString("0.#");
             }
             else
             {
@@ -455,29 +461,50 @@ namespace HarpHeroConverter
                 buttonPlay.Enabled = false;
                 buttonSave.Enabled = false;
                 numericTargetBPM.Enabled = false;
+
+                labelMedianRemoved.Text = "--";
             }
         }
 
         private void LoadMidiFile(string path)
         {
-            loadedTracks.Clear();
             loadedFilePath = null;
+            loadedTracks.Clear();
 
             try
             {
                 loadedFile = System.IO.File.Exists(path) ? MidiFile.Read(path) : null;
                 if (loadedFile != null)
                 {
-                    MidiTrackWrapper.CollectNoteProcessing = true;
-
-                    loadedTracks = MidiTrackWrapper.GenerateTracks(loadedFile);
-                    loadedFilePath = path;
+                    if (ImportMidiFile())
+                    {
+                        loadedFilePath = path;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.WriteLine("Failed to import: " + ex);
                 OnLoadingError(ex);
+            }
+
+            buttonReimport.Enabled = (loadedFile != null);
+        }
+
+        private bool ImportMidiFile()
+        {
+            bool result = true;
+            try
+            {
+                MidiTrackWrapper.CollectNoteProcessing = true;
+
+                loadedTracks = MidiTrackWrapper.GenerateTracks(loadedFile);
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Failed to import midi file: " + ex);
+                OnLoadingError(ex);
+                result = false;
             }
 
             OnFileChanged();
@@ -491,7 +518,9 @@ namespace HarpHeroConverter
             {
                 comboBox1.SelectedIndex = 0;
             }
+
             comboBox1.Enabled = comboBox1.Items.Count > 1;
+            return result;
         }
 
         private void LoadMidiTrack(MidiTrackWrapper trackOb)
@@ -550,6 +579,39 @@ namespace HarpHeroConverter
         private void labelUpdateNotify_Click(object sender, EventArgs e)
         {
             labelUpdateNotify.Hide();
+        }
+
+        private void buttonExperimental_Click(object sender, EventArgs e)
+        {
+            groupBox1.Visible = !groupBox1.Visible;
+            buttonExperimental.Text = groupBox1.Visible ? "Hide settings" : "Show settings";
+        }
+
+        private void buttonReimport_Click(object sender, EventArgs e)
+        {
+            ImportMidiFile();
+        }
+
+        private void numericMinDuration_ValueChanged(object sender, EventArgs e)
+        {
+            MidiTrackWrapper.MinNoteDurationSeconds = (int)numericMinDuration.Value * 0.001f;
+        }
+
+        private void numericHPF_ValueChanged(object sender, EventArgs e)
+        {
+            var filterValue = (byte)numericHPF.Value;
+            MidiTrackWrapper.HighPassFilter = filterValue;
+
+            if (filterValue > 0)
+            {
+                var filterNoteNumber = new SevenBitNumber(filterValue);
+                var note = new Note(filterNoteNumber);
+                labelHPF.Text = note.ToString();
+            }
+            else
+            {
+                labelHPF.Text = "(all)";
+            }
         }
     }
 }

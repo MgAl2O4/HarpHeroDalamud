@@ -15,6 +15,7 @@ namespace HarpHero
 
         public static float MinNoteDurationSeconds = 0.101f;
         public static int MaxBarsToCalculateTempo = 10;
+        public static int HighPassFilter = 0;
 
         public string name;
 
@@ -38,6 +39,7 @@ namespace HarpHero
             ShortenOverlap,
             RemoveOverlap,
             RemoveTooShort,
+            RemoveTooLow,
             Multi,
         }
 
@@ -334,6 +336,34 @@ namespace HarpHero
             }
         }
 
+        private void FilterTooLow()
+        {
+            if (HighPassFilter <= 0)
+            {
+                return;
+            }
+
+            midiTrack.RemoveNotes(x =>
+            {
+                bool shouldRemove = x.NoteNumber < HighPassFilter;
+                if (CollectNoteProcessing)
+                {
+                    if (shouldRemove)
+                    {
+                        noteProcessing.Add(new NoteProcessingInfo()
+                        {
+                            note = x,
+                            timeUs = TimeConverter.ConvertTo<MetricTimeSpan>(x.Time, tempoMap).TotalMicroseconds,
+                            type = NoteProcessingType.RemoveTooLow,
+                            desc = "filtered"
+                        });
+                    }
+                }
+
+                return shouldRemove;
+            });
+        }
+
         private void UnifyTempo()
         {
             int numTempoChanges = tempoMap.GetTempoChanges().Count();
@@ -432,6 +462,7 @@ namespace HarpHero
             int numNotes = midiTrack.GetNotes().Count;
             if (numNotes > 0)
             {
+                FilterTooLow();
                 FilterTooShort(true);
                 SimplifyChords();
                 SimplifyOverlaps();

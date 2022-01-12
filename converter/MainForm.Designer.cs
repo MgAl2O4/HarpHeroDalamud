@@ -50,8 +50,21 @@ namespace HarpHeroConverter
             this.textBoxError = new System.Windows.Forms.TextBox();
             this.labelUpdateNotify = new System.Windows.Forms.Label();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.buttonReimport = new System.Windows.Forms.Button();
+            this.labelHPF = new System.Windows.Forms.Label();
+            this.numericHPF = new System.Windows.Forms.NumericUpDown();
+            this.label4 = new System.Windows.Forms.Label();
+            this.labelMedianRemoved = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.numericMinDuration = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
+            this.buttonExperimental = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numericTargetBPM)).BeginInit();
             this.panelTransformHint.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericHPF)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericMinDuration)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonLoad
@@ -253,11 +266,131 @@ namespace HarpHeroConverter
             this.saveFileDialog1.DefaultExt = "*.mid";
             this.saveFileDialog1.Filter = "Midi files|*.mid";
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Controls.Add(this.buttonReimport);
+            this.groupBox1.Controls.Add(this.labelHPF);
+            this.groupBox1.Controls.Add(this.numericHPF);
+            this.groupBox1.Controls.Add(this.label4);
+            this.groupBox1.Controls.Add(this.labelMedianRemoved);
+            this.groupBox1.Controls.Add(this.label3);
+            this.groupBox1.Controls.Add(this.numericMinDuration);
+            this.groupBox1.Controls.Add(this.label2);
+            this.groupBox1.Location = new System.Drawing.Point(411, 3);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(492, 96);
+            this.groupBox1.TabIndex = 15;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Experimental";
+            this.groupBox1.Visible = false;
+            // 
+            // buttonReimport
+            // 
+            this.buttonReimport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonReimport.Location = new System.Drawing.Point(411, 67);
+            this.buttonReimport.Name = "buttonReimport";
+            this.buttonReimport.Size = new System.Drawing.Size(75, 23);
+            this.buttonReimport.TabIndex = 7;
+            this.buttonReimport.Text = "Apply";
+            this.buttonReimport.UseVisualStyleBackColor = true;
+            this.buttonReimport.Click += new System.EventHandler(this.buttonReimport_Click);
+            // 
+            // labelHPF
+            // 
+            this.labelHPF.AutoSize = true;
+            this.labelHPF.Location = new System.Drawing.Point(174, 48);
+            this.labelHPF.Name = "labelHPF";
+            this.labelHPF.Size = new System.Drawing.Size(27, 15);
+            this.labelHPF.TabIndex = 6;
+            this.labelHPF.Text = "(all)";
+            // 
+            // numericHPF
+            // 
+            this.numericHPF.Location = new System.Drawing.Point(101, 46);
+            this.numericHPF.Name = "numericHPF";
+            this.numericHPF.Size = new System.Drawing.Size(67, 23);
+            this.numericHPF.TabIndex = 5;
+            this.numericHPF.ValueChanged += new System.EventHandler(this.numericHPF_ValueChanged);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(6, 48);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(89, 15);
+            this.label4.TabIndex = 4;
+            this.label4.Text = "High pass filter:";
+            // 
+            // labelMedianRemoved
+            // 
+            this.labelMedianRemoved.AutoSize = true;
+            this.labelMedianRemoved.Location = new System.Drawing.Point(316, 19);
+            this.labelMedianRemoved.Name = "labelMedianRemoved";
+            this.labelMedianRemoved.Size = new System.Drawing.Size(17, 15);
+            this.labelMedianRemoved.TabIndex = 3;
+            this.labelMedianRemoved.Text = "??";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(174, 19);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(136, 15);
+            this.label3.TabIndex = 2;
+            this.label3.Text = "ms, median of removed:";
+            // 
+            // numericMinDuration
+            // 
+            this.numericMinDuration.Location = new System.Drawing.Point(101, 17);
+            this.numericMinDuration.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numericMinDuration.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numericMinDuration.Name = "numericMinDuration";
+            this.numericMinDuration.Size = new System.Drawing.Size(67, 23);
+            this.numericMinDuration.TabIndex = 1;
+            this.numericMinDuration.Value = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numericMinDuration.ValueChanged += new System.EventHandler(this.numericMinDuration_ValueChanged);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 19);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(79, 15);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "Min duration:";
+            // 
+            // buttonExperimental
+            // 
+            this.buttonExperimental.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonExperimental.Location = new System.Drawing.Point(909, 41);
+            this.buttonExperimental.Name = "buttonExperimental";
+            this.buttonExperimental.Size = new System.Drawing.Size(166, 23);
+            this.buttonExperimental.TabIndex = 16;
+            this.buttonExperimental.Text = "Show settings";
+            this.buttonExperimental.UseVisualStyleBackColor = true;
+            this.buttonExperimental.Click += new System.EventHandler(this.buttonExperimental_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1084, 561);
+            this.Controls.Add(this.buttonExperimental);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.labelTrackPos);
             this.Controls.Add(this.buttonSave);
             this.Controls.Add(this.panelBindings);
@@ -283,6 +416,10 @@ namespace HarpHeroConverter
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseMove);
             ((System.ComponentModel.ISupportInitialize)(this.numericTargetBPM)).EndInit();
             this.panelTransformHint.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericHPF)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericMinDuration)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -309,6 +446,16 @@ namespace HarpHeroConverter
         private System.Windows.Forms.TextBox textBoxError;
         private System.Windows.Forms.Label labelUpdateNotify;
         private System.Windows.Forms.SaveFileDialog saveFileDialog1;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Button buttonReimport;
+        private System.Windows.Forms.Label labelHPF;
+        private System.Windows.Forms.NumericUpDown numericHPF;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label labelMedianRemoved;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.NumericUpDown numericMinDuration;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button buttonExperimental;
     }
 }
 
