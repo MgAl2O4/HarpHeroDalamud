@@ -170,7 +170,25 @@ namespace HarpHero
                 }
             }
 
-            midiTrack.RemoveNotes(x => removeNotes.Find(rx => (rx.Time == x.Time) && (rx.NoteNumber == x.NoteNumber)) != null);
+            // can't do midiTrack.RemoveNotes, because it will remove all notes whenever there is an exact duplicate
+            // midiTrack.RemoveNotes(x => removeNotes.Find(rx => (rx.Time == x.Time) && (rx.NoteNumber == x.NoteNumber)) != null);
+
+            using (var manager = midiTrack.ManageNotes())
+            {
+                var realRemoveList = new List<Melanchall.DryWetMidi.Interaction.Note>();
+                foreach (var note in manager.Notes)
+                {
+                    var matchIdx = removeNotes.FindIndex(rx => (rx.Time == note.Time) && (rx.NoteNumber == note.NoteNumber));
+                    if (matchIdx >= 0)
+                    {
+                        realRemoveList.Add(note);
+                        removeNotes.RemoveAt(matchIdx);
+                    }
+                }
+
+                manager.Notes.Remove(realRemoveList);
+                manager.SaveChanges();
+            }
         }
 
         private void SimplifyOverlaps()
