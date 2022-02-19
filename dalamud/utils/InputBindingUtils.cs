@@ -316,7 +316,7 @@ namespace MgAl2O4.Utils
         }
 
         private const short GamepadStyleOptionId = 94;
-
+        private const short GamepadStyleValueId = 123;
 
         /// TEMPORARY, used only for debugging / with outdated ClientStruct 
         [StructLayout(LayoutKind.Explicit, Size = 0xD698)]
@@ -333,11 +333,24 @@ namespace MgAl2O4.Utils
             var optionsArr = (Option*)configTestPtr->options;
             for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
             {
-                if (optionsArr[idx].OptionID == optionId)
+                if ((int)optionsArr[idx].OptionID == optionId)
                 {
                     var valuesArr = (AtkValue*)configTestPtr->values;
                     return valuesArr[idx].Int;
                 }
+            }
+
+            return 0;
+        }
+
+        private static unsafe int GetConfigModuleTestingValue(int valueId)
+        {
+            var configTestPtr = (ConfigModuleTesting*)ConfigModule.Instance();
+            var valuesArr = (AtkValue*)configTestPtr->values;
+
+            if (valueId >= 0 && valueId < ConfigModuleTesting.ConfigOptionCount)
+            {
+                return valuesArr[valueId].Int;
             }
 
             return 0;
@@ -355,7 +368,7 @@ namespace MgAl2O4.Utils
                 var optionsArr = (Option*)configTestPtr->options;
                 for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
                 {
-                    PluginLog.Log($"option[{idx}] = {optionsArr[idx].OptionID}");
+                    PluginLog.Log($"option[{idx}] = {(int)optionsArr[idx].OptionID}");
                 }
 
                 var valuesArr = (AtkValue*)configTestPtr->values;
@@ -374,15 +387,24 @@ namespace MgAl2O4.Utils
             LogConfigModuleTesting();
 
             int styleSettings = GetConfigModuleTestingOption(GamepadStyleOptionId);
-            PluginLog.Log($"Gamepad style (id: {GamepadStyleOptionId}) = {styleSettings}");
+            PluginLog.Log($"Gamepad style by option (id: {GamepadStyleOptionId}) = {styleSettings}");
+
+            styleSettings = GetConfigModuleTestingValue(GamepadStyleValueId);
+            PluginLog.Log($"Gamepad style by value ({GamepadStyleValueId}) = {styleSettings}");
         }
 #endif // DEBUG
 
         private static unsafe int GetGamepadStyleSettings()
         {
-            int settingsValue = 0;
+            // 6.08 - settings broken, value holding gamepad style is not accessible through optionID
+            //          value[123] = style
+            //          option[123].optionId = -1 => sadness.
+            //
+            // TODO: figure it out one day (or wait until it magically fixes itself)
+            //
+            int settingsValue = GetConfigModuleTestingValue(GamepadStyleValueId);
 
-            bool useDefaultConfigs = ConfigModule.ConfigOptionCount >= ConfigModuleTesting.ConfigOptionCount;
+            /*bool useDefaultConfigs = ConfigModule.ConfigOptionCount >= ConfigModuleTesting.ConfigOptionCount;
             if (useDefaultConfigs)
             {
                 ConfigModule* modulePtr = ConfigModule.Instance();
@@ -398,7 +420,7 @@ namespace MgAl2O4.Utils
             else
             {
                 settingsValue = GetConfigModuleTestingOption(GamepadStyleOptionId);
-            }
+            }*/
 
             return settingsValue;
         }
