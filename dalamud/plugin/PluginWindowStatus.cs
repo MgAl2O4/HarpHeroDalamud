@@ -103,12 +103,16 @@ namespace HarpHero
         private string locConfigAssistBindScaleGamepad;
         private string locConfigAssistNoteNumMarkers;
         private string locConfigAssistBindNumMarkers;
+        private string locConfigAssistBindExtraHints;
         private string locConfigAssistNoteWarnMs;
         private string locConfigModeBind;
         private string locConfigModeNote;
         private string locConfigAppearanceBgAlpha;
         private string locConfigAppearanceKeyAlias;
         private string locConfigAppearanceAddAlias;
+        private string locConfigShowOverlay;
+        private string locConfigShowAllHints;
+        private string locConfigShowAllHintsHelp;
 
         public PluginWindowStatus(MidiFileManager fileManager, TrackHealthCheck trackHealth) : base("Harp Hero")
         {
@@ -203,11 +207,15 @@ namespace HarpHero
             locConfigShowScore = Localization.Localize("CFG_ShowScore", "Show score");
             locConfigAssistBindScaleKeyboard = Localization.Localize("CFG_BindScaleKeyboard", "Scale (keyboard)");
             locConfigAssistBindScaleGamepad = Localization.Localize("CFG_BindScaleGamepad", "Scale (gamepad)");
-            locConfigAssistBindNumMarkers = Localization.Localize("CFG_BindNumMarkers", "Number of hints");
+            locConfigAssistBindNumMarkers = Localization.Localize("CFG_BindNumMarkers", "Number of lines");
+            locConfigAssistBindExtraHints = Localization.Localize("CFG_BindNumHintsAhead", "Number of extra hints");
             locConfigAssistNoteNumMarkers = Localization.Localize("CFG_NoteNumMarkers", "Number of markers");
             locConfigAssistNoteWarnMs = Localization.Localize("CFG_NoteWarnMs", "Warn time (ms)");
             locConfigModeBind = Localization.Localize("CFG_AssistBind", "Key binding");
             locConfigModeNote = Localization.Localize("CFG_AssistNote", "Note");
+            locConfigShowOverlay = Localization.Localize("CFG_ShowOverlay", "Show overlay when performance mode is active");
+            locConfigShowAllHints = Localization.Localize("CFG_ShowAllBinds", "Show all notes");
+            locConfigShowAllHintsHelp = Localization.Localize("CFG_ShowAllBindsHelp", "Binding mode: All notes will be shown, binding description depends on number of hints.");
 
             locConfigAppearanceBgAlpha = Localization.Localize("CFG_BackgroundAlpha", "Background alpha");
             locConfigAppearanceKeyAlias = Localization.Localize("CFG_KeyAlias", "Key name alias");
@@ -829,6 +837,20 @@ namespace HarpHero
             }
 
             ImGui.Unindent();
+            ImGui.Spacing();
+            ImGui.Separator();
+
+            bool showOverlayCopy = Service.config.ShowOverlay;
+
+            hasChanges = ImGui.Checkbox(locConfigShowOverlay, ref showOverlayCopy) || hasChanges;
+
+            if (hasChanges)
+            {
+                Service.config.ShowOverlay = showOverlayCopy;
+                needsSave = true;
+                hasChanges = false;
+            }
+
             if (needsSave)
             {
                 Service.config.Save();
@@ -855,15 +877,20 @@ namespace HarpHero
             int numMarkersCopy = Service.config.AssistNote2Markers;
             int warnTimeCopy = Service.config.AssistNote2WarnMs;
             int numBindMarkersCopy = Service.config.AssistBindRows;
+            int numBindExtraHintsCopy = Service.config.AssistBindExtraHints;
             float scaleKeyboardCopy = Service.config.AssistBindScaleKeyboard;
             float scaleGamepadCopy = Service.config.AssistBindScaleGamepad;
+            bool showAllNotesCopy = Service.config.AssistAllNotes;
 
             var textLineHeight = ImGui.GetTextLineHeightWithSpacing();
 
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.Text($"{locConfigAssistMode}: {locConfigModeBind}");
-            if (ImGui.BeginChild("##detailsAssistMode1", new Vector2(-1.0f, textLineHeight * 4.0f)))
+            hasChanges = ImGui.Checkbox(locConfigShowAllHints, ref showAllNotesCopy) || hasChanges;
+            ImGuiComponents.HelpMarker(locConfigShowAllHintsHelp);
+
+            if (ImGui.BeginChild("##detailsAssistMode1", new Vector2(-1.0f, textLineHeight * 5.0f)))
             {
                 ImGui.Columns(2);
 
@@ -883,6 +910,12 @@ namespace HarpHero
                 ImGui.Text(locConfigAssistBindNumMarkers);
                 ImGui.NextColumn();
                 hasChanges = ImGui.SliderInt("##numBindHints", ref numBindMarkersCopy, 1, 6) || hasChanges;
+
+                ImGui.NextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locConfigAssistBindExtraHints);
+                ImGui.NextColumn();
+                hasChanges = ImGui.SliderInt("##numBindHintsExtra", ref numBindExtraHintsCopy, 1, 20) || hasChanges;
             }
             ImGui.EndChild();
 
@@ -919,6 +952,8 @@ namespace HarpHero
                 Service.config.AssistBindScaleKeyboard = scaleKeyboardCopy;
                 Service.config.AssistBindScaleGamepad = scaleGamepadCopy;
                 Service.config.AssistBindRows = numBindMarkersCopy;
+                Service.config.AssistBindExtraHints = numBindExtraHintsCopy;
+                Service.config.AssistAllNotes = showAllNotesCopy;
                 Service.trackAssistant.UpdateViewerParams();
                 needsSave = true;
                 hasChanges = false;
@@ -1033,7 +1068,7 @@ namespace HarpHero
             isPerformanceActive = isVisible;
             if (isVisible)
             {
-                IsOpen = true;
+                IsOpen = Service.config.ShowOverlay;
             }
             else if (!Service.trackAssistant.IsPausedForUI)
             {

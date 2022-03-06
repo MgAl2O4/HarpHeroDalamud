@@ -29,9 +29,12 @@ namespace HarpHero
         public float AssistBindScaleKeyboard { get; set; } = 1.0f;
         public float AssistBindScaleGamepad { get; set; } = 1.5f;
         public int AssistBindRows { get; set; } = 3;
+        public int AssistBindExtraHints { get; set; } = 2;
+        public bool AssistAllNotes { get; set; } = false;
 
         public bool UseTrainingMode { get; set; } = true;
         public bool ShowScore { get; set; } = true;
+        public bool ShowOverlay { get; set; } = true;
 
         public List<Tuple<ushort, string>> VKAlias { get; set; } = new();
         public float AssistBgAlpha = 1.0f;

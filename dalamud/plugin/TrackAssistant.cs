@@ -510,7 +510,8 @@ namespace HarpHero
         {
             if (musicViewer != null)
             {
-                musicViewer.SetShownBindings(Service.config.AssistBindRows, 2);
+                musicViewer.showAllBindings = Service.config.AssistAllNotes;
+                musicViewer.SetShownBindings(Service.config.AssistBindRows, Service.config.AssistBindExtraHints);
             }
         }
 
