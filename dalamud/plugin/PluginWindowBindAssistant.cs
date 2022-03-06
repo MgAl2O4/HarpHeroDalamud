@@ -195,7 +195,7 @@ namespace HarpHero
             uint colorFarMask = 0x40ffffff;
             uint colorPlayingDark = 0xffffffff;
 
-            foreach (var noteBinding in Service.trackAssistant.musicViewer.GetShownNotesBindings())
+            foreach (var noteBinding in Service.trackAssistant.musicViewer.shownBindings)
             {
                 float tX0Raw = 1.0f * (noteBinding.noteInfo.startUs - timeRangeStartUs) / timeRangeUs;
                 float tX0 = Math.Min(1.0f, Math.Max(0.0f, tX0Raw));

@@ -13,13 +13,7 @@ namespace HarpHero
             public Note note;
             public long startUs;
             public long endUs;
-        }
-
-        public class BindingInfo
-        {
-            public SevenBitNumber noteNumber;
-            public int pressIdx;
-            public int showIdx;
+            public int cacheIdx;
         }
 
         public struct NoteBindingInfo
@@ -31,6 +25,13 @@ namespace HarpHero
             public bool hasBindingConflict;
         }
 
+        private class LineInfo
+        {
+            public SevenBitNumber noteNumber = SevenBitNumber.MinValue;
+            public int startNoteIdx = -1;
+            public int lastNoteIdx = -1;
+        }
+
         public float timeWindowSecondsAhead = 9.0f;
         public float timeWindowSecondsBehind = 1.0f;
         public int maxBindingsToShow = 3;
@@ -38,8 +39,10 @@ namespace HarpHero
 
         public bool generateBarData = true;
         public bool generateBindingData = true;
+        public bool showAllBindings = false;
 
         private NoteInfo[] cachedNotes;
+        private int[] cachedBindings;
         private TempoMap tempoMap;
         public TempoMap TempoMap => tempoMap;
 
@@ -56,7 +59,7 @@ namespace HarpHero
         public List<NoteInfo> shownNotes = new List<NoteInfo>();
         public List<long> shownBarLines = new List<long>();
         public List<long> shownBeatLines = new List<long>();
-        public List<BindingInfo> shownBindings = new List<BindingInfo>();
+        public List<NoteBindingInfo> shownBindings = new List<NoteBindingInfo>();
 
         public Action<NoteInfo> OnNoteNotify;
         private long lastNotifyStartUs;
@@ -77,6 +80,7 @@ namespace HarpHero
         public void OnPlayStart()
         {
             lastNotifyStartUs = -1;
+            cachedBindings = null;
         }
 
         public void SetTime(long time)
@@ -98,7 +102,7 @@ namespace HarpHero
         {
             maxBindingsToShow = numBindsToShow;
             maxNotesToHint = numBindsToShow + numNotesAhead;
-            shownBindings.Clear();
+            cachedBindings = null;
         }
 
         private bool GenerateCachedData(TrackChunk trackChunk, TempoMap tempoMap)
@@ -111,7 +115,16 @@ namespace HarpHero
             // cache once, this is likely to be queried every tick with moving time window
             // depending on how complex tempoMap is, conversions can get expensive
             this.tempoMap = tempoMap;
+            GenerateCachedNotes(trackChunk);
 
+            // don't generate cached bindings immediately, this is likely called from ctor
+            // and desired values of setting flags are not set. will be created on first use
+
+            return true;
+        }
+
+        private void GenerateCachedNotes(TrackChunk trackChunk)
+        {
             var cacheBuilder = new List<NoteInfo>();
             foreach (var note in trackChunk.GetNotes())
             {
@@ -119,12 +132,94 @@ namespace HarpHero
                 {
                     note = note,
                     startUs = note.TimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds,
-                    endUs = note.EndTimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds
+                    endUs = note.EndTimeAs<MetricTimeSpan>(tempoMap).TotalMicroseconds,
+                    cacheIdx = cacheBuilder.Count
                 });
             }
 
             cachedNotes = cacheBuilder.ToArray();
-            return true;
+        }
+
+        private void GenerateCachedBindings()
+        {
+            cachedBindings = null;
+            if (!generateBindingData || cachedNotes == null || cachedNotes.Length <= 0)
+            {
+                return;
+            }
+
+            var lineInfo = new List<LineInfo>();
+            for (int idx = 0; idx < maxBindingsToShow; idx++)
+            {
+                lineInfo.Add(new LineInfo() { lastNoteIdx = (-maxBindingsToShow + idx) });
+            }
+
+            var cacheBuilder = new List<int>();
+            for (int noteIdx = 0; noteIdx < cachedNotes.Length; noteIdx++)
+            {
+                var noteNumber = cachedNotes[noteIdx].note.NoteNumber;
+                int bestLineIdx = -1;
+
+                // can it match any of existing lines?
+                bestLineIdx = lineInfo.FindIndex(x => x.noteNumber == noteNumber);
+
+                // find next unique note
+                for (int nextNoteIdx = noteIdx + 1; nextNoteIdx < cachedNotes.Length; nextNoteIdx++)
+                {
+                    if (cachedNotes[nextNoteIdx].note.NoteNumber != noteNumber)
+                    {
+                        // ...and try to match it with existing lines
+                        int nextNoteLineIdx = lineInfo.FindIndex(x => x.noteNumber == cachedNotes[nextNoteIdx].note.NoteNumber);
+                        if (nextNoteLineIdx >= 0)
+                        {
+                            // do oldest line, except upcoming one
+
+                            int bestActivity = 0;
+                            for (int lineIdx = 0; lineIdx < lineInfo.Count; lineIdx++)
+                            {
+                                if (lineIdx == nextNoteLineIdx) { continue; }
+
+                                int lineLastActivity = lineInfo[lineIdx].lastNoteIdx;
+                                if (bestLineIdx < 0 || bestActivity > lineLastActivity)
+                                {
+                                    bestLineIdx = lineIdx;
+                                    bestActivity = lineLastActivity;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                }
+
+                // fallback assignment: oldest line
+                if (bestLineIdx < 0)
+                {
+                    int bestActivity = 0;
+                    for (int lineIdx = 0; lineIdx < lineInfo.Count; lineIdx++)
+                    {
+                        int lineLastActivity = lineInfo[lineIdx].lastNoteIdx;
+                        if (bestLineIdx < 0 || bestActivity > lineLastActivity)
+                        {
+                            bestLineIdx = lineIdx;
+                            bestActivity = lineLastActivity;
+                        }
+                    }
+                }
+
+                // save current line info
+                var saveLineInfo = lineInfo[bestLineIdx];
+                if (saveLineInfo.startNoteIdx < 0 || (saveLineInfo.noteNumber != noteNumber))
+                {
+                    saveLineInfo.startNoteIdx = noteIdx;
+                    saveLineInfo.noteNumber = noteNumber;
+                }
+                saveLineInfo.lastNoteIdx = noteIdx;
+
+                cacheBuilder.Add(bestLineIdx);
+            }
+
+            cachedBindings = cacheBuilder.ToArray();
         }
 
         private void UpdateShownNotes()
@@ -227,130 +322,51 @@ namespace HarpHero
 
         private void UpdateShownBindings()
         {
-            if (generateBindingData)
+            if (generateBindingData && cachedBindings == null)
             {
-                // find next set of bindings
-                var nearestBindings = new List<BindingInfo>();
+                GenerateCachedBindings();
+            }
+
+            shownBindings.Clear();
+            if (cachedBindings != null)
+            {
+                int maxPressWithConflicts = maxNotesToHint;
                 int pressIdx = 0;
+                bool hasAnyConflict = false;
+
                 for (int idx = 0; idx < shownNotes.Count; idx++)
                 {
                     var noteInfo = shownNotes[idx];
+                    if (noteInfo.startUs < timeUs && noteInfo.endUs <= timeUs)
+                    {
+                        continue;
+                    }
 
                     if ((startTimeUs >= 0 && noteInfo.startUs < startTimeUs) || (endTimeUs >= 0 && noteInfo.endUs >= endTimeUs))
                     {
                         continue;
                     }
 
-                    if (noteInfo.startUs >= timeUs || noteInfo.endUs > timeUs)
+                    if (noteInfo.cacheIdx < 0 || noteInfo.cacheIdx >= cachedBindings.Length)
                     {
-                        if (nearestBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber) < 0)
-                        {
-                            var newBinding = new BindingInfo() { noteNumber = noteInfo.note.NoteNumber, pressIdx = pressIdx };
-                            newBinding.showIdx = shownBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber);
-
-                            nearestBindings.Add(newBinding);
-                            if (nearestBindings.Count == maxBindingsToShow)
-                            {
-                                break;
-                            }
-                        }
-
-                        pressIdx++;
-                    }
-                }
-
-                int newNumToShow = Math.Max(nearestBindings.Count, shownBindings.Count);
-                if (newNumToShow > 0)
-                {
-                    var freeShowSlots = new List<int>();
-                    for (int idx = 0; idx < newNumToShow; idx++)
-                    {
-                        bool isUsed = nearestBindings.FindIndex(x => x.showIdx == idx) >= 0;
-                        if (!isUsed)
-                        {
-                            freeShowSlots.Add(idx);
-
-                            if (idx < shownBindings.Count)
-                            {
-                                shownBindings[idx].pressIdx = -1;
-                            }
-                        }
-
-                        if (shownBindings.Count <= idx)
-                        {
-                            shownBindings.Add(new BindingInfo());
-                        }
+                        // this should never happen...
+                        break;
                     }
 
-                    for (int idx = 0; idx < nearestBindings.Count; idx++)
+                    var newBinding = new NoteBindingInfo() { noteInfo = noteInfo, bindingIdx = cachedBindings[noteInfo.cacheIdx], pressIdx = pressIdx };
+                    newBinding.hasBindingConflict = shownBindings.FindIndex(x =>
+                        (x.bindingIdx == newBinding.bindingIdx) && (x.noteInfo.note.NoteNumber != newBinding.noteInfo.note.NoteNumber)) >= 0;
+                    newBinding.showHint = pressIdx < maxNotesToHint;
+
+                    hasAnyConflict = hasAnyConflict || newBinding.hasBindingConflict;
+                    if (!showAllBindings && hasAnyConflict && newBinding.pressIdx > maxPressWithConflicts)
                     {
-                        var bindingInfo = nearestBindings[idx];
-
-                        if (bindingInfo.showIdx < 0 && freeShowSlots.Count > 0)
-                        {
-                            bindingInfo.showIdx = freeShowSlots[0];
-                            freeShowSlots.RemoveAt(0);
-                        }
-
-                        shownBindings[bindingInfo.showIdx] = bindingInfo;
+                        break;
                     }
+
+                    shownBindings.Add(newBinding);
+                    pressIdx++;
                 }
-            }
-            else
-            {
-                shownBindings.Clear();
-            }
-        }
-
-        public IEnumerable<NoteBindingInfo> GetShownNotesBindings()
-        {
-            int pressIdx = 0;
-            int maxPressIdxWithConflict = maxNotesToHint;
-            var listHistory = new List<int>();
-            var mapBindingConflicts = new Dictionary<int, int>();
-
-            for (int idx = 0; idx < shownNotes.Count; idx++)
-            {
-                var noteInfo = shownNotes[idx];
-                if (noteInfo.startUs < timeUs && noteInfo.endUs <= timeUs)
-                {
-                    continue;
-                }
-
-                if ((startTimeUs >= 0 && noteInfo.startUs < startTimeUs) || (endTimeUs >= 0 && noteInfo.endUs >= endTimeUs))
-                {
-                    continue;
-                }
-
-                int bindingIdx = shownBindings.FindIndex(x => x.noteNumber == noteInfo.note.NoteNumber);
-                if ((bindingIdx < 0) && (pressIdx >= maxPressIdxWithConflict))
-                {
-                    break;
-                }
-
-                bool hasConflict = (bindingIdx < 0);
-                if (hasConflict)
-                {
-                    if (!mapBindingConflicts.TryGetValue(noteInfo.note.NoteNumber, out bindingIdx))
-                    {
-                        bindingIdx = (listHistory.Count > 0) ? listHistory[0] : 0;
-                        mapBindingConflicts.Add(noteInfo.note.NoteNumber, bindingIdx);
-                    }
-                }
-
-                listHistory.Remove(bindingIdx);
-                listHistory.Add(bindingIdx);
-
-                yield return new NoteBindingInfo()
-                {
-                    noteInfo = noteInfo,
-                    pressIdx = pressIdx,
-                    bindingIdx = bindingIdx,
-                    showHint = (pressIdx >= 0) && (pressIdx < maxNotesToHint),
-                    hasBindingConflict = hasConflict
-                };
-
-                pressIdx++;
             }
         }
     }

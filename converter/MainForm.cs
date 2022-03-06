@@ -383,7 +383,7 @@ namespace HarpHeroConverter
             // draw stuff
             int playingColorIdx = 0;
 
-            foreach (var noteBinding in musicViewer.GetShownNotesBindings())
+            foreach (var noteBinding in musicViewer.shownBindings)
             {
                 float alphaX0 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.startUs - startTimeUs) / timeRangeUs));
                 float alphaX1 = Math.Min(1.0f, Math.Max(0.0f, 1.0f * (noteBinding.noteInfo.endUs - startTimeUs) / timeRangeUs));
