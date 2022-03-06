@@ -177,6 +177,7 @@ namespace HarpHeroConverter
             this.hScrollBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.hScrollBar1.Location = new System.Drawing.Point(9, 468);
+            this.hScrollBar1.Maximum = 10000;
             this.hScrollBar1.Name = "hScrollBar1";
             this.hScrollBar1.Size = new System.Drawing.Size(1066, 13);
             this.hScrollBar1.TabIndex = 9;
