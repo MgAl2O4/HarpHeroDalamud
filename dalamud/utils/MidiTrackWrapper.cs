@@ -33,6 +33,9 @@ namespace HarpHero
 
         public float medianTooShortMs = -1.0f;
 
+        private int transposeOffset = 0;
+        public int TransposeOffset => transposeOffset;
+
         public enum NoteProcessingType
         {
             SimplifyChord,
@@ -536,5 +539,30 @@ namespace HarpHero
 
         public bool IsOctaveRangeValid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId, octaveRange: 3);
         public bool IsOctaveRange5Valid(out int midOctaveId) => stats.IsOctaveRangeValid(out midOctaveId, octaveRange: 5);
+
+        public bool TryTransposeNotes(int offsetDelta, bool useOctaveRange5)
+        {
+            int minNote = useOctaveRange5 ? MidiTrackStats.MinNote5 : MidiTrackStats.MinNote3;
+            int maxNote = useOctaveRange5 ? MidiTrackStats.MaxNote5 : MidiTrackStats.MaxNote3;
+
+            int newMinNote = stats.minNote + offsetDelta;
+            int newMaxNote = stats.maxNote + offsetDelta;
+
+            if (newMinNote >= minNote && newMaxNote <= maxNote)
+            {
+                midiTrack.ProcessNotes(x =>
+                {
+                    var note = Melanchall.DryWetMidi.MusicTheory.Note.Get(x.NoteNumber);
+                    var newNote = note.Transpose(Interval.FromHalfSteps(offsetDelta));
+                    x.SetNoteNameAndOctave(newNote.NoteName, newNote.Octave);
+                });
+
+                transposeOffset += offsetDelta;
+                stats.OnTranspose(midiTrack);
+                return true;
+            }
+
+            return false;
+        }
     }
 }

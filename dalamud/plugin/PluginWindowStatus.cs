@@ -52,6 +52,7 @@ namespace HarpHero
         private string locTrackSectionUnits;
         private string locTrackSectionReset;
         private string locTrackTooShortMedian;
+        private string locTrackTranspose;
         private string locPlayMetronomeHint;
         private string locPlayMetronome;
         private string locPlayMetronomeNotVisible;
@@ -157,6 +158,7 @@ namespace HarpHero
             locTrackSectionUnits = Localization.Localize("ST_TrackSectionUnits", "bars");
             locTrackSectionReset = Localization.Localize("ST_TrackSectionReset", "Set full length");
             locTrackTooShortMedian = Localization.Localize("ST_TrackShortNoteMedian", "Duration filter median:");
+            locTrackTranspose = Localization.Localize("ST_TrackTranspose", "Transpose");
             locPlayMetronomeHint = Localization.Localize("ST_PlayMetronomeHint", "Use game metronome for play controls");
             locPlayMetronome = Localization.Localize("ST_Metronome", "Metronome");
             locPlayMetronomeNotVisible = Localization.Localize("ST_MetronomeNotVis", "not visible");
@@ -457,6 +459,24 @@ namespace HarpHero
                     ImGui.TextColored(colorDetail, $"{Service.trackAssistant.musicTrack.medianTooShortMs} ms");
                 }
                 ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp);
+
+                int transposeOffset = Service.trackAssistant.musicTrack.TransposeOffset;
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(locTrackTranspose);
+                ImGui.SameLine();
+                ImGui.PushItemWidth(100 * ImGuiHelpers.GlobalScale);
+                if (ImGui.InputInt("##transpose", ref transposeOffset))
+                {
+                    transposeOffset = Math.Clamp(transposeOffset, -24, 24);
+
+                    int transposeDelta = transposeOffset - Service.trackAssistant.musicTrack.TransposeOffset;
+                    Service.trackAssistant.musicTrack.TryTransposeNotes(transposeDelta, Service.config.UseExtendedMode);
+                }
+                ImGui.SameLine();
+
+                Service.trackAssistant.musicTrack.stats.DescribeNoteRange(out string noteRangeMin, out string noteRangeMax);
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text($"({noteRangeMin} .. {noteRangeMax})");
 
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text($"{locTrackSection}:");

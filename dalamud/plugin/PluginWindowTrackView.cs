@@ -18,6 +18,7 @@ namespace HarpHero
 
         private int minValidNoteNumber;
         private int maxValidNoteNumber;
+        private int shownTransposeOffset;
 
         private const uint colorTimeLineBeat = UIColors.colorGrayYellowDark;
         private const uint colorTimeLineBar = UIColors.colorGrayYellow;
@@ -59,18 +60,13 @@ namespace HarpHero
             if (track != null)
             {
                 var trackViewer = new MidiTrackViewer(shownTrack);
+                SetTrackViewerParams(trackViewer, true);
+
                 var trackViewerOrg = new MidiTrackViewer(shownTrack.midiTrackOrg, shownTrack.tempoMap);
+                SetTrackViewerParams(trackViewerOrg, false);
 
                 trackViewers = new MidiTrackViewer[2] { trackViewer, trackViewerOrg };
-                foreach (var viewer in trackViewers)
-                {
-                    viewer.generateBarData = (viewer == trackViewer);
-                    viewer.generateBindingData = false;
-                    viewer.timeWindowSecondsAhead = 18.0f;
-                    viewer.timeWindowSecondsBehind = 2.0f;
-
-                    viewer.SetTimeUs(0);
-                }
+                shownTransposeOffset = shownTrack.TransposeOffset;
 
                 FindMidOctave();
                 shownSecond = 0;
@@ -91,6 +87,12 @@ namespace HarpHero
             if (trackViewers == null || shownTrack == null || trackViewers.Length != 2)
             {
                 return;
+            }
+
+            if (shownTrack.TransposeOffset != shownTransposeOffset)
+            {
+                RefreshTransposeView();
+                shownTransposeOffset = shownTrack.TransposeOffset;
             }
 
             var drawList = ImGui.GetWindowDrawList();
@@ -166,6 +168,25 @@ namespace HarpHero
                 const float noteHalfHeight = 2.5f;
                 drawList.AddRectFilled(new Vector2(posX0, posY + noteHalfHeight), new Vector2(posX1, posY - noteHalfHeight), drawColor);
                 drawList.AddText(new Vector2(posX0, posY - ImGui.GetTextLineHeight()), drawColor, noteInfo.note.ToString());
+            }
+        }
+
+        private void SetTrackViewerParams(MidiTrackViewer viewer, bool isMainTrack)
+        {
+            viewer.generateBarData = isMainTrack;
+            viewer.generateBindingData = false;
+            viewer.timeWindowSecondsAhead = 18.0f;
+            viewer.timeWindowSecondsBehind = 2.0f;
+
+            viewer.SetTimeUs(0);
+        }
+
+        private void RefreshTransposeView()
+        {
+            if (trackViewers != null && shownTrack != null)
+            {
+                trackViewers[0] = new MidiTrackViewer(shownTrack);
+                SetTrackViewerParams(trackViewers[0], true);
             }
         }
 

@@ -20,6 +20,7 @@
 	"ST_TrackSectionUnits": { "message": "bars" },
 	"ST_TrackSectionReset": { "message": "Set full length" },
 	"ST_TrackShortNoteMedian": { "message": "Duration filter median" },
+	"ST_TrackTranspose": { "message": "Transpose" },
 	"ST_PlayMetronomeHint": { "message": "Use game metronome for play controls" },
 	"ST_Metronome": { "message": "Metronome" },
 	"ST_MetronomeNotVis": { "message": "not visible" },

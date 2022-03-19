@@ -11,6 +11,11 @@ namespace HarpHero
     {
         public const int MaxBeatsToProcess = 100 * 1000;
 
+        public static SevenBitNumber MinNote5 = NoteUtilities.GetNoteNumber(NoteName.C, 2);
+        public static SevenBitNumber MinNote3 = NoteUtilities.GetNoteNumber(NoteName.C, 3);
+        public static SevenBitNumber MaxNote3 = NoteUtilities.GetNoteNumber(NoteName.C, 6);
+        public static SevenBitNumber MaxNote5 = NoteUtilities.GetNoteNumber(NoteName.C, 7);
+
         public SevenBitNumber minNote;
         public SevenBitNumber maxNote;
         public int notesPerBeat;
@@ -44,6 +49,15 @@ namespace HarpHero
         }
 
         public void Update(TrackChunk track, TempoMap tempoMap) => Update(track, tempoMap, null, null);
+
+        public void OnTranspose(TrackChunk track)
+        {
+            numNotes = track.GetNotes().Count;
+            if (numNotes > 0)
+            {
+                CalcNoteRange(track);
+            }
+        }
 
         public int GetOctaveRange()
         {
@@ -240,6 +254,12 @@ namespace HarpHero
             }
 
             numTimeSignatures = listUniqueSigs.Count;
+        }
+
+        public void DescribeNoteRange(out string minDesc, out string maxDesc)
+        {
+            minDesc = $"{NoteUtilities.GetNoteName(minNote)}{NoteUtilities.GetNoteOctave(minNote)}";
+            maxDesc = $"{NoteUtilities.GetNoteName(maxNote)}{NoteUtilities.GetNoteOctave(maxNote)}";
         }
     }
 }
