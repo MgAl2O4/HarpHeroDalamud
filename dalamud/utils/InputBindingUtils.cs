@@ -316,7 +316,7 @@ namespace MgAl2O4.Utils
         }
 
         private const short GamepadStyleOptionId = 94;
-        private const short GamepadStyleValueId = 123;
+        private const short GamepadStyleValueId = 131;
 
         /// TEMPORARY, used only for debugging / with outdated ClientStruct 
         [StructLayout(LayoutKind.Explicit, Size = 0xD698)]

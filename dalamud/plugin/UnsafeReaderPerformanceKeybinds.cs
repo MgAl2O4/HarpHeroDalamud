@@ -148,7 +148,7 @@ namespace HarpHero
                 // 
                 // WritePerformanceBindings: open settings agent in memory view, break on binding byte access, snigle function reading it on save ^
                 //
-                // inputManager = uiModule.vf54()
+                // inputManager = uiModule.vf60()
                 // bindingData = inputManager + 0x9b0
                 //
                 // binding indicies in 5.58:
@@ -162,7 +162,7 @@ namespace HarpHero
                 var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
                 {
-                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[54]);
+                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[60]);
                     var getInputManager = Marshal.GetDelegateForFunctionPointer<GetInputManagerDelegate>(getInputManagerPtr);
 
                     var inputManager = getInputManager(uiModulePtr);

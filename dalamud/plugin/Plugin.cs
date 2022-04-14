@@ -93,6 +93,7 @@ namespace HarpHero
             };
 
             //uiReaderPerformance.ApplyTestSetup();
+            //InputBindingUtils.TestGamepadStyleSettings();
 
             windowSystem.AddWindow(statusWindow);
             windowSystem.AddWindow(trackViewWindow);
