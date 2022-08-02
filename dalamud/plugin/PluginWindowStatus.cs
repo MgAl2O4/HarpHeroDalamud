@@ -295,7 +295,8 @@ namespace HarpHero
             var fileName = GetTrimmedName(System.IO.Path.GetFileName(fileManager.FilePath));
             ImGui.Text(string.IsNullOrEmpty(fileName) ? $"<< {locImportHint}" : fileName);
 
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (50 * ImGuiHelpers.GlobalScale));
+            var availWindowWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
+            ImGui.SameLine(availWindowWidth - (50 * ImGuiHelpers.GlobalScale));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
             {
                 Plugin.RequestDebugSnapshot();
@@ -305,7 +306,7 @@ namespace HarpHero
                 ImGui.SetTooltip(locDebugSnapshot);
             }
 
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (18 * ImGuiHelpers.GlobalScale));
+            ImGui.SameLine(availWindowWidth - (18 * ImGuiHelpers.GlobalScale));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
                 showConfigs = true;
@@ -390,7 +391,9 @@ namespace HarpHero
 
                 ImGui.SameLine();
                 ImGuiHelpers.ScaledDummy(new Vector2(50, 0));
-                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (46 * ImGuiHelpers.GlobalScale));
+                
+                var availRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
+                ImGui.SameLine(availRegionWidth - (46 * ImGuiHelpers.GlobalScale));
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
                 {
                     OnShowTrack?.Invoke(Service.trackAssistant.musicTrack);
@@ -400,7 +403,7 @@ namespace HarpHero
                     ImGui.SetTooltip(locPreviewTrackNotes);
                 }
 
-                ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (18 * ImGuiHelpers.GlobalScale));
+                ImGui.SameLine(availRegionWidth - (18 * ImGuiHelpers.GlobalScale));
                 if (Service.trackAssistant.IsPlayingPreview)
                 {
                     if (ImGuiComponents.IconButton(21, FontAwesomeIcon.Stop))

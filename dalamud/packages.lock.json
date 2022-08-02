@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0-windows7.0": {
+      "DalamudPackager": {
+        "type": "Direct",
+        "requested": "[2.1.7, )",
+        "resolved": "2.1.7",
+        "contentHash": "jnZ/sdInyn07ycuWI+pPOtP/xE3v+c4+jYJfDt36FWnBF9NKqkpzfviJtPl/jGLgbaCmFIXu+Yid0N8GvdKefg=="
+      },
+      "Melanchall.DryWetMidi": {
+        "type": "Direct",
+        "requested": "[5.2.1, )",
+        "resolved": "5.2.1",
+        "contentHash": "LMtff2kMFZJEhE8KXzaNye1oWyHyGaAu6sp/Taf45M5K+ZjEtWGZM4NmTX6bwLWfWj0e5oITFoQwrTONgothCQ=="
+      }
+    }
+  }
+}

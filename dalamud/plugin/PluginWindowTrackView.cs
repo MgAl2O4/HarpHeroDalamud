@@ -96,8 +96,9 @@ namespace HarpHero
             }
 
             var drawList = ImGui.GetWindowDrawList();
+            var availWindowWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
 
-            ImGui.SetNextItemWidth(ImGui.GetWindowContentRegionWidth());
+            ImGui.SetNextItemWidth(availWindowWidth);
             if (ImGui.SliderInt("##trackViewerSecond", ref shownSecond, 0, maxSeconds))
             {
                 long timeUs = (long)shownSecond * 1000 * 1000;

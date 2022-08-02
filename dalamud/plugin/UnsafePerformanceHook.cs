@@ -26,7 +26,7 @@ namespace HarpHero
             try
             {
                 var noteFuncPtr = Service.sigScanner.ScanText("48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 8b fa 41 0f b6 f0 03 79 5c 48 8b d9");
-                hookNote = new Hook<OnNotePlayedDelegate>(noteFuncPtr, OnNoteDetour);
+                hookNote = Hook<OnNotePlayedDelegate>.FromAddress(noteFuncPtr, OnNoteDetour);
                 hookNote.Enable();
 
                 IsValid = true;
