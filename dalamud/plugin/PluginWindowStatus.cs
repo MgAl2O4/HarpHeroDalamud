@@ -406,14 +406,14 @@ namespace HarpHero
                 ImGui.SameLine(availRegionWidth - (18 * ImGuiHelpers.GlobalScale));
                 if (Service.trackAssistant.IsPlayingPreview)
                 {
-                    if (ImGuiComponents.IconButton(21, FontAwesomeIcon.Stop))
+                    if (IconButtonWithId(21, FontAwesomeIcon.Stop))
                     {
                         Service.trackAssistant.Stop();
                     }
                 }
                 else
                 {
-                    if (ImGuiComponents.IconButton(20, FontAwesomeIcon.Play))
+                    if (IconButtonWithId(20, FontAwesomeIcon.Play))
                     {
                         Service.trackAssistant.PlayPreview();
                     }
@@ -633,7 +633,7 @@ namespace HarpHero
             {
                 if (Service.trackAssistant.IsPlaying)
                 {
-                    if (ImGuiComponents.IconButton(12, FontAwesomeIcon.Stop))
+                    if (IconButtonWithId(12, FontAwesomeIcon.Stop))
                     {
                         Service.trackAssistant.Stop();
                     }
@@ -643,19 +643,19 @@ namespace HarpHero
                     {
                         if (isPerformanceActive)
                         {
-                            if (ImGuiComponents.IconButton(13, FontAwesomeIcon.Play))
+                            if (IconButtonWithId(13, FontAwesomeIcon.Play))
                             {
                                 Service.trackAssistant.Resume();
                             }
                         }
                         else
                         {
-                            ImGuiComponents.DisabledButton(FontAwesomeIcon.Play, 13);
+                            DisabledIconButtonWithId(FontAwesomeIcon.Play, 13);
                         }
                     }
                     else
                     {
-                        if (ImGuiComponents.IconButton(13, FontAwesomeIcon.Pause))
+                        if (IconButtonWithId(13, FontAwesomeIcon.Pause))
                         {
                             Service.trackAssistant.Pause();
                         }
@@ -690,7 +690,7 @@ namespace HarpHero
                     if (trackHealth.cachedStatus == TrackHealthCheck.Status.CanPlayBasic ||
                         trackHealth.cachedStatus == TrackHealthCheck.Status.CanPlayExtended)
                     {
-                        if (ImGuiComponents.IconButton(10, FontAwesomeIcon.Play))
+                        if (IconButtonWithId(10, FontAwesomeIcon.Play))
                         {
                             Service.trackAssistant.Start();
                         }
@@ -700,7 +700,7 @@ namespace HarpHero
                     }
                     else
                     {
-                        ImGuiComponents.DisabledButton(FontAwesomeIcon.Play, 11);
+                        DisabledIconButtonWithId(FontAwesomeIcon.Play, 11);
 
                         if (trackHealth.cachedStatus == TrackHealthCheck.Status.NoTrack)
                         {
@@ -720,7 +720,7 @@ namespace HarpHero
             {
                 if (!showPlayControls)
                 {
-                    ImGuiComponents.DisabledButton(FontAwesomeIcon.Unlink, 15);
+                    DisabledIconButtonWithId(FontAwesomeIcon.Unlink, 15);
                 }
 
                 ImGui.SameLine();
@@ -1029,7 +1029,7 @@ namespace HarpHero
                         }
 
                         ImGui.TableNextColumn();
-                        if (ImGuiComponents.IconButton(100 + aliasIdx, FontAwesomeIcon.Times, colorRed))
+                        if (IconButtonWithId(100 + aliasIdx, FontAwesomeIcon.Times, colorRed))
                         {
                             removeIdx = aliasIdx;
                         }
@@ -1097,6 +1097,22 @@ namespace HarpHero
             {
                 IsOpen = false;
             }
+        }
+
+        private bool IconButtonWithId(int id, FontAwesomeIcon icon, Vector4? color = null)
+        {
+            ImGui.PushFont(UiBuilder.IconFont);
+            var result = ImGuiComponents.IconButton($"{icon.ToIconString()}##{id}", color);
+            ImGui.PopFont();
+
+            return result;
+        }
+
+        private void DisabledIconButtonWithId(FontAwesomeIcon icon, int id)
+        {
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGuiComponents.DisabledButton($"{icon.ToIconString()}##{id}");
+            ImGui.PopFont();
         }
     }
 }
