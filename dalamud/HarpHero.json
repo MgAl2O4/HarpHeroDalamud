@@ -6,5 +6,5 @@
   "InternalName": "HarpHero",
   "ApplicableVersion": "any",
   "Tags": [ "bard", "music", "performance", "midi", "harp" ],
-  "DalamudApiLevel": 7
+  "DalamudApiLevel": 8
 }

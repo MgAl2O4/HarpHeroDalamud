@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <Authors>MgAl2O4</Authors>
-    <Version>1.7.0.1</Version>
+    <Version>1.8.0.0</Version>
     <Description>Bard performance assistant</Description>
-    <Copyright>(c) 2022 MgAl2O4</Copyright>
+    <Copyright>(c) 2023 MgAl2O4</Copyright>
     <PackageProjectUrl>https://github.com/MgAl2O4/HarpHeroDalamud</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <Platforms>x64</Platforms>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.7" />
+    <PackageReference Include="DalamudPackager" Version="2.1.10" />
     <PackageReference Include="Melanchall.DryWetMidi" Version="5.2.1" />
     <Reference Include="Dalamud">
       <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
