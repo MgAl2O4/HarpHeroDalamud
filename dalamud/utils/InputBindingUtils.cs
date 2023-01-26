@@ -318,7 +318,10 @@ namespace MgAl2O4.Utils
         private const short GamepadStyleOptionId = 94;
         private const short GamepadStyleValueId = 131;
 
-        /// TEMPORARY, used only for debugging / with outdated ClientStruct 
+        // -------------------------------------------------------------------
+        // TEMPORARY, used only for debugging / with outdated ClientStruct
+        // outdated in 6.31 - using ClientStructs like a normal person for once...
+
         [StructLayout(LayoutKind.Explicit, Size = 0xD698)]
         unsafe struct ConfigModuleTesting
         {
@@ -379,12 +382,29 @@ namespace MgAl2O4.Utils
             }
         }
 
+        private static unsafe void LogClientStructConfigs()
+        {
+            ConfigModule* modulePtr = ConfigModule.Instance();
+            if (modulePtr != null)
+            {
+                for (short idx = 0; idx < ConfigModule.ConfigOptionCount; idx++)
+                {
+                    Option* optionPtr = modulePtr->GetOptionById(idx);
+                    if (optionPtr != null)
+                    {
+                        PluginLog.Log($"option[{idx}] id:{(int)optionPtr->OptionID}, name:{optionPtr->GetName()}, intValue:{modulePtr->GetIntValue(idx)}");
+                    }
+                }
+            }
+        }
+
         public static void TestGamepadStyleSettings()
         {
             PluginLog.Log($"ClientStruct check, num options:{ConfigModule.ConfigOptionCount} (vs {ConfigModuleTesting.ConfigOptionCount})");
 
             PluginLog.Log("Dumping config data:");
             LogConfigModuleTesting();
+            LogClientStructConfigs();
 
             int styleSettings = GetConfigModuleTestingOption(GamepadStyleOptionId);
             PluginLog.Log($"Gamepad style by option (id: {GamepadStyleOptionId}) = {styleSettings}");
@@ -396,31 +416,21 @@ namespace MgAl2O4.Utils
 
         private static unsafe int GetGamepadStyleSettings()
         {
-            // 6.08 - settings broken, value holding gamepad style is not accessible through optionID
-            //          value[123] = style
-            //          option[123].optionId = -1 => sadness.
-            //
-            // TODO: figure it out one day (or wait until it magically fixes itself)
-            //
-            int settingsValue = GetConfigModuleTestingValue(GamepadStyleValueId);
+            int settingsValue = 0;
 
-            /*bool useDefaultConfigs = ConfigModule.ConfigOptionCount >= ConfigModuleTesting.ConfigOptionCount;
-            if (useDefaultConfigs)
+            ConfigModule* modulePtr = ConfigModule.Instance();
+            if (modulePtr != null )
             {
-                ConfigModule* modulePtr = ConfigModule.Instance();
-                if (modulePtr != null)
-                {
-                    var valuePtr = modulePtr->GetValueById(GamepadStyleOptionId);
-                    if (valuePtr != null)
-                    {
-                        settingsValue = valuePtr->Int;
-                    }
-                }
+                bool useDefaultConfigs = true; // ConfigModule.ConfigOptionCount >= ConfigModuleTesting.ConfigOptionCount;
+
+                settingsValue = useDefaultConfigs ?
+                    modulePtr->GetIntValue(ConfigOption.PadSelectButtonIcon) :
+                    GetConfigModuleTestingValue(GamepadStyleValueId);
             }
-            else
-            {
-                settingsValue = GetConfigModuleTestingOption(GamepadStyleOptionId);
-            }*/
+
+#if DEBUG
+            PluginLog.Log($"Detected gamepad style: (id: {settingsValue})");
+#endif // DEBUG
 
             return settingsValue;
         }
