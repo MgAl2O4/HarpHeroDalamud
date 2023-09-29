@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using Melanchall.DryWetMidi.Interaction;
+﻿using Melanchall.DryWetMidi.Interaction;
 using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
@@ -90,19 +89,19 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                PluginLog.Log($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay} (3O:{IsValidBasicMode}, 5O:{IsValidExtendedMode}), IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
+                Service.logger.Info($"TrackAssistant: HasMetronomeLink:{HasMetronomeLink}, CanPlay:{CanPlay} (3O:{IsValidBasicMode}, 5O:{IsValidExtendedMode}), IsPlaying:{IsPlaying} (preview:{IsPlayingPreview}, sound:{isPlayingSound}), IsPausedForInput:{IsPausedForInput}, CurrentTime:{CurrentTime}, midOctave:{midOctaveIdx}");
                 if (musicTrack != null)
                 {
-                    PluginLog.Log($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}, section:{musicTrack.GetStartTimeUs() / 1000000.0f}..{musicTrack.GetEndTimeUs() / 1000000.0f}");
+                    Service.logger.Info($"> musicTrack: {musicTrack.name}, notes:{musicTrack.stats.numNotes}, tempo:{musicTrack.stats.beatsPerMinute}, section:{musicTrack.GetStartTimeUs() / 1000000.0f}..{musicTrack.GetEndTimeUs() / 1000000.0f}");
                 }
                 else
                 {
-                    PluginLog.Log($"> musicTrack: not loaded");
+                    Service.logger.Info($"> musicTrack: not loaded");
                 }
 
                 if (notePausedForInput != null)
                 {
-                    PluginLog.Log($"> paused for: {notePausedForInput} = {notePausedForInput.NoteNumber}, lastPressed:{lastPressNoteNumber}");
+                    Service.logger.Info($"> paused for: {notePausedForInput} = {notePausedForInput.NoteNumber}, lastPressed:{lastPressNoteNumber}");
                 }
             };
         }
@@ -218,7 +217,7 @@ namespace HarpHero
                     }
                     catch (Exception ex)
                     {
-                        PluginLog.Error(ex, "Failed to start midi player, turning off playback!");
+                        Service.logger.Error(ex, "Failed to start midi player, turning off playback!");
                         Service.config.UsePlayback = false;
                         return false;
                     }
@@ -299,7 +298,7 @@ namespace HarpHero
                     }
                     catch (Exception ex)
                     {
-                        PluginLog.Error(ex, "Failed to start midi player, turning off playback!");
+                        Service.logger.Error(ex, "Failed to start midi player, turning off playback!");
                         Service.config.UsePlayback = false;
                     }
                 }

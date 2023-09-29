@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MgAl2O4.Utils;
@@ -82,7 +82,7 @@ namespace HarpHero
                     (cachedNotePosX == null) ? 5 :
                     0;
 
-                Dalamud.Logging.PluginLog.Log($"PluginWindowNoteAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant.CanShowNoteAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
+                Service.logger.Info($"PluginWindowNoteAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant.CanShowNoteAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
             };
         }
 

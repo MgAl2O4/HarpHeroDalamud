@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using Melanchall.DryWetMidi.Common;
+﻿using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.MusicTheory;
@@ -334,7 +333,7 @@ namespace HarpHero
                     medianTooShortMs = (listTooShort[medianIdx1 - 1] + listTooShort[medianIdx1]) / 2000.0f;
                 }
 #if DEBUG
-                PluginLog.Log($"Median of too short notes: {medianTooShortMs} ms");
+                Service.logger.Info($"Median of too short notes: {medianTooShortMs} ms");
 #endif // DEBUG
             }
         }
@@ -420,7 +419,7 @@ namespace HarpHero
                     }
 
 #if DEBUG
-                    PluginLog.Log($"Unified tempo: {roundedBPM} BPM");
+                    Service.logger.Info($"Unified tempo: {roundedBPM} BPM");
 #endif // DEBUG
                 }
             }

@@ -1,9 +1,7 @@
 ﻿using Dalamud;
-using Dalamud.Game;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using MgAl2O4.Utils;
 using System;
@@ -110,7 +108,7 @@ namespace HarpHero
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
-            Service.framework.Update += Framework_OnUpdateEvent;
+            Service.framework.RunOnTick(Framework_OnUpdateEvent);
 
             // keep at the end to update everything created here
             locManager.LocalizationChanged += (_) => CacheLocalization();
@@ -141,13 +139,12 @@ namespace HarpHero
             Service.trackAssistant.Dispose();
             Service.commandManager.RemoveHandler("/harphero");
             windowSystem.RemoveAllWindows();
-            Service.framework.Update -= Framework_OnUpdateEvent;
         }
 
         private static int debugSnapshotCounter = 0;
         public static void RequestDebugSnapshot()
         {
-            PluginLog.Log($"Requesting debug snapshot #{debugSnapshotCounter}");
+            Service.logger.Info($"Requesting debug snapshot #{debugSnapshotCounter}");
             OnDebugSnapshot?.Invoke(debugSnapshotCounter);
             debugSnapshotCounter++;
         }
@@ -168,17 +165,17 @@ namespace HarpHero
             windowSystem.Draw();
         }
 
-        private void Framework_OnUpdateEvent(Framework framework)
+        private void Framework_OnUpdateEvent()
         {
             try
             {
-                float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
+                float deltaSeconds = (float)Service.framework.UpdateDelta.TotalSeconds;
                 uiReaderScheduler.Update(deltaSeconds);
                 TickScheduler.Update(deltaSeconds);
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "state update failed");
+                Service.logger.Error(ex, "state update failed");
             }
         }
     }

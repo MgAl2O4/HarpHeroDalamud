@@ -35,7 +35,7 @@ namespace HarpHero
             Plugin.OnDebugSnapshot += (_) =>
             {
                 string bindDesc = (keyBinds != null && keyBinds.HasValue) ? "ok" : "--";
-                Dalamud.Logging.PluginLog.Log($"InputMapper: wide:{isWideModeCached}, keyboard:{isKeyboardMode}, bindings:{bindDesc}");
+                Service.logger.Info($"InputMapper: wide:{isWideModeCached}, keyboard:{isKeyboardMode}, bindings:{bindDesc}");
             };
         }
 

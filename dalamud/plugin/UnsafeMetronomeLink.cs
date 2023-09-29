@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.UI;
+﻿using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using System.Runtime.InteropServices;
 
@@ -86,7 +85,7 @@ namespace HarpHero
                     ptrGetMeasureFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
 
                     ptrMetronomeStopFunc = Service.sigScanner.ScanText("40 53 48 83 ec 20 48 8b 01 48 8b d9 ff 50 28 84 c0 74 ?? 48 8b cb c6 43 73 00 c6 83 87 00 00 00 00");
-                    //PluginLog.Log($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)Service.sigScanner.Module.BaseAddress):X}");
+                    //Service.logger.Info($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)Service.sigScanner.Module.BaseAddress):X}");
                 }
                 catch (Exception)
                 {
@@ -107,12 +106,12 @@ namespace HarpHero
             }
             else
             {
-                PluginLog.Error("Failed to find metronome functions, turning link off");
+                Service.logger?.Error("Failed to find metronome functions, turning link off");
             }
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                PluginLog.Log($"UnsafeMetronomeLink: error:{HasErrors} (F1:{ptrSetMeasureFunc:X}, F2:{ptrSetBPMFunc:X}, F3:{ptrGetBPMFunc:X}, F4:{ptrGetMeasureFunc:X}, F5:{ptrMetronomeStopFunc:X}, ex:{hasException})");
+                Service.logger.Info($"UnsafeMetronomeLink: error:{HasErrors} (F1:{ptrSetMeasureFunc:X}, F2:{ptrSetBPMFunc:X}, F3:{ptrGetBPMFunc:X}, F4:{ptrGetMeasureFunc:X}, F5:{ptrMetronomeStopFunc:X}, ex:{hasException})");
             };
         }
 

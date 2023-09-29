@@ -1,4 +1,4 @@
-﻿using Dalamud.Logging;
+﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
@@ -264,7 +264,7 @@ namespace MgAl2O4.Utils
             return hasParsableChildNodes || hasContent;
         }
 
-        public static unsafe void LogParsableNodes(AtkResNode* node)
+        public static unsafe void LogParsableNodes(AtkResNode* node, IPluginLog logger)
         {
             var list = new List<ParsableNode>();
             RecursiveAppendParsableChildNodes(node, 0, 0, list, "");
@@ -272,7 +272,7 @@ namespace MgAl2O4.Utils
             foreach (var entry in list)
             {
                 var prefix = entry.depth > 0 ? new string(' ', entry.depth * 2) : "";
-                PluginLog.Log($"{prefix}> '{entry.content}' idx:{entry.childIdx}, children:{entry.numChildren}, type:{entry.type}, addr:{entry.nodeAddr:X}, path:{entry.debugPath}");
+                logger.Info($"{prefix}> '{entry.content}' idx:{entry.childIdx}, children:{entry.numChildren}, type:{entry.type}, addr:{entry.nodeAddr:X}, path:{entry.debugPath}");
             }
         }
 #endif // DEBUG
