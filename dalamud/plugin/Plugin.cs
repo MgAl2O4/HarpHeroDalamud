@@ -139,6 +139,7 @@ namespace HarpHero
             performanceHook.Dispose();
             Service.trackAssistant.Dispose();
             Service.commandManager.RemoveHandler("/harphero");
+            Service.framework.Update -= Framework_Update;
             windowSystem.RemoveAllWindows();
         }
 
