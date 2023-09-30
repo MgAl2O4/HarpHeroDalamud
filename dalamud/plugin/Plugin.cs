@@ -3,6 +3,7 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using MgAl2O4.Utils;
 using System;
 
@@ -108,7 +109,7 @@ namespace HarpHero
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
-            Service.framework.RunOnTick(Framework_OnUpdateEvent);
+            Service.framework.Update += Framework_Update;
 
             // keep at the end to update everything created here
             locManager.LocalizationChanged += (_) => CacheLocalization();
@@ -165,11 +166,11 @@ namespace HarpHero
             windowSystem.Draw();
         }
 
-        private void Framework_OnUpdateEvent()
+        private void Framework_Update(IFramework framework)
         {
             try
             {
-                float deltaSeconds = (float)Service.framework.UpdateDelta.TotalSeconds;
+                float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
                 uiReaderScheduler.Update(deltaSeconds);
                 TickScheduler.Update(deltaSeconds);
             }
