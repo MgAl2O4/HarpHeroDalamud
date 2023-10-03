@@ -1,9 +1,7 @@
 ﻿using Dalamud.Game;
-using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
-using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 
 namespace HarpHero
 {
@@ -17,18 +15,27 @@ namespace HarpHero
         public static DalamudPluginInterface pluginInterface { get; private set; } = null!;
 
         [PluginService]
-        public static CommandManager commandManager { get; private set; } = null!;
+        public static ICommandManager commandManager { get; private set; } = null!;
 
         [PluginService]
-        public static ToastGui toastGui { get; private set; } = null!;
+        public static IToastGui toastGui { get; private set; } = null!;
 
         [PluginService]
-        public static SigScanner sigScanner { get; private set; } = null!;
+        public static IGameInteropProvider interOp { get; private set; } = null!;
 
         [PluginService]
-        public static Framework framework { get; private set; } = null!;
+        public static ISigScanner sigScanner { get; private set; } = null!;
 
         [PluginService]
-        public static GameGui gameGui { get; private set; } = null!;
+        public static IFramework framework { get; private set; } = null!;
+
+        [PluginService]
+        public static IGameGui gameGui { get; private set; } = null!;
+
+        [PluginService]
+        public static IPluginLog logger { get; private set; } = null!;
+
+        [PluginService]
+        public static IGameConfig gameConfig { get; private set; } = null;
     }
 }

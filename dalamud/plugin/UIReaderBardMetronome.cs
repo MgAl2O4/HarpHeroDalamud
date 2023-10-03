@@ -28,7 +28,7 @@ namespace HarpHero
         {
             Plugin.OnDebugSnapshot += (_) =>
             {
-                Dalamud.Logging.PluginLog.Log($"UIReaderBardMetronome: active:{AgentPtr != IntPtr.Zero}");
+                Service.logger.Info($"UIReaderBardMetronome: active:{AgentPtr != IntPtr.Zero}");
             };
         }
 

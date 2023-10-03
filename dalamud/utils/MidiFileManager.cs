@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using Melanchall.DryWetMidi.Core;
+﻿using Melanchall.DryWetMidi.Core;
 using System;
 using System.Collections.Generic;
 
@@ -17,7 +16,7 @@ namespace HarpHero
             if (!string.IsNullOrEmpty(path))
             {
                 FilePath = path;
-                PluginLog.Log($"importing: {path}");
+                Service.logger.Info($"importing: {path}");
 
                 try
                 {
@@ -28,7 +27,7 @@ namespace HarpHero
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Error(ex, "import failed");
+                    Service.logger.Error(ex, "import failed");
                     FilePath = null;
                     tracks.Clear();
                 }

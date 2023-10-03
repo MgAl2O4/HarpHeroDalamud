@@ -1,10 +1,12 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.Config;
 using Dalamud.Game.Text;
 using Dalamud.Interface;
-using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using HarpHero;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -68,7 +70,7 @@ namespace MgAl2O4.Utils
                 if (!isGamepadStyleInitialized)
                 {
                     isGamepadStyleInitialized = true;
-                    isUsingXboxGamepadStyle = GetGamepadStyleSettings() == 0;
+                    isUsingXboxGamepadStyle = GetGamepadStyleSettings(Service.gameConfig, Service.logger) == 0;
                 }
 
                 return isUsingXboxGamepadStyle;
@@ -263,7 +265,7 @@ namespace MgAl2O4.Utils
             bool useUnicodeActions = true;
 
             // can't change without client restart
-            var styleV = GetGamepadStyleSettings();
+            var styleV = GetGamepadStyleSettings(Service.gameConfig, Service.logger);
             isUsingXboxGamepadStyle = styleV == 0;
 
             const float scaleOverrideFontAwesome = 0.8f;
@@ -360,79 +362,71 @@ namespace MgAl2O4.Utils
         }
 
 #if DEBUG
-        private static unsafe void LogConfigModuleTesting()
+        private static unsafe void LogConfigModuleTesting(IPluginLog logger)
         {
             ConfigModule* modulePtr = ConfigModule.Instance();
             if (modulePtr != null)
             {
                 var configTestPtr = (ConfigModuleTesting*)modulePtr;
-                PluginLog.Log($"module: {(ulong)configTestPtr:X}");
+                logger.Info($"module: {(ulong)configTestPtr:X}");
 
                 var optionsArr = (Option*)configTestPtr->options;
                 for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
                 {
-                    PluginLog.Log($"option[{idx}] = {(int)optionsArr[idx].OptionID}");
+                    logger.Info($"option[{idx}] = {(int)optionsArr[idx].OptionID}");
                 }
 
                 var valuesArr = (AtkValue*)configTestPtr->values;
                 for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
                 {
-                    PluginLog.Log($"value[{idx}] = {valuesArr[idx].Int}");
+                    logger.Info($"value[{idx}] = {valuesArr[idx].Int}");
                 }
             }
         }
 
-        private static unsafe void LogClientStructConfigs()
+        private static unsafe void LogClientStructConfigs(IGameConfig gameConfig, IPluginLog logger)
         {
-            ConfigModule* modulePtr = ConfigModule.Instance();
-            if (modulePtr != null)
+            if (gameConfig != null)
             {
-                for (short idx = 0; idx < ConfigModule.ConfigOptionCount; idx++)
+                foreach (SystemConfigOption option in Enum.GetValues(typeof(SystemConfigOption)))
                 {
-                    Option* optionPtr = modulePtr->GetOptionById(idx);
-                    if (optionPtr != null)
+                    if (gameConfig.TryGet(option, out uint value))
                     {
-                        PluginLog.Log($"option[{idx}] id:{(int)optionPtr->OptionID}, name:{optionPtr->GetName()}, intValue:{modulePtr->GetIntValue(idx)}");
+                        logger.Info($"option[{option}] intValue:{value}");
                     }
                 }
             }
         }
 
-        public static void TestGamepadStyleSettings()
+        public static void TestGamepadStyleSettings(IGameConfig gameConfig, IPluginLog logger)
         {
-            PluginLog.Log($"ClientStruct check, num options:{ConfigModule.ConfigOptionCount} (vs {ConfigModuleTesting.ConfigOptionCount})");
+            logger.Info($"ClientStruct check, num options:{ConfigModule.ConfigOptionCount} (vs {ConfigModuleTesting.ConfigOptionCount})");
 
-            PluginLog.Log("Dumping config data:");
-            LogConfigModuleTesting();
-            LogClientStructConfigs();
+            logger.Info("Dumping config data:");
+            LogConfigModuleTesting(logger);
+            LogClientStructConfigs(gameConfig, logger);
 
             int styleSettings = GetConfigModuleTestingOption(GamepadStyleOptionId);
-            PluginLog.Log($"Gamepad style by option (id: {GamepadStyleOptionId}) = {styleSettings}");
+            logger.Info($"Gamepad style by option (id: {GamepadStyleOptionId}) = {styleSettings}");
 
             styleSettings = GetConfigModuleTestingValue(GamepadStyleValueId);
-            PluginLog.Log($"Gamepad style by value ({GamepadStyleValueId}) = {styleSettings}");
+            logger.Info($"Gamepad style by value ({GamepadStyleValueId}) = {styleSettings}");
         }
 #endif // DEBUG
 
-        private static unsafe int GetGamepadStyleSettings()
+        private static int GetGamepadStyleSettings(IGameConfig gameConfig, IPluginLog logger)
         {
-            int settingsValue = 0;
-
-            ConfigModule* modulePtr = ConfigModule.Instance();
-            if (modulePtr != null )
+            uint settingsValue = 0;
+            if (gameConfig != null)
             {
-                bool useDefaultConfigs = true; // ConfigModule.ConfigOptionCount >= ConfigModuleTesting.ConfigOptionCount;
-
-                settingsValue = useDefaultConfigs ?
-                    modulePtr->GetIntValue(ConfigOption.PadSelectButtonIcon) :
-                    GetConfigModuleTestingValue(GamepadStyleValueId);
+                gameConfig.TryGet(SystemConfigOption.PadSelectButtonIcon, out settingsValue);
             }
 
 #if DEBUG
-            PluginLog.Log($"Detected gamepad style: (id: {settingsValue})");
+            logger?.Info($"Detected gamepad style: (id: {settingsValue})");
 #endif // DEBUG
 
-            return settingsValue;
+            return (int)settingsValue;
         }
 
         [DllImport("user32.dll")]

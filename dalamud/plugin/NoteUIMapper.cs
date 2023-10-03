@@ -57,7 +57,7 @@ namespace HarpHero
                     int writeIdx = expectedNumNotes - 1;
                     notes[writeIdx] = new NoteMap() { octaveIdx = 0, uiIndex = 0 };
                     writeIdx--;
-                    //PluginLog.Log($"[{expectedNumNotes - 1}] = ui:0, note:0");
+                    //Service.logger.Info($"[{expectedNumNotes - 1}] = ui:0, note:0");
 
                     // octave(s)
                     int noteIdx = 1;
@@ -65,7 +65,7 @@ namespace HarpHero
                     {
                         for (int idx = octaveNotes.Length - 1; idx >= 0; idx--)
                         {
-                            //PluginLog.Log($"[{writeIdx}] = ui:{noteIdx + mapOctaveNotes[idx].uiIndex}, note:{idx}");
+                            //Service.logger.Info($"[{writeIdx}] = ui:{noteIdx + mapOctaveNotes[idx].uiIndex}, note:{idx}");
                             notes[writeIdx] = new NoteMap() { octaveIdx = idx, uiIndex = noteIdx + octaveNotes[idx].uiIndex };
                             writeIdx--;
                         }

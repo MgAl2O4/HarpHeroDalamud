@@ -1,7 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using System.Collections.Generic;
@@ -75,7 +74,7 @@ namespace HarpHero
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Error(ex, "oh noes!");
+                    Service.logger.Error(ex, "oh noes!");
                 }
             }
 
@@ -92,7 +91,7 @@ namespace HarpHero
 
             if (HasErrors)
             {
-                PluginLog.Error("Failed to find key bind indices, turning reader off");
+                Service.logger?.Error("Failed to find key bind indices, turning reader off");
             }
             else
             {
@@ -127,7 +126,7 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                PluginLog.Log($"UnsafeReaderPerformanceKeybinds: error:{HasErrors} (S:{baseShortNotes}:{baseShortOctave}, W:{baseWideNotes}:{baseWideOctave}, G:{baseGamepadNotes}:{baseGamepadModifiers})");
+                Service.logger.Info($"UnsafeReaderPerformanceKeybinds: error:{HasErrors} (S:{baseShortNotes}:{baseShortOctave}, W:{baseWideNotes}:{baseWideOctave}, G:{baseGamepadNotes}:{baseGamepadModifiers})");
             };
         }
 
@@ -168,7 +167,7 @@ namespace HarpHero
                     var inputManager = getInputManager(uiModulePtr);
                     if (inputManager != IntPtr.Zero)
                     {
-                        //PluginLog.Log($"bindings ptr: {(inputManager.ToInt64() + 0x9b0):X}");
+                        //Service.logger.Info($"bindings ptr: {(inputManager.ToInt64() + 0x9b0):X}");
                         var bindingArr = *((KeybindMemory**)(inputManager.ToInt64() + 0x9b0));
 
                         VirtualKey ReadKeyBinding(int baseIdx, int offset)
@@ -218,14 +217,14 @@ namespace HarpHero
                         for (int idx = 0; idx < gamepadNotes.Length; idx++)
                         {
                             gamepadNotes[idx] = bindingArr[baseGamepadNotes + idx].Gamepad;
-                            //PluginLog.Log($"Gamepad.note[{idx}]: {gamepadNotes[idx]:X} [{(baseGamepadNotes + idx):X}, {(long)&bindingArr[baseGamepadNotes + idx]:X}]");
+                            //Service.logger.Info($"Gamepad.note[{idx}]: {gamepadNotes[idx]:X} [{(baseGamepadNotes + idx):X}, {(long)&bindingArr[baseGamepadNotes + idx]:X}]");
                         }
 
                         int[] gamepadModifiers = new int[4];
                         for (int idx = 0; idx < gamepadModifiers.Length; idx++)
                         {
                             gamepadModifiers[idx] = bindingArr[baseGamepadModifiers + idx].Gamepad;
-                            //PluginLog.Log($"Gamepad.mod[{idx}]:  {gamepadModifiers[idx]:X} [{(baseGamepadModifiers + idx):X}, {(long)&bindingArr[baseGamepadModifiers + idx]:X}]");
+                            //Service.logger.Info($"Gamepad.mod[{idx}]:  {gamepadModifiers[idx]:X} [{(baseGamepadModifiers + idx):X}, {(long)&bindingArr[baseGamepadModifiers + idx]:X}]");
                         }
 
                         resultBindings = new PerformanceBindingInfo()
@@ -253,7 +252,7 @@ namespace HarpHero
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "Failed to read keybinds data, turning reader off");
+                Service.logger.Error(ex, "Failed to read keybinds data, turning reader off");
                 HasErrors = true;
                 resultBindings = null;
             }

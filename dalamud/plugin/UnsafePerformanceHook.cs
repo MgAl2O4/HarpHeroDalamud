@@ -1,5 +1,4 @@
 ﻿using Dalamud.Hooking;
-using Dalamud.Logging;
 using Dalamud.Memory;
 using System;
 
@@ -25,20 +24,19 @@ namespace HarpHero
 
             try
             {
-                var noteFuncPtr = Service.sigScanner.ScanText("48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 8b fa 41 0f b6 f0 03 79 5c 48 8b d9");
-                hookNote = Hook<OnNotePlayedDelegate>.FromAddress(noteFuncPtr, OnNoteDetour);
+                hookNote = Service.interOp.HookFromSignature<OnNotePlayedDelegate>("48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 8b fa 41 0f b6 f0 03 79 5c 48 8b d9", OnNoteDetour);
                 hookNote.Enable();
 
                 IsValid = true;
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "oh noes!");
+                Service.logger.Error(ex, "oh noes!");
             }
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                PluginLog.Log($"UnsafePerformanceHook: valid:{IsValid}, note:{activeNote}, lastPressed:{lastPressedNote}");
+                Service.logger.Info($"UnsafePerformanceHook: valid:{IsValid}, note:{activeNote}, lastPressed:{lastPressedNote}");
             };
         }
 

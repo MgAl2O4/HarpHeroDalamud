@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MgAl2O4.Utils;
 using System;
@@ -55,7 +54,7 @@ namespace HarpHero
 
             Plugin.OnDebugSnapshot += (_) =>
             {
-                PluginLog.Log($"UIReaderBardPerformance: status:{status}, numKeys:{cachedNumKeys}, isWide:{isWideMode}, useGamepad:{cachedState.isGamepad}");
+                Service.logger.Info($"UIReaderBardPerformance: status:{status}, numKeys:{cachedNumKeys}, isWide:{isWideMode}, useGamepad:{cachedState.isGamepad}");
             };
         }
 
@@ -247,7 +246,7 @@ namespace HarpHero
 
                 if (HasErrors)
                 {
-                    PluginLog.Error("Performance reader error: " + newStatus);
+                    Service.logger.Error("Performance reader error: " + newStatus);
                 }
 
                 if (wasVisible != IsVisible)

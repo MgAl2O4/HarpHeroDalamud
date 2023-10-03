@@ -3,8 +3,8 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiFileDialog;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -263,7 +263,7 @@ namespace HarpHero
             }
             catch (Exception ex)
             {
-                PluginLog.LogError(ex, "file dialog died");
+                Service.logger.Error(ex, "file dialog died");
                 dlgManager.Reset();
             }
         }
@@ -391,7 +391,7 @@ namespace HarpHero
 
                 ImGui.SameLine();
                 ImGuiHelpers.ScaledDummy(new Vector2(50, 0));
-                
+
                 var availRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
                 ImGui.SameLine(availRegionWidth - (46 * ImGuiHelpers.GlobalScale));
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
