@@ -161,7 +161,7 @@ namespace HarpHero
                 var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
                 {
-                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[64]);
+                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[65]);
                     var getInputManager = Marshal.GetDelegateForFunctionPointer<GetInputManagerDelegate>(getInputManagerPtr);
 
                     var inputManager = getInputManager(uiModulePtr);
