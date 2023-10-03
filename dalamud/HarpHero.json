@@ -5,6 +5,5 @@
   "Description": "Assist mode for bards who want to play music but don't know how to.\n- does NOT play anything automatically\n- needs MIDI files to work\n- adapts MIDI tracks to fit in game limitations for you\n- you will be scored :O",
   "InternalName": "HarpHero",
   "ApplicableVersion": "any",
-  "Tags": [ "bard", "music", "performance", "midi", "harp" ],
-  "DalamudApiLevel": 9
+  "Tags": [ "bard", "music", "performance", "midi", "harp" ]
 }
