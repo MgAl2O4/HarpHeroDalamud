@@ -12,12 +12,9 @@ namespace HarpHero
         private SetMetronomeValueDelegate SetMetronomeMeasureFn;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        private delegate ushort GetMetronomeValueDelegate(IntPtr managerPtr);
+        private delegate ushort GetMetronomeValueDelegate(nint uiDataPtr);
         private GetMetronomeValueDelegate GetMetronomeBPMFn;
         private GetMetronomeValueDelegate GetMetronomeMeasureFn;
-
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        private delegate IntPtr GetMetronomeManagerDelegate(IntPtr uiObject);
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate IntPtr StopMetronomeDelegate(IntPtr agentPtr);
@@ -125,33 +122,28 @@ namespace HarpHero
             {
                 newIsPlaying = statePtr->IsPlaying != 0;
 
-                var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
-                if (uiModulePtr != IntPtr.Zero)
+                var uiModule = (Service.gameGui != null) ? (UIModule*)Service.gameGui.GetUIModule() : null;
+                var raptureUIData = (uiModule != null) ? uiModule->GetRaptureUiDataModule() : null;
+
+                if (raptureUIData != null)
                 {
-                    var getMetronomeManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[26]);
-                    var getMetronomeManager = Marshal.GetDelegateForFunctionPointer<GetMetronomeManagerDelegate>(getMetronomeManagerPtr);
-
-                    var metronomeManager = getMetronomeManager(uiModulePtr);
-                    if (metronomeManager != IntPtr.Zero)
+                    int currentBPM = GetMetronomeBPMFn((nint)raptureUIData);
+                    if (cachedBPM != currentBPM)
                     {
-                        int currentBPM = GetMetronomeBPMFn(metronomeManager);
-                        if (cachedBPM != currentBPM)
-                        {
-                            cachedBPM = currentBPM;
-                            OnBPMChanged?.Invoke(currentBPM);
-                        }
+                        cachedBPM = currentBPM;
+                        OnBPMChanged?.Invoke(currentBPM);
+                    }
 
-                        int currentMeasure = GetMetronomeMeasureFn(metronomeManager);
-                        if (cachedMeasure != currentMeasure)
-                        {
-                            cachedMeasure = currentMeasure;
-                            OnMeasureChanged?.Invoke(currentMeasure);
-                        }
-                    }
-                    else
+                    int currentMeasure = GetMetronomeMeasureFn((nint)raptureUIData);
+                    if (cachedMeasure != currentMeasure)
                     {
-                        HasErrors = true;
+                        cachedMeasure = currentMeasure;
+                        OnMeasureChanged?.Invoke(currentMeasure);
                     }
+                }
+                else
+                {
+                    HasErrors = true;
                 }
             }
 

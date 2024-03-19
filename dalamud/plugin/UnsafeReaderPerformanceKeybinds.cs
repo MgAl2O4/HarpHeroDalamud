@@ -29,9 +29,6 @@ namespace HarpHero
 
     public unsafe class UnsafeReaderPerformanceKeybinds
     {
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        private delegate IntPtr GetInputManagerDelegate(IntPtr uiObject);
-
         [StructLayout(LayoutKind.Explicit, Size = 0xB)]
         private unsafe struct KeybindMemory
         {
@@ -158,96 +155,91 @@ namespace HarpHero
                 // - 0x22b (0x16 elems = gamepad notes)
                 // - 0x227 (0x4 elems = gamepad modifiers)
 
-                var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
-                if (uiModulePtr != IntPtr.Zero)
+                var uiModule = (Service.gameGui != null) ? (UIModule*)Service.gameGui.GetUIModule() : null;
+                var uiInputData = (uiModule != null) ? uiModule->GetUIInputData() : null;
+
+                if (uiInputData != null)
                 {
-                    var getInputManagerPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[65]);
-                    var getInputManager = Marshal.GetDelegateForFunctionPointer<GetInputManagerDelegate>(getInputManagerPtr);
+                    //Service.logger.Info($"bindings ptr: {(inputManager.ToInt64() + 0x9b0):X}");
+                    var bindingArr = *((KeybindMemory**)((nint)uiInputData + 0x9b0));
 
-                    var inputManager = getInputManager(uiModulePtr);
-                    if (inputManager != IntPtr.Zero)
+                    VirtualKey ReadKeyBinding(int baseIdx, int offset)
                     {
-                        //Service.logger.Info($"bindings ptr: {(inputManager.ToInt64() + 0x9b0):X}");
-                        var bindingArr = *((KeybindMemory**)(inputManager.ToInt64() + 0x9b0));
-
-                        VirtualKey ReadKeyBinding(int baseIdx, int offset)
+                        var value = bindingArr[baseIdx + offset].Key;
+                        if (mapKeys.TryGetValue(value, out var mappedValue))
                         {
-                            var value = bindingArr[baseIdx + offset].Key;
-                            if (mapKeys.TryGetValue(value, out var mappedValue))
-                            {
-                                return mappedValue;
-                            }
-
-                            return (VirtualKey)value;
+                            return mappedValue;
                         }
 
-                        VirtualKey[] ReadKeyBindings(int baseIdx, int count)
-                        {
-                            var result = new VirtualKey[count];
-                            for (int idx = 0; idx < count; idx++)
-                            {
-                                result[idx] = ReadKeyBinding(baseIdx, idx);
-                            }
-
-                            return result;
-                        }
-
-                        GamepadButtons ReadGamepadBinding(int baseIdx, int offset)
-                        {
-                            if (mapGamepad.TryGetValue(bindingArr[baseIdx + offset].Gamepad, out var buttonEnum))
-                            {
-                                return buttonEnum;
-                            }
-
-                            return GamepadButtons.None;
-                        }
-
-                        GamepadButtons[] ReadGamepadBindings(int baseIdx, int count)
-                        {
-                            var result = new GamepadButtons[count];
-                            for (int idx = 0; idx < count; idx++)
-                            {
-                                result[idx] = ReadGamepadBinding(baseIdx, idx);
-                            }
-
-                            return result;
-                        }
-
-                        int[] gamepadNotes = new int[16];
-                        for (int idx = 0; idx < gamepadNotes.Length; idx++)
-                        {
-                            gamepadNotes[idx] = bindingArr[baseGamepadNotes + idx].Gamepad;
-                            //Service.logger.Info($"Gamepad.note[{idx}]: {gamepadNotes[idx]:X} [{(baseGamepadNotes + idx):X}, {(long)&bindingArr[baseGamepadNotes + idx]:X}]");
-                        }
-
-                        int[] gamepadModifiers = new int[4];
-                        for (int idx = 0; idx < gamepadModifiers.Length; idx++)
-                        {
-                            gamepadModifiers[idx] = bindingArr[baseGamepadModifiers + idx].Gamepad;
-                            //Service.logger.Info($"Gamepad.mod[{idx}]:  {gamepadModifiers[idx]:X} [{(baseGamepadModifiers + idx):X}, {(long)&bindingArr[baseGamepadModifiers + idx]:X}]");
-                        }
-
-                        resultBindings = new PerformanceBindingInfo()
-                        {
-                            singleOctave = new PerformanceBindingInfo.Mode()
-                            {
-                                notes = ReadKeyBindings(baseShortNotes, 12 + 1),
-                                octaveUp = ReadKeyBinding(baseShortOctave, 0),
-                                octaveDown = ReadKeyBinding(baseShortOctave, 1),
-                            },
-                            threeOctaves = new PerformanceBindingInfo.Mode()
-                            {
-                                notes = ReadKeyBindings(baseWideNotes, 12 + 12 + 12 + 1),
-                                octaveUp = ReadKeyBinding(baseWideOctave, 0),
-                                octaveDown = ReadKeyBinding(baseWideOctave, 1),
-                            },
-                            gamepadNotes = ReadGamepadBindings(baseGamepadNotes, 12 + 1),
-                            gamepadOctaveUp = ReadGamepadBinding(baseGamepadModifiers, 0),
-                            gamepadOctaveDown = ReadGamepadBinding(baseGamepadModifiers, 1),
-                            gamepadHalfUp = ReadGamepadBinding(baseGamepadModifiers, 2),
-                            gamepadHalfDown = ReadGamepadBinding(baseGamepadModifiers, 3)
-                        };
+                        return (VirtualKey)value;
                     }
+
+                    VirtualKey[] ReadKeyBindings(int baseIdx, int count)
+                    {
+                        var result = new VirtualKey[count];
+                        for (int idx = 0; idx < count; idx++)
+                        {
+                            result[idx] = ReadKeyBinding(baseIdx, idx);
+                        }
+
+                        return result;
+                    }
+
+                    GamepadButtons ReadGamepadBinding(int baseIdx, int offset)
+                    {
+                        if (mapGamepad.TryGetValue(bindingArr[baseIdx + offset].Gamepad, out var buttonEnum))
+                        {
+                            return buttonEnum;
+                        }
+
+                        return GamepadButtons.None;
+                    }
+
+                    GamepadButtons[] ReadGamepadBindings(int baseIdx, int count)
+                    {
+                        var result = new GamepadButtons[count];
+                        for (int idx = 0; idx < count; idx++)
+                        {
+                            result[idx] = ReadGamepadBinding(baseIdx, idx);
+                        }
+
+                        return result;
+                    }
+
+                    int[] gamepadNotes = new int[16];
+                    for (int idx = 0; idx < gamepadNotes.Length; idx++)
+                    {
+                        gamepadNotes[idx] = bindingArr[baseGamepadNotes + idx].Gamepad;
+                        //Service.logger.Info($"Gamepad.note[{idx}]: {gamepadNotes[idx]:X} [{(baseGamepadNotes + idx):X}, {(long)&bindingArr[baseGamepadNotes + idx]:X}]");
+                    }
+
+                    int[] gamepadModifiers = new int[4];
+                    for (int idx = 0; idx < gamepadModifiers.Length; idx++)
+                    {
+                        gamepadModifiers[idx] = bindingArr[baseGamepadModifiers + idx].Gamepad;
+                        //Service.logger.Info($"Gamepad.mod[{idx}]:  {gamepadModifiers[idx]:X} [{(baseGamepadModifiers + idx):X}, {(long)&bindingArr[baseGamepadModifiers + idx]:X}]");
+                    }
+
+                    resultBindings = new PerformanceBindingInfo()
+                    {
+                        singleOctave = new PerformanceBindingInfo.Mode()
+                        {
+                            notes = ReadKeyBindings(baseShortNotes, 12 + 1),
+                            octaveUp = ReadKeyBinding(baseShortOctave, 0),
+                            octaveDown = ReadKeyBinding(baseShortOctave, 1),
+                        },
+                        threeOctaves = new PerformanceBindingInfo.Mode()
+                        {
+                            notes = ReadKeyBindings(baseWideNotes, 12 + 12 + 12 + 1),
+                            octaveUp = ReadKeyBinding(baseWideOctave, 0),
+                            octaveDown = ReadKeyBinding(baseWideOctave, 1),
+                        },
+                        gamepadNotes = ReadGamepadBindings(baseGamepadNotes, 12 + 1),
+                        gamepadOctaveUp = ReadGamepadBinding(baseGamepadModifiers, 0),
+                        gamepadOctaveDown = ReadGamepadBinding(baseGamepadModifiers, 1),
+                        gamepadHalfUp = ReadGamepadBinding(baseGamepadModifiers, 2),
+                        gamepadHalfDown = ReadGamepadBinding(baseGamepadModifiers, 3)
+                    };
                 }
             }
             catch (Exception ex)
