@@ -67,7 +67,7 @@ namespace HarpHero
                     ptrShortOctaves = Service.sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 84 00 00 00 bd 02 00");
                     ptrWideOctaves = Service.sigScanner.GetStaticAddressFromSig("48 8d 35 ?? ?? ?? ?? 48 2b ee 4c 8d bd 44 01 00 00 bd 02 00");
                     ptrGamepadNotes = Service.sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 33 db 4c 8d 3d ?? ?? ?? ?? 66 0f");
-                    ptrGamepadModifiers = Service.sigScanner.GetStaticAddressFromSig("48 8d 3d ?? ?? ?? ?? 66 66 0f 1f 84 00 00 00 00 00 48 8b 4e 10");
+                    ptrGamepadModifiers = Service.sigScanner.GetStaticAddressFromSig("48 8D 3D ?? ?? ?? ?? 66 66 0F 1F 84 ?? 00 00 00 00 48 8B 4E");
                 }
                 catch (Exception ex)
                 {

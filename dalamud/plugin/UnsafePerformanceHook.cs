@@ -24,7 +24,7 @@ namespace HarpHero
 
             try
             {
-                hookNote = Service.interOp.HookFromSignature<OnNotePlayedDelegate>("48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 8b fa 41 0f b6 f0 03 79 5c 48 8b d9", OnNoteDetour);
+                hookNote = Service.interOp.HookFromSignature<OnNotePlayedDelegate>("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 8B 41 ?? 8B FA", OnNoteDetour);
                 hookNote.Enable();
 
                 IsValid = true;

@@ -75,13 +75,13 @@ namespace HarpHero
 
                 try
                 {
-                    ptrSetMeasureFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 48 63 06 48 8d 54 24 30 48 69 c8 e8 03");
-                    ptrSetBPMFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 48 8b 43 48 48 8b 48 10 48 8b 01 ff 90 d0");
+                    ptrSetMeasureFunc = Service.sigScanner.ScanText("E8 ?? ?? ?? ?? 48 63 06");
+                    ptrSetBPMFunc = Service.sigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 43 ?? 48 8B 48 ?? 48 8B 01 FF 90 ?? ?? ?? ?? 48 8B C8 E8 ?? ?? ?? ?? 0F BE 56");
 
-                    ptrGetBPMFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? f3 0f 10 4e 04 0f b7 c0 66 0f 6e c0");
-                    ptrGetMeasureFunc = Service.sigScanner.ScanText("e8 ?? ?? ?? ?? 0f be 56 08 0f b7 c0 3b c2 74 ?? 48");
+                    ptrGetBPMFunc = Service.sigScanner.ScanText("E8 ?? ?? ?? ?? F3 0F 10 4E ?? 0F B7 C0");
+                    ptrGetMeasureFunc = Service.sigScanner.ScanText("E8 ?? ?? ?? ?? 0F BE 56 ?? 0F B7 C0");
 
-                    ptrMetronomeStopFunc = Service.sigScanner.ScanText("40 53 48 83 ec 20 48 8b 01 48 8b d9 ff 50 28 84 c0 74 ?? 48 8b cb c6 43 73 00 c6 83 87 00 00 00 00");
+                    ptrMetronomeStopFunc = Service.sigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 4F ?? 48 85 C9");
                     //Service.logger.Info($"stopFunc: +0x{((long)ptrMetronomeStopFunc - (long)Service.sigScanner.Module.BaseAddress):X}");
                 }
                 catch (Exception)
