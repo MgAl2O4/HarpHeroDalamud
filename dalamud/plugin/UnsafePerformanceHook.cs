@@ -7,9 +7,9 @@ namespace HarpHero
     public class UnsafePerformanceHook : IDisposable
     {
         public delegate void OnNotePlayedDelegate(ulong agentPtr, int noteIdx, byte state);
-        private readonly Hook<OnNotePlayedDelegate> hookNote;
+        private readonly Hook<OnNotePlayedDelegate>? hookNote;
 
-        public Action<int> OnPlayingNoteChanged;
+        public Action<int>? OnPlayingNoteChanged;
 
         public bool IsValid = false;
         private bool isDisposed = false;
@@ -52,7 +52,7 @@ namespace HarpHero
 
         public void OnNoteDetour(ulong agentPtr, int noteIdx, byte state)
         {
-            hookNote.Original(agentPtr, noteIdx, state);
+            hookNote?.Original(agentPtr, noteIdx, state);
 
             if (state != 0)
             {

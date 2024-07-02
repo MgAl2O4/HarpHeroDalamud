@@ -10,8 +10,7 @@ namespace HarpHero
     {
         private readonly UIReaderBardPerformance uiReader;
 
-        private int lastShownRankMajor;
-        private Vector2[] cachedRankMinorPos;
+        private Vector2[]? cachedRankMinorPos;
 
         private uint colorMinorEmpty = UIColors.colorGray33;
         private uint[] colorMinor = { UIColors.colorGreen, UIColors.colorYellow, UIColors.colorRed };
@@ -106,9 +105,6 @@ namespace HarpHero
                     drawList.AddCircle(centerPos + cachedRankMinorPos[idx], markerRadius, colorMinorEmpty);
                 }
             }
-
-            // TODO: fx for rank changes?
-            lastShownRankMajor = Service.trackAssistant.scoreTracker.RankMajor;
         }
 
         private void UpdateRankMinorSlots(float radius)

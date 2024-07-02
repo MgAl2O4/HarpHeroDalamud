@@ -16,19 +16,19 @@ namespace HarpHero
         public static int MaxBarsToCalculateTempo = 10;
         public static int HighPassFilter = 0;
 
-        public string name;
+        public string? name;
 
         public readonly TrackChunk midiTrackOrg;
         public readonly TempoMap tempoMapOrg;
 
-        public TrackChunk midiTrack;
-        public TempoMap tempoMap;
+        public TrackChunk? midiTrack;
+        public TempoMap? tempoMap;
 
-        public ITimeSpan sectionStart;
-        public ITimeSpan sectionEnd;
+        public ITimeSpan? sectionStart;
+        public ITimeSpan? sectionEnd;
 
-        public MidiTrackStats stats = new MidiTrackStats();
-        public MidiTrackStats statsOrg = new MidiTrackStats();
+        public MidiTrackStats stats = new();
+        public MidiTrackStats statsOrg = new();
 
         public float medianTooShortMs = -1.0f;
 
@@ -58,7 +58,7 @@ namespace HarpHero
             }
         }
 
-        public List<NoteProcessingInfo> noteProcessing = new List<NoteProcessingInfo>();
+        public List<NoteProcessingInfo> noteProcessing = new();
 
         public MidiTrackWrapper(TrackChunk midiTrack, TempoMap tempoMap)
         {
@@ -111,7 +111,7 @@ namespace HarpHero
          *            `~----"`   `-.........'
          */
 
-        public void SetSection(ITimeSpan sectionStart, ITimeSpan sectionEnd)
+        public void SetSection(ITimeSpan? sectionStart, ITimeSpan? sectionEnd)
         {
             this.sectionStart = sectionStart;
             this.sectionEnd = sectionEnd;
@@ -138,7 +138,7 @@ namespace HarpHero
             var removeNotes = new List<Melanchall.DryWetMidi.Interaction.Note>();
             foreach (var chord in midiTrack.GetChords())
             {
-                Melanchall.DryWetMidi.Interaction.Note keepNote = null;
+                Melanchall.DryWetMidi.Interaction.Note? keepNote = null;
                 int numNotes = 0;
 
                 foreach (var note in chord.Notes)
@@ -151,7 +151,7 @@ namespace HarpHero
                     }
                 }
 
-                if (numNotes > 1)
+                if (numNotes > 1 && keepNote != null)
                 {
                     var removeChordNotes = chord.Notes.Where(x => x != keepNote);
 
@@ -201,7 +201,7 @@ namespace HarpHero
             bool needsRemove = false;
             bool needsDurationChange = false;
 
-            Melanchall.DryWetMidi.Interaction.Note prevNote = null;
+            Melanchall.DryWetMidi.Interaction.Note? prevNote = null;
             long prevTime = -1;
             long prevDuration = -1;
 
@@ -212,7 +212,7 @@ namespace HarpHero
             foreach (var note in midiTrack.GetNotes())
             {
                 bool moveToNextNote = true;
-                if (prevDuration > 0)
+                if (prevDuration > 0 && prevNote != null)
                 {
                     if (note.Time < (prevTime + prevDuration))
                     {
@@ -368,6 +368,11 @@ namespace HarpHero
 
         private void UnifyTempo()
         {
+            if (tempoMap == null || midiTrack == null)
+            {
+                return;
+            }
+
             int numTempoChanges = tempoMap.GetTempoChanges().Count();
             if (numTempoChanges > 1)
             {

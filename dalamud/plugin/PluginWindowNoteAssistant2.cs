@@ -26,7 +26,7 @@ namespace HarpHero
         private readonly UIReaderBardPerformance uiReader;
         private readonly NoteUIMapper noteMapper;
 
-        private float[] cachedNotePosX = null;
+        private float[]? cachedNotePosX = null;
         private float cachedWhiteKeyY = 0;
         private float cachedBlackKeyY = 0;
         private float cachedOverlayAlpha = 1.0f;
@@ -129,7 +129,7 @@ namespace HarpHero
         public override void PreDraw()
         {
             int numMappedNotes = noteMapper.notes?.Length ?? 0;
-            if (numMappedNotes > 0)
+            if (numMappedNotes > 0 && noteMapper.notes != null)
             {
                 var viewportOffset = ImGui.GetMainViewport().Pos;
 
@@ -215,7 +215,7 @@ namespace HarpHero
 
         public override void Draw()
         {
-            if (cachedNotePosX != null && maxMarkersToShow > 0)
+            if (cachedNotePosX != null && maxMarkersToShow > 0 && noteMapper.notes != null)
             {
                 var drawList = ImGui.GetWindowDrawList();
                 var currentTimeUs = Service.trackAssistant.musicViewer?.TimeUs ?? 0;

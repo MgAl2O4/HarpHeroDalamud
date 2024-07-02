@@ -11,9 +11,9 @@ namespace HarpHero
         public readonly TrackScore scoreTracker;
         private readonly UIReaderBardPerformance uiReader;
 
-        public MidiTrackWrapper musicTrack;
-        public MidiTrackViewer musicViewer;
-        public MidiTrackPlayer musicPlayer;
+        public MidiTrackWrapper? musicTrack;
+        public MidiTrackViewer? musicViewer;
+        public MidiTrackPlayer? musicPlayer;
 
         public bool HasMetronomeLink => metronomeLink != null && !metronomeLink.HasErrors && Service.config.UseMetronomeLink;
         public bool CanPlay => (musicViewer != null) && (musicTrack != null) && (trackEndTimeUs > trackStartTimeUs);
@@ -53,14 +53,14 @@ namespace HarpHero
         private bool isPaused;
         private bool isValidExtendedMode;
         private bool isValidBasicMode;
-        private Note notePausedForInput;
+        private Note? notePausedForInput;
         private long pausedTimeUs;
         private long lastPressTimeUs;
         private int lastPressNoteNumber;
 
-        public Action<bool> OnPlayChanged;
-        public Action<bool> OnTrackChanged;
-        public Action<float> OnPerformanceScore;
+        public Action<bool>? OnPlayChanged;
+        public Action<bool>? OnTrackChanged;
+        public Action<float>? OnPerformanceScore;
 
         public TrackAssistant(UIReaderBardPerformance uiReader, UnsafeMetronomeLink metronomeLink, UnsafePerformanceHook performanceHook)
         {
@@ -106,7 +106,7 @@ namespace HarpHero
             };
         }
 
-        public void SetTrack(MidiTrackWrapper track)
+        public void SetTrack(MidiTrackWrapper? track)
         {
             Stop();
 
@@ -152,11 +152,11 @@ namespace HarpHero
 
             if (startBar < 0 || endBar < 0)
             {
-                musicTrack.SetSection(null, null);
+                musicTrack?.SetSection(null, null);
             }
             else
             {
-                musicTrack.SetSection(new BarBeatTicksTimeSpan(startBar), new BarBeatTicksTimeSpan(endBar));
+                musicTrack?.SetSection(new BarBeatTicksTimeSpan(startBar), new BarBeatTicksTimeSpan(endBar));
             }
 
             musicViewer = null;
@@ -226,9 +226,12 @@ namespace HarpHero
                 isPlaying = true;
                 Plugin.TickScheduler.Register(this);
 
-                musicViewer.generateBindingData = CanShowBindAssistant;
-                musicViewer.generateBarData = false; // TODO: expose?
-                musicViewer.OnPlayStart();
+                if (musicViewer != null)
+                {
+                    musicViewer.generateBindingData = CanShowBindAssistant;
+                    musicViewer.generateBarData = false; // TODO: expose?
+                    musicViewer.OnPlayStart();
+                }
 
                 currentTimeUs = trackStartTimeUs - (long)(NumWarmupSeconds * timeScaling * 1000 * 1000);
                 Tick(0);
@@ -345,7 +348,7 @@ namespace HarpHero
             if (isPlayingSound)
             {
                 // time scaling and section start are already applied
-                currentTimeUs = musicPlayer.GetCurrentTimeUs();
+                currentTimeUs = (musicPlayer != null) ? musicPlayer.GetCurrentTimeUs() : 0;
             }
             else if (HasMetronomeLink && metronomeLink.IsPlaying)
             {
@@ -387,7 +390,7 @@ namespace HarpHero
 
                     if (timeScaling + speedOffset > 0.0f)
                     {
-                        musicPlayer.SetTimeScaling(timeScaling + speedOffset);
+                        musicPlayer?.SetTimeScaling(timeScaling + speedOffset);
                     }
                 }
             }
@@ -395,13 +398,13 @@ namespace HarpHero
             // try starting playback 
             if (CanUsePlayback && !isPlayingSound && !isPaused && currentTimeUs >= trackStartTimeUs)
             {
-                isPlayingSound = musicPlayer.StartAt(currentTimeUs);
+                isPlayingSound = musicPlayer?.StartAt(currentTimeUs) ?? false;
             }
 
             // update viewer & look for end of track
             if (currentTimeUs < trackEndTimeUs)
             {
-                musicViewer.SetTimeUs(currentTimeUs);
+                musicViewer?.SetTimeUs(currentTimeUs);
             }
             else
             {
@@ -494,7 +497,7 @@ namespace HarpHero
 
         public void OnAssistModeChanged()
         {
-            OnPlayChanged.Invoke(IsPlaying);
+            OnPlayChanged?.Invoke(IsPlaying);
         }
 
         public void OnTrainingModeChanged()

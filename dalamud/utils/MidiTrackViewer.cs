@@ -41,10 +41,10 @@ namespace HarpHero
         public bool generateBindingData = true;
         public bool showAllBindings = false;
 
-        private NoteInfo[] cachedNotes;
-        private int[] cachedBindings;
-        private TempoMap tempoMap;
-        public TempoMap TempoMap => tempoMap;
+        private NoteInfo[]? cachedNotes;
+        private int[]? cachedBindings;
+        private TempoMap? tempoMap;
+        public TempoMap? TempoMap => tempoMap;
 
         private long timeUs;
         public long TimeUs => timeUs;
@@ -56,15 +56,15 @@ namespace HarpHero
         public long startTimeUs = -1;
         public long endTimeUs = -1;
 
-        public List<NoteInfo> shownNotes = new List<NoteInfo>();
-        public List<long> shownBarLines = new List<long>();
-        public List<long> shownBeatLines = new List<long>();
-        public List<NoteBindingInfo> shownBindings = new List<NoteBindingInfo>();
+        public List<NoteInfo> shownNotes = [];
+        public List<long> shownBarLines = [];
+        public List<long> shownBeatLines = [];
+        public List<NoteBindingInfo> shownBindings = [];
 
-        public Action<NoteInfo> OnNoteNotify;
+        public Action<NoteInfo>? OnNoteNotify;
         private long lastNotifyStartUs;
 
-        public MidiTrackViewer(MidiTrackWrapper track)
+        public MidiTrackViewer(MidiTrackWrapper? track)
         {
             if (track != null)
             {
@@ -72,7 +72,7 @@ namespace HarpHero
             }
         }
 
-        public MidiTrackViewer(TrackChunk trackChunk, TempoMap tempoMap)
+        public MidiTrackViewer(TrackChunk? trackChunk, TempoMap? tempoMap)
         {
             GenerateCachedData(trackChunk, tempoMap);
         }
@@ -105,7 +105,7 @@ namespace HarpHero
             cachedBindings = null;
         }
 
-        private bool GenerateCachedData(TrackChunk trackChunk, TempoMap tempoMap)
+        private bool GenerateCachedData(TrackChunk? trackChunk, TempoMap? tempoMap)
         {
             if (trackChunk == null || tempoMap == null)
             {
@@ -257,7 +257,7 @@ namespace HarpHero
             shownBarLines.Clear();
             shownBeatLines.Clear();
 
-            if (cachedNotes != null && generateBarData)
+            if (cachedNotes != null && generateBarData && tempoMap != null)
             {
                 var startTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(new MetricTimeSpan(Math.Max(0, TimeRangeStartUs)), tempoMap);
                 var endTimeBar = TimeConverter.ConvertTo<BarBeatTicksTimeSpan>(new MetricTimeSpan(Math.Max(0, TimeRangeEndUs)), tempoMap);

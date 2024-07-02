@@ -23,97 +23,97 @@ namespace HarpHero
         private Vector4 colorDetail = new Vector4(0.2f, 0.9f, 0.9f, 1);
 
         public bool showConfigs = false;
-        public Action<MidiTrackWrapper> OnShowTrack;
-        public Action<string> OnImportFile;
+        public Action<MidiTrackWrapper>? OnShowTrack;
+        public Action<string>? OnImportFile;
 
         private const int MaxNameLen = 30;
-        private string[] cachedTrackNames;
-        private string[] cachedAssistNames;
-        private int[] cachedAssistIds;
+        private string[]? cachedTrackNames;
+        private string[]? cachedAssistNames;
+        private int[]? cachedAssistIds;
         private FileDialogManager dlgManager = new();
         private bool isPerformanceActive = false;
 
-        private string locImportHint;
-        private string locSettingsHint;
-        private string locDebugSnapshot;
-        private string locPlayBPM;
-        private string locKeyPerSecond;
-        private string locWaitingForImport;
-        private string locTrainingMode;
-        private string locTrackHeader;
-        private string locSelectTrack;
-        private string locPreviewTrackSound;
-        private string locPreviewTrackNotes;
-        private string locTrackBPM;
-        private string locTrackMeasure;
-        private string locTrackBars;
-        private string locTrackOctaves;
-        private string locTrackSection;
-        private string locTrackSectionUnits;
-        private string locTrackSectionReset;
-        private string locTrackTooShortMedian;
-        private string locTrackTranspose;
-        private string locPlayMetronomeHint;
-        private string locPlayMetronome;
-        private string locPlayMetronomeNotVisible;
-        private string locPlayMetronomeNotVisibleHint;
-        private string locPlayMetronomeSyncError;
-        private string locPlayMetronomePlaying;
-        private string locPlayMetronomeStopped;
-        private string locTrainingWaits;
-        private string locStatusPlaying;
-        private string locStatusPaused;
-        private string locStatusPlayTime;
-        private string locStartPlayingHint;
-        private string locStatusPlayNotAvail;
-        private string locStatusPlayNotAvailDefault;
-        private string locStatusPlayNotAvailNeedsWideMode;
-        private string locStatusPlayNotAvailNeedsKeyboard;
-        private string locStatusPlayNotAvailNeedsAllBindings;
-        private string locStatusExtendedMode;
-        private string locStatusExtendedModeActive;
-        private string locStatusExtendedModeHint;
-        private string locStatusWideUIHint;
-        private string locStatusTrackTruncated;
-        private string locStatusTrackTruncatedHint;
-        private string locStatusTrackTruncatedHintNoExtended;
-        private string locStatusTooManyOctaves;
-        private string locStartPlayingExtHint;
+        private string? locImportHint;
+        private string? locSettingsHint;
+        private string? locDebugSnapshot;
+        private string? locPlayBPM;
+        private string? locKeyPerSecond;
+        private string? locWaitingForImport;
+        private string? locTrainingMode;
+        private string? locTrackHeader;
+        private string? locSelectTrack;
+        private string? locPreviewTrackSound;
+        private string? locPreviewTrackNotes;
+        private string? locTrackBPM;
+        private string? locTrackMeasure;
+        private string? locTrackBars;
+        private string? locTrackOctaves;
+        private string? locTrackSection;
+        private string? locTrackSectionUnits;
+        private string? locTrackSectionReset;
+        private string? locTrackTooShortMedian;
+        private string? locTrackTranspose;
+        private string? locPlayMetronomeHint;
+        private string? locPlayMetronome;
+        private string? locPlayMetronomeNotVisible;
+        private string? locPlayMetronomeNotVisibleHint;
+        private string? locPlayMetronomeSyncError;
+        private string? locPlayMetronomePlaying;
+        private string? locPlayMetronomeStopped;
+        private string? locTrainingWaits;
+        private string? locStatusPlaying;
+        private string? locStatusPaused;
+        private string? locStatusPlayTime;
+        private string? locStartPlayingHint;
+        private string? locStatusPlayNotAvail;
+        private string? locStatusPlayNotAvailDefault;
+        private string? locStatusPlayNotAvailNeedsWideMode;
+        private string? locStatusPlayNotAvailNeedsKeyboard;
+        private string? locStatusPlayNotAvailNeedsAllBindings;
+        private string? locStatusExtendedMode;
+        private string? locStatusExtendedModeActive;
+        private string? locStatusExtendedModeHint;
+        private string? locStatusWideUIHint;
+        private string? locStatusTrackTruncated;
+        private string? locStatusTrackTruncatedHint;
+        private string? locStatusTrackTruncatedHintNoExtended;
+        private string? locStatusTooManyOctaves;
+        private string? locStartPlayingExtHint;
 
-        private string locConfigSettingsTab;
-        private string locConfigAppearanceTab;
-        private string locConfigBack;
-        private string locConfigImport;
-        private string locConfigAutoBPM;
-        private string locConfigAutoBPMHelp;
-        private string locConfigAutoSection;
-        private string locConfigAutoSectionHelp;
-        private string locConfigTooShortFilter;
-        private string locConfigTooShortFilterHelp;
-        private string locConfigAllowExtendedMode;
-        private string locConfigAssist;
-        private string locConfigUseMetronome;
-        private string locConfigUseMetronomeHelp;
-        private string locConfigUsePlayback;
-        private string locConfigUsePlaybackHelp;
-        private string locConfigAutoResume;
-        private string locConfigAutoResumeHelp;
-        private string locConfigAssistMode;
-        private string locConfigShowScore;
-        private string locConfigAssistBindScaleKeyboard;
-        private string locConfigAssistBindScaleGamepad;
-        private string locConfigAssistNoteNumMarkers;
-        private string locConfigAssistBindNumMarkers;
-        private string locConfigAssistBindExtraHints;
-        private string locConfigAssistNoteWarnMs;
-        private string locConfigModeBind;
-        private string locConfigModeNote;
-        private string locConfigAppearanceBgAlpha;
-        private string locConfigAppearanceKeyAlias;
-        private string locConfigAppearanceAddAlias;
-        private string locConfigShowOverlay;
-        private string locConfigShowAllHints;
-        private string locConfigShowAllHintsHelp;
+        private string? locConfigSettingsTab;
+        private string? locConfigAppearanceTab;
+        private string? locConfigBack;
+        private string? locConfigImport;
+        private string? locConfigAutoBPM;
+        private string? locConfigAutoBPMHelp;
+        private string? locConfigAutoSection;
+        private string? locConfigAutoSectionHelp;
+        private string? locConfigTooShortFilter;
+        private string? locConfigTooShortFilterHelp;
+        private string? locConfigAllowExtendedMode;
+        private string? locConfigAssist;
+        private string? locConfigUseMetronome;
+        private string? locConfigUseMetronomeHelp;
+        private string? locConfigUsePlayback;
+        private string? locConfigUsePlaybackHelp;
+        private string? locConfigAutoResume;
+        private string? locConfigAutoResumeHelp;
+        private string? locConfigAssistMode;
+        private string? locConfigShowScore;
+        private string? locConfigAssistBindScaleKeyboard;
+        private string? locConfigAssistBindScaleGamepad;
+        private string? locConfigAssistNoteNumMarkers;
+        private string? locConfigAssistBindNumMarkers;
+        private string? locConfigAssistBindExtraHints;
+        private string? locConfigAssistNoteWarnMs;
+        private string? locConfigModeBind;
+        private string? locConfigModeNote;
+        private string? locConfigAppearanceBgAlpha;
+        private string? locConfigAppearanceKeyAlias;
+        private string? locConfigAppearanceAddAlias;
+        private string? locConfigShowOverlay;
+        private string? locConfigShowAllHints;
+        private string? locConfigShowAllHintsHelp;
 
         public PluginWindowStatus(MidiFileManager fileManager, TrackHealthCheck trackHealth) : base("Harp Hero")
         {
@@ -128,7 +128,10 @@ namespace HarpHero
             Flags = ImGuiWindowFlags.AlwaysAutoResize;
             RespectCloseHotkey = false;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            if (Plugin.CurrentLocManager != null)
+            {
+                Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            }
             CacheLocalization();
         }
 
@@ -276,7 +279,7 @@ namespace HarpHero
             ImGui.AlignTextToFramePadding();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.FileImport))
             {
-                dlgManager.OpenFileDialog(locImportHint, ".mid,.midi", (found, path) =>
+                dlgManager.OpenFileDialog(locImportHint ?? "", ".mid,.midi", (found, path) =>
                 {
                     if (found)
                     {
@@ -379,13 +382,16 @@ namespace HarpHero
                 ImGui.Text($"{locSelectTrack}:");
                 ImGui.SameLine();
 
-                ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
-                int selectedIdx = fileManager.tracks.IndexOf(Service.trackAssistant.musicTrack);
-                if (ImGui.Combo("##trackCombo", ref selectedIdx, cachedTrackNames, cachedTrackNames.Length))
+                if (cachedTrackNames != null)
                 {
-                    if (selectedIdx >= 0 && selectedIdx < fileManager.tracks.Count)
+                    ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+                    int selectedIdx = fileManager.tracks.IndexOf(Service.trackAssistant.musicTrack);
+                    if (ImGui.Combo("##trackCombo", ref selectedIdx, cachedTrackNames, cachedTrackNames.Length))
                     {
-                        Service.trackAssistant.SetTrack(fileManager.tracks[selectedIdx]);
+                        if (selectedIdx >= 0 && selectedIdx < fileManager.tracks.Count)
+                        {
+                            Service.trackAssistant.SetTrack(fileManager.tracks[selectedIdx]);
+                        }
                     }
                 }
 
@@ -461,7 +467,7 @@ namespace HarpHero
                 {
                     ImGui.TextColored(colorDetail, $"{Service.trackAssistant.musicTrack.medianTooShortMs} ms");
                 }
-                ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp);
+                ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp ?? "");
 
                 int transposeOffset = Service.trackAssistant.musicTrack.TransposeOffset;
                 ImGui.AlignTextToFramePadding();
@@ -519,10 +525,10 @@ namespace HarpHero
             if (lengthPct < 1.0f)
             {
                 ImGui.Spacing();
-                ImGui.TextColored(colorYellow, string.Format(locStatusTrackTruncated, lengthPct).Replace("%", "%%"));
+                ImGui.TextColored(colorYellow, string.Format(locStatusTrackTruncated ?? "", lengthPct).Replace("%", "%%"));
 
                 int numAvailableOctaves = Service.config.UseExtendedMode ? 5 : 3;
-                string helpMsg = string.Format(locStatusTrackTruncatedHint, numAvailableOctaves);
+                string helpMsg = string.Format(locStatusTrackTruncatedHint ?? "", numAvailableOctaves);
 
                 if (!Service.config.UseExtendedMode)
                 {
@@ -555,7 +561,7 @@ namespace HarpHero
                 }
 
                 ImGui.SameLine();
-                ImGuiComponents.HelpMarker(locStatusExtendedModeHint);
+                ImGuiComponents.HelpMarker(locStatusExtendedModeHint ?? "");
 
                 needsSameLine = true;
             }
@@ -612,7 +618,7 @@ namespace HarpHero
                     if (syncErrorMs > 100.0f && Service.trackAssistant.musicTrack != null && Service.trackAssistant.IsPlaying)
                     {
                         ImGui.SameLine();
-                        ImGui.TextColored(colorYellow, string.Format(locPlayMetronomeSyncError, syncErrorMs));
+                        ImGui.TextColored(colorYellow, string.Format(locPlayMetronomeSyncError ?? "", syncErrorMs));
                     }
                     else
                     {
@@ -678,7 +684,7 @@ namespace HarpHero
                         }
 
                         ImGui.SameLine();
-                        ImGui.Text(string.Format(locStatusPlayTime, Service.trackAssistant.CurrentTime));
+                        ImGui.Text(string.Format(locStatusPlayTime ?? "", Service.trackAssistant.CurrentTime));
 
                         float trackPct = Math.Max(0.0f, 1.0f * (Service.trackAssistant.CurrentTimeUs - Service.trackAssistant.TrackStartTimeUs) / (Service.trackAssistant.TrackEndTimeUs - Service.trackAssistant.TrackStartTimeUs));
                         ImGui.SameLine();
@@ -736,7 +742,7 @@ namespace HarpHero
                 if (trackHealth.cachedStatus == TrackHealthCheck.Status.MissingWideMode)
                 {
                     ImGui.SameLine();
-                    ImGuiComponents.HelpMarker(locStatusWideUIHint);
+                    ImGuiComponents.HelpMarker(locStatusWideUIHint ?? "");
                 }
             }
         }
@@ -783,7 +789,7 @@ namespace HarpHero
             ImGui.Indent();
 
             hasChanges = ImGui.Checkbox(locConfigAutoBPM, ref autoAdjustBPMCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigAutoBPMHelp);
+            ImGuiComponents.HelpMarker(locConfigAutoBPMHelp ?? "");
 
             if (autoAdjustBPMCopy)
             {
@@ -796,17 +802,17 @@ namespace HarpHero
             }
 
             hasChanges = ImGui.Checkbox(locConfigAutoSection, ref autoAdjustEndBarCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigAutoSectionHelp);
+            ImGuiComponents.HelpMarker(locConfigAutoSectionHelp ?? "");
 
             hasChanges = ImGui.Checkbox(locConfigAllowExtendedMode, ref useExtendedModeCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locStatusExtendedModeHint);
+            ImGuiComponents.HelpMarker(locStatusExtendedModeHint ?? "");
 
             ImGui.AlignTextToFramePadding();
             ImGui.Text(locConfigTooShortFilter);
             ImGui.SameLine();
             ImGui.SetNextItemWidth(100);
             hasChanges = ImGui.InputInt("##tooShortFilter", ref minDurationCopy, 1, 25) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp);
+            ImGuiComponents.HelpMarker(locConfigTooShortFilterHelp ?? "");
 
             if (hasChanges)
             {
@@ -825,32 +831,35 @@ namespace HarpHero
             ImGui.Text($"{locConfigAssist}:");
             ImGui.Indent();
 
-            int assistModeIdx = Math.Max(0, Array.IndexOf(cachedAssistIds, Service.config.AssistMode));
+            int assistModeIdx = (cachedAssistIds != null) ? Math.Max(0, Array.IndexOf(cachedAssistIds, Service.config.AssistMode)) : 0;
             bool useMetronomeLinkCopy = Service.config.UseMetronomeLink;
             bool usePlaybackCopy = Service.config.UsePlayback;
             bool autoResumeCopy = Service.config.AutoResume;
             bool showScoreCopy = Service.config.ShowScore;
 
             hasChanges = ImGui.Checkbox(locConfigUseMetronome, ref useMetronomeLinkCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigUseMetronomeHelp);
+            ImGuiComponents.HelpMarker(locConfigUseMetronomeHelp ?? "");
 
             hasChanges = ImGui.Checkbox(locConfigUsePlayback, ref usePlaybackCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigUsePlaybackHelp);
+            ImGuiComponents.HelpMarker(locConfigUsePlaybackHelp ?? "");
 
             hasChanges = ImGui.Checkbox(locConfigAutoResume, ref autoResumeCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigAutoResumeHelp);
+            ImGuiComponents.HelpMarker(locConfigAutoResumeHelp ?? "");
 
             hasChanges = ImGui.Checkbox(locConfigShowScore, ref showScoreCopy) || hasChanges;
 
-            ImGui.AlignTextToFramePadding();
-            ImGui.Text($"{locConfigAssistMode}:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(150);
-            hasChanges = ImGui.Combo("##assistMode", ref assistModeIdx, cachedAssistNames, cachedAssistNames.Length) || hasChanges;
+            if (cachedAssistNames != null)
+            {
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text($"{locConfigAssistMode}:");
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(150);
+                hasChanges = ImGui.Combo("##assistMode", ref assistModeIdx, cachedAssistNames, cachedAssistNames.Length) || hasChanges;
+            }
 
             if (hasChanges)
             {
-                Service.config.AssistMode = cachedAssistIds[assistModeIdx];
+                Service.config.AssistMode = (cachedAssistIds != null) ? cachedAssistIds[assistModeIdx] : 0;
                 Service.config.UseMetronomeLink = useMetronomeLinkCopy;
                 Service.config.UsePlayback = usePlaybackCopy;
                 Service.config.AutoResume = autoResumeCopy;
@@ -911,7 +920,7 @@ namespace HarpHero
             ImGui.Separator();
             ImGui.Text($"{locConfigAssistMode}: {locConfigModeBind}");
             hasChanges = ImGui.Checkbox(locConfigShowAllHints, ref showAllNotesCopy) || hasChanges;
-            ImGuiComponents.HelpMarker(locConfigShowAllHintsHelp);
+            ImGuiComponents.HelpMarker(locConfigShowAllHintsHelp ?? "");
 
             if (ImGui.BeginChild("##detailsAssistMode1", new Vector2(-1.0f, textLineHeight * 5.0f)))
             {
@@ -1064,7 +1073,7 @@ namespace HarpHero
             }
         }
 
-        private string GetTrimmedName(string name)
+        private string? GetTrimmedName(string? name)
         {
             if (name != null && name.Length > MaxNameLen)
             {
@@ -1081,7 +1090,7 @@ namespace HarpHero
                 cachedTrackNames = new string[fileManager.tracks.Count];
                 for (int idx = 0; idx < fileManager.tracks.Count; idx++)
                 {
-                    cachedTrackNames[idx] = GetTrimmedName(fileManager.tracks[idx].name);
+                    cachedTrackNames[idx] = GetTrimmedName(fileManager.tracks[idx].name) ?? "";
                 }
             }
         }

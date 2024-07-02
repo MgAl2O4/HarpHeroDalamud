@@ -8,24 +8,24 @@ namespace HarpHero
     {
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate void SetMetronomeValueDelegate(IntPtr agentPtr, int BPM, byte idkSomething);
-        private SetMetronomeValueDelegate SetMetronomeBPMFn;
-        private SetMetronomeValueDelegate SetMetronomeMeasureFn;
+        private SetMetronomeValueDelegate? SetMetronomeBPMFn;
+        private SetMetronomeValueDelegate? SetMetronomeMeasureFn;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate ushort GetMetronomeValueDelegate(nint uiDataPtr);
-        private GetMetronomeValueDelegate GetMetronomeBPMFn;
-        private GetMetronomeValueDelegate GetMetronomeMeasureFn;
+        private GetMetronomeValueDelegate? GetMetronomeBPMFn;
+        private GetMetronomeValueDelegate? GetMetronomeMeasureFn;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate IntPtr StopMetronomeDelegate(IntPtr agentPtr);
-        private StopMetronomeDelegate StopMetronomeFn;
+        private StopMetronomeDelegate? StopMetronomeFn;
 
         public readonly UIReaderBardMetronome uiReader;
 
-        public Action<int> OnBPMChanged;
-        public Action<int> OnMeasureChanged;
-        public Action<bool> OnPlayingChanged;
-        public Action<bool> OnVisibilityChanged;
+        public Action<int>? OnBPMChanged;
+        public Action<int>? OnMeasureChanged;
+        public Action<bool>? OnPlayingChanged;
+        public Action<bool>? OnVisibilityChanged;
 
         public bool HasErrors { get; private set; }
 
@@ -103,7 +103,7 @@ namespace HarpHero
             }
             else
             {
-                Service.logger?.Error("Failed to find metronome functions, turning link off");
+                Service.logger.Error("Failed to find metronome functions, turning link off");
             }
 
             Plugin.OnDebugSnapshot += (_) =>
@@ -127,18 +127,24 @@ namespace HarpHero
 
                 if (raptureUIData != null)
                 {
-                    int currentBPM = GetMetronomeBPMFn((nint)raptureUIData);
-                    if (cachedBPM != currentBPM)
+                    if (GetMetronomeBPMFn != null)
                     {
-                        cachedBPM = currentBPM;
-                        OnBPMChanged?.Invoke(currentBPM);
+                        int currentBPM = GetMetronomeBPMFn((nint)raptureUIData);
+                        if (cachedBPM != currentBPM)
+                        {
+                            cachedBPM = currentBPM;
+                            OnBPMChanged?.Invoke(currentBPM);
+                        }
                     }
 
-                    int currentMeasure = GetMetronomeMeasureFn((nint)raptureUIData);
-                    if (cachedMeasure != currentMeasure)
+                    if (GetMetronomeMeasureFn != null)
                     {
-                        cachedMeasure = currentMeasure;
-                        OnMeasureChanged?.Invoke(currentMeasure);
+                        int currentMeasure = GetMetronomeMeasureFn((nint)raptureUIData);
+                        if (cachedMeasure != currentMeasure)
+                        {
+                            cachedMeasure = currentMeasure;
+                            OnMeasureChanged?.Invoke(currentMeasure);
+                        }
                     }
                 }
                 else
@@ -180,7 +186,7 @@ namespace HarpHero
 
         public void Stop()
         {
-            if (uiReader.AgentPtr != IntPtr.Zero)
+            if (uiReader.AgentPtr != IntPtr.Zero && StopMetronomeFn != null)
             {
                 StopMetronomeFn(uiReader.AgentPtr);
             }
@@ -196,7 +202,7 @@ namespace HarpHero
         {
             if (value >= 10 && value <= 200)
             {
-                if (!HasErrors && uiReader != null && uiReader.AgentPtr != IntPtr.Zero)
+                if (!HasErrors && uiReader != null && uiReader.AgentPtr != IntPtr.Zero && SetMetronomeBPMFn != null)
                 {
                     SetMetronomeBPMFn(uiReader.AgentPtr, value, 0);
                     cachedBPM = value;
@@ -211,7 +217,7 @@ namespace HarpHero
         {
             if (value >= 2 && value <= 7)
             {
-                if (!HasErrors && uiReader != null && uiReader.AgentPtr != IntPtr.Zero)
+                if (!HasErrors && uiReader != null && uiReader.AgentPtr != IntPtr.Zero && SetMetronomeMeasureFn != null)
                 {
                     SetMetronomeMeasureFn(uiReader.AgentPtr, value, 0);
                     cachedMeasure = value;

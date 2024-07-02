@@ -21,7 +21,7 @@ namespace HarpHero
 
         private IntPtr cachedAgentPtr;
 
-        public UnsafeMetronomeLink updateNotify;
+        public UnsafeMetronomeLink? updateNotify;
         public IntPtr AgentPtr => cachedAgentPtr;
 
         public UIReaderBardMetronome()
@@ -40,7 +40,7 @@ namespace HarpHero
         public void OnAddonLost()
         {
             cachedAgentPtr = IntPtr.Zero;
-            updateNotify.Update();
+            updateNotify?.Update();
         }
 
         public void OnAddonShown(IntPtr addonPtr)
@@ -51,7 +51,7 @@ namespace HarpHero
 
         public void OnAddonUpdate(IntPtr addonPtr)
         {
-            updateNotify.Update();
+            updateNotify?.Update();
         }
     }
 }

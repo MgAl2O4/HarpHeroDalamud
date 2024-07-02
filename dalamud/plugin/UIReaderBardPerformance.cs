@@ -30,11 +30,11 @@ namespace HarpHero
         }
 
         public UIStateBardPerformance cachedState = new();
-        public Action<bool> OnVisibilityChanged;
-        public Action<int> OnOctaveOffsetChanged;
-        public Action<int> OnPlayingNoteChanged;
-        public Action<bool> OnKeyboardModeChanged;
-        public Action<int> OnCachedKeysChanged;
+        public Action<bool>? OnVisibilityChanged;
+        public Action<int>? OnOctaveOffsetChanged;
+        public Action<int>? OnPlayingNoteChanged;
+        public Action<bool>? OnKeyboardModeChanged;
+        public Action<int>? OnCachedKeysChanged;
 
         public Status status = Status.AddonNotFound;
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
@@ -116,7 +116,7 @@ namespace HarpHero
 
                 if (cachedState.footerDescriptionAddr != 0)
                 {
-                    var footerText = GUINodeUtils.GetNodeText((AtkResNode*)cachedState.footerDescriptionAddr);
+                    var footerText = GUINodeUtils.GetNodeText((AtkResNode*)cachedState.footerDescriptionAddr) ?? "";
                     if (cachedState.footerDescText != footerText)
                     {
                         cachedState.footerDescText = footerText;
@@ -148,7 +148,7 @@ namespace HarpHero
             OnCachedKeysChanged?.Invoke(numKeys);
         }
 
-        private string gamepadIconString;
+        private string? gamepadIconString;
         private bool HasGamepadIcon(string text)
         {
             if (gamepadIconString == null)
@@ -211,7 +211,7 @@ namespace HarpHero
             //         [1] text => check if starts with icon (gamepad) or not (keyboard)
 
             var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
-            if (nodeArrL0.Length == 7)
+            if (nodeArrL0 != null && nodeArrL0.Length == 7)
             {
                 var nodeA = GUINodeUtils.PickNode(nodeArrL0, 1, 7);
                 AddKeyNodeAddresses(nodeA);
@@ -321,7 +321,7 @@ namespace HarpHero
     // helper class for scheduler: handles single octave performance UI and passes all notifies to parent
     public class UIReaderBardPerformanceShort : IUIReader
     {
-        public UIReaderBardPerformance parentReader;
+        public UIReaderBardPerformance? parentReader;
 
         public string GetAddonName()
         {
@@ -330,24 +330,24 @@ namespace HarpHero
 
         public void OnAddonLost()
         {
-            parentReader.OnAddonLost();
+            parentReader?.OnAddonLost();
         }
 
         public void OnAddonShown(IntPtr addonPtr)
         {
-            parentReader.OnAddonShown(addonPtr, false);
+            parentReader?.OnAddonShown(addonPtr, false);
         }
 
         public void OnAddonUpdate(IntPtr addonPtr)
         {
-            parentReader.OnAddonUpdate(addonPtr);
+            parentReader?.OnAddonUpdate(addonPtr);
         }
     }
 
     // helper class for scheduler: handles three octaves performance UI and passes all notifies to parent
     public class UIReaderBardPerformanceWide : IUIReader
     {
-        public UIReaderBardPerformance parentReader;
+        public UIReaderBardPerformance? parentReader;
 
         public string GetAddonName()
         {
@@ -356,17 +356,17 @@ namespace HarpHero
 
         public void OnAddonLost()
         {
-            parentReader.OnAddonLost();
+            parentReader?.OnAddonLost();
         }
 
         public void OnAddonShown(IntPtr addonPtr)
         {
-            parentReader.OnAddonShown(addonPtr, true);
+            parentReader?.OnAddonShown(addonPtr, true);
         }
 
         public void OnAddonUpdate(IntPtr addonPtr)
         {
-            parentReader.OnAddonUpdate(addonPtr);
+            parentReader?.OnAddonUpdate(addonPtr);
         }
     }
 
@@ -383,7 +383,7 @@ namespace HarpHero
         public Vector2 keysSize;
 
         public long footerDescriptionAddr;
-        public string footerDescText;
+        public string? footerDescText;
         public bool isGamepad;
 
         public int activeNote;

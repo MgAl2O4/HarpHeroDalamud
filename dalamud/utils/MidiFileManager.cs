@@ -6,10 +6,10 @@ namespace HarpHero
 {
     public class MidiFileManager
     {
-        public string FilePath;
+        public string? FilePath;
         public List<MidiTrackWrapper> tracks = new();
 
-        public Action<MidiFileManager> OnImported;
+        public Action<MidiFileManager>? OnImported;
 
         public void ImportFile(string path)
         {

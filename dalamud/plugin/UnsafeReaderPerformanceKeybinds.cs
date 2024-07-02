@@ -88,7 +88,7 @@ namespace HarpHero
 
             if (HasErrors)
             {
-                Service.logger?.Error("Failed to find key bind indices, turning reader off");
+                Service.logger.Error("Failed to find key bind indices, turning reader off");
             }
             else
             {

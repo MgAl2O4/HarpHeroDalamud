@@ -99,6 +99,11 @@
 
         public float GetTrackLengthPct()
         {
+            if (trackAssistant == null || trackAssistant.musicTrack == null)
+            {
+                return 0.0f;
+            }
+
             var statBlock = trackAssistant.musicTrack.stats;
             return (statBlock.numBarsTotal > 0) ? (1.0f * statBlock.numBars / statBlock.numBarsTotal) : 0.0f;
         }

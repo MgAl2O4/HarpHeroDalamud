@@ -2,6 +2,7 @@
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Windowing;
+using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using MgAl2O4.Utils;
@@ -28,18 +29,20 @@ namespace HarpHero
         private readonly UIReaderScheduler uiReaderScheduler;
         public static readonly TickScheduler TickScheduler = new();
 
-        public static Action<int> OnDebugSnapshot;
-        public static Localization CurrentLocManager;
+        public static Action<int>? OnDebugSnapshot;
+        public static Localization? CurrentLocManager;
         private string[] supportedLangCodes = { "en" };
 
-        public Plugin(DalamudPluginInterface pluginInterface)
+        [PluginService] internal static IDalamudPluginInterface pluginInterface { get; private set; } = null!;
+
+        public Plugin()
         {
             pluginInterface.Create<Service>();
 
             Service.plugin = this;
-
+            Service.pluginInterface = pluginInterface;
             Service.config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            Service.config.Initialize(pluginInterface);
+            Service.config.Initialize();
 
             var myAssemblyName = GetType().Assembly.GetName().Name;
             locManager = new Localization($"{myAssemblyName}.assets.loc.", "", true);            // res stream format: HarpHero.assets.loc.en.json
@@ -108,6 +111,7 @@ namespace HarpHero
             pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
+            pluginInterface.UiBuilder.OpenMainUi += () => OnCommand("", "");
 
             Service.framework.Update += Framework_Update;
 

@@ -5,7 +5,6 @@ using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using HarpHero;
 using ImGuiNET;
 using System;
@@ -13,7 +12,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
-using static FFXIVClientStructs.FFXIV.Client.UI.Misc.ConfigModule;
 
 namespace MgAl2O4.Utils
 {
@@ -34,12 +32,12 @@ namespace MgAl2O4.Utils
 
     public struct InputBindingChord
     {
-        public readonly InputBindingKey[] keys;
+        public readonly InputBindingKey[]? keys;
         public readonly GamepadButtons mainButton;
-        public readonly string simpleText;
+        public readonly string? simpleText;
         public readonly string separator;
 
-        public InputBindingChord(InputBindingKey[] keys, string separator = " + ")
+        public InputBindingChord(InputBindingKey[]? keys, string separator = " + ")
         {
             this.keys = keys;
             this.separator = separator;
@@ -70,7 +68,7 @@ namespace MgAl2O4.Utils
                 if (!isGamepadStyleInitialized)
                 {
                     isGamepadStyleInitialized = true;
-                    isUsingXboxGamepadStyle = GetGamepadStyleSettings(Service.gameConfig, Service.logger) == 0;
+                    isUsingXboxGamepadStyle = GetGamepadStyleSettings(Service.gameConfig) == 0;
                 }
 
                 return isUsingXboxGamepadStyle;
@@ -123,7 +121,7 @@ namespace MgAl2O4.Utils
             return newButtonData;
         }
 
-        public static string TryCreatingSimpleChordDescription(InputBindingKey[] keys, string separator, bool ignoreScaleOverrides = true)
+        public static string? TryCreatingSimpleChordDescription(InputBindingKey[]? keys, string separator, bool ignoreScaleOverrides = true)
         {
             if (keys == null || keys.Length == 0)
             {
@@ -152,7 +150,7 @@ namespace MgAl2O4.Utils
             return canUseSimpleDesc ? desc : null;
         }
 
-        public static GamepadButtons FindMainGamepadButton(InputBindingKey[] keys)
+        public static GamepadButtons FindMainGamepadButton(InputBindingKey[]? keys)
         {
             if (keys != null)
             {
@@ -176,7 +174,7 @@ namespace MgAl2O4.Utils
             }
             else if (inputChord.keys != null)
             {
-                string sepStr = null;
+                string? sepStr = null;
                 foreach (var inputKey in inputChord.keys)
                 {
                     if (sepStr != null)
@@ -237,7 +235,7 @@ namespace MgAl2O4.Utils
             }
             else if (inputChord.keys != null)
             {
-                string sepStr = null;
+                string? sepStr = null;
                 foreach (var inputKey in inputChord.keys)
                 {
                     if (sepStr != null)
@@ -265,7 +263,7 @@ namespace MgAl2O4.Utils
             bool useUnicodeActions = true;
 
             // can't change without client restart
-            var styleV = GetGamepadStyleSettings(Service.gameConfig, Service.logger);
+            var styleV = GetGamepadStyleSettings(Service.gameConfig);
             isUsingXboxGamepadStyle = styleV == 0;
 
             const float scaleOverrideFontAwesome = 0.8f;
@@ -317,74 +315,8 @@ namespace MgAl2O4.Utils
             }
         }
 
-        private const short GamepadStyleOptionId = 94;
-        private const short GamepadStyleValueId = 131;
-
-        // -------------------------------------------------------------------
-        // TEMPORARY, used only for debugging / with outdated ClientStruct
-        // outdated in 6.31 - using ClientStructs like a normal person for once...
-
-        [StructLayout(LayoutKind.Explicit, Size = 0xD698)]
-        unsafe struct ConfigModuleTesting
-        {
-            public const int ConfigOptionCount = 680;
-            [FieldOffset(0x2C8)] public fixed byte options[Option.Size * ConfigOptionCount];
-            [FieldOffset(0xAC18)] public fixed byte values[0x10 * ConfigOptionCount];
-        }
-
-        private static unsafe int GetConfigModuleTestingOption(int optionId)
-        {
-            var configTestPtr = (ConfigModuleTesting*)ConfigModule.Instance();
-            var optionsArr = (Option*)configTestPtr->options;
-            for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
-            {
-                if ((int)optionsArr[idx].OptionID == optionId)
-                {
-                    var valuesArr = (AtkValue*)configTestPtr->values;
-                    return valuesArr[idx].Int;
-                }
-            }
-
-            return 0;
-        }
-
-        private static unsafe int GetConfigModuleTestingValue(int valueId)
-        {
-            var configTestPtr = (ConfigModuleTesting*)ConfigModule.Instance();
-            var valuesArr = (AtkValue*)configTestPtr->values;
-
-            if (valueId >= 0 && valueId < ConfigModuleTesting.ConfigOptionCount)
-            {
-                return valuesArr[valueId].Int;
-            }
-
-            return 0;
-        }
-
 #if DEBUG
-        private static unsafe void LogConfigModuleTesting(IPluginLog logger)
-        {
-            ConfigModule* modulePtr = ConfigModule.Instance();
-            if (modulePtr != null)
-            {
-                var configTestPtr = (ConfigModuleTesting*)modulePtr;
-                logger.Info($"module: {(ulong)configTestPtr:X}");
-
-                var optionsArr = (Option*)configTestPtr->options;
-                for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
-                {
-                    logger.Info($"option[{idx}] = {(int)optionsArr[idx].OptionID}");
-                }
-
-                var valuesArr = (AtkValue*)configTestPtr->values;
-                for (int idx = 0; idx < ConfigModuleTesting.ConfigOptionCount; idx++)
-                {
-                    logger.Info($"value[{idx}] = {valuesArr[idx].Int}");
-                }
-            }
-        }
-
-        private static unsafe void LogClientStructConfigs(IGameConfig gameConfig, IPluginLog logger)
+        private static unsafe void LogClientStructConfigs(IGameConfig gameConfig)
         {
             if (gameConfig != null)
             {
@@ -392,29 +324,22 @@ namespace MgAl2O4.Utils
                 {
                     if (gameConfig.TryGet(option, out uint value))
                     {
-                        logger.Info($"option[{option}] intValue:{value}");
+                        Service.logger.Info($"option[{option}] intValue:{value}");
                     }
                 }
             }
         }
 
-        public static void TestGamepadStyleSettings(IGameConfig gameConfig, IPluginLog logger)
+        public static void TestGamepadStyleSettings(IGameConfig gameConfig)
         {
-            logger.Info($"ClientStruct check, num options:{ConfigModule.ConfigOptionCount} (vs {ConfigModuleTesting.ConfigOptionCount})");
+            Service.logger.Info($"ClientStruct check, num options:{ConfigModule.ConfigOptionCount}");
 
-            logger.Info("Dumping config data:");
-            LogConfigModuleTesting(logger);
-            LogClientStructConfigs(gameConfig, logger);
-
-            int styleSettings = GetConfigModuleTestingOption(GamepadStyleOptionId);
-            logger.Info($"Gamepad style by option (id: {GamepadStyleOptionId}) = {styleSettings}");
-
-            styleSettings = GetConfigModuleTestingValue(GamepadStyleValueId);
-            logger.Info($"Gamepad style by value ({GamepadStyleValueId}) = {styleSettings}");
+            Service.logger.Info("Dumping config data:");
+            LogClientStructConfigs(gameConfig);
         }
 #endif // DEBUG
 
-        private static int GetGamepadStyleSettings(IGameConfig gameConfig, IPluginLog logger)
+        private static int GetGamepadStyleSettings(IGameConfig gameConfig)
         {
             uint settingsValue = 0;
             if (gameConfig != null)
@@ -423,7 +348,7 @@ namespace MgAl2O4.Utils
             }
 
 #if DEBUG
-            logger?.Info($"Detected gamepad style: (id: {settingsValue})");
+            Service.logger.Info($"Detected gamepad style: (id: {settingsValue})");
 #endif // DEBUG
 
             return (int)settingsValue;

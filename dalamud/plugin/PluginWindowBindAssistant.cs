@@ -69,7 +69,7 @@ namespace HarpHero
                     !Service.trackAssistant.IsPlaying ? 4 :
                     0;
 
-                Service.logger.Info($"PluginWindowBindAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant.CanShowBindAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
+                Service.logger.Info($"PluginWindowBindAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant?.CanShowBindAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
             };
         }
 
@@ -185,6 +185,11 @@ namespace HarpHero
 
         private void DrawBindTimeline()
         {
+            if (Service.trackAssistant.musicViewer == null || Position == null || Size == null)
+            {
+                return;
+            }
+
             var drawList = ImGui.GetWindowDrawList();
             var viewportOffset = ImGui.GetMainViewport().Pos;
             var timeRangeStartUs = Service.trackAssistant.musicViewer.TimeRangeStartUs;

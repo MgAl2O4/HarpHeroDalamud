@@ -37,7 +37,7 @@ namespace HarpHero
 
         private int midOctaveIdx;
         private int midOctaveLowC = 0;
-        public NoteMap[] notes = null;
+        public NoteMap[]? notes = null;
         public bool isWideMode = false;
 
         public void OnNumKeysChanged(UIStateBardPerformance uiState)

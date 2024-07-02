@@ -30,14 +30,19 @@ namespace HarpHero
         public int startBar;
         public int endBar;
 
-        public TimeSignature timeSignature;
+        public TimeSignature? timeSignature;
         public int numTimeSignatures;
 
-        public MetricTimeSpan duration;
+        public MetricTimeSpan? duration;
         public long DurationTicks => endTick - startTick;
 
-        public void Update(TrackChunk track, TempoMap tempoMap, ITimeSpan sectionStart, ITimeSpan sectionEnd)
+        public void Update(TrackChunk? track, TempoMap? tempoMap, ITimeSpan? sectionStart, ITimeSpan? sectionEnd)
         {
+            if (track == null || tempoMap == null)
+            {
+                return;
+            }
+
             numNotes = track.GetNotes().Count;
             if (numNotes > 0)
             {
@@ -48,14 +53,17 @@ namespace HarpHero
             }
         }
 
-        public void Update(TrackChunk track, TempoMap tempoMap) => Update(track, tempoMap, null, null);
+        public void Update(TrackChunk? track, TempoMap? tempoMap) => Update(track, tempoMap, null, null);
 
-        public void OnTranspose(TrackChunk track)
+        public void OnTranspose(TrackChunk? track)
         {
-            numNotes = track.GetNotes().Count;
-            if (numNotes > 0)
+            if (track != null)
             {
-                CalcNoteRange(track);
+                numNotes = track.GetNotes().Count;
+                if (numNotes > 0)
+                {
+                    CalcNoteRange(track);
+                }
             }
         }
 
@@ -83,7 +91,7 @@ namespace HarpHero
             return numBeatsPerSecond * notesPerBeat;
         }
 
-        private void CalcDuration(TrackChunk track, TempoMap tempoMap, ITimeSpan sectionStart, ITimeSpan sectionEnd)
+        private void CalcDuration(TrackChunk track, TempoMap tempoMap, ITimeSpan? sectionStart, ITimeSpan? sectionEnd)
         {
             var lastNote = track.GetNotes().Last();
             var lastNoteEndTick = lastNote.Time + lastNote.Length;

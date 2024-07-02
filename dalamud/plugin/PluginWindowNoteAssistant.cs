@@ -38,11 +38,11 @@ namespace HarpHero
         public bool showOctaveShiftHints = true;
         public bool showBars = false;
 
-        private float[] minNoteTime = null;
+        private float[]? minNoteTime = null;
 
         private float cachedNoteActivationPosY;
         private float cachedNoteAppearPosY;
-        private float[] cachedNotePosX = null;
+        private float[]? cachedNotePosX = null;
 
         private float noMusicUpkeepRemaining = 0.0f;
 
@@ -82,7 +82,7 @@ namespace HarpHero
                     (cachedNotePosX == null) ? 5 :
                     0;
 
-                Service.logger.Info($"PluginWindowNoteAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant.CanShowNoteAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
+                Service.logger.Info($"PluginWindowNoteAssistant: open:{IsOpen}, numNotes:{noteMapper.notes?.Length ?? 0}, canShow:{Service.trackAssistant?.CanShowNoteAssistant}, fade:{BgAlpha} ({noMusicUpkeepRemaining}), drawErr:{drawErrState}");
             };
         }
 
@@ -130,7 +130,7 @@ namespace HarpHero
         public override void PreDraw()
         {
             int numMappedNotes = noteMapper.notes?.Length ?? 0;
-            if (numMappedNotes > 0)
+            if (numMappedNotes > 0 && noteMapper.notes != null)
             {
                 var viewportOffset = ImGui.GetMainViewport().Pos;
 
@@ -226,6 +226,11 @@ namespace HarpHero
 
         private void DrawKeyGuides()
         {
+            if (noteMapper.notes == null || minNoteTime == null || cachedNotePosX == null)
+            {
+                return;
+            }
+
             var drawList = ImGui.GetWindowDrawList();
 
             const float keyHalfWidth = 8.0f;
@@ -287,6 +292,11 @@ namespace HarpHero
 
         private void DrawBars()
         {
+            if (Service.trackAssistant.musicViewer == null || Position == null || Size == null)
+            {
+                return;
+            }
+
             var drawList = ImGui.GetWindowDrawList();
             var posStartX = Position.Value.X + 10;
             var posEndX = Position.Value.X + (Size.Value.X - 10) * ImGuiHelpers.GlobalScale;
@@ -326,6 +336,11 @@ namespace HarpHero
 
         private void DrawNotes()
         {
+            if (Service.trackAssistant.musicViewer == null || minNoteTime == null || cachedNotePosX == null || Position == null || Size == null)
+            {
+                return;
+            }
+
             var drawList = ImGui.GetWindowDrawList();
             var timeRangeStartUs = Service.trackAssistant.musicViewer.TimeRangeStartUs;
             var timeRangeUs = Service.trackAssistant.musicViewer.TimeRangeUs;

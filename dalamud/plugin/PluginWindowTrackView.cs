@@ -11,8 +11,8 @@ namespace HarpHero
 {
     public class PluginWindowTrackView : Window, IDisposable
     {
-        private MidiTrackWrapper shownTrack;
-        private MidiTrackViewer[] trackViewers;
+        private MidiTrackWrapper? shownTrack;
+        private MidiTrackViewer[]? trackViewers;
         private int shownSecond;
         private int maxSeconds;
 
@@ -26,8 +26,8 @@ namespace HarpHero
         private const uint colorNote = UIColors.colorGreenDark;
         private const uint colorNoteInvalid = UIColors.colorRed;
 
-        private string locDetailsHint;
-        private string locDetailsHeader;
+        private string? locDetailsHint;
+        private string? locDetailsHeader;
 
         public PluginWindowTrackView() : base("Track View")
         {
@@ -38,7 +38,10 @@ namespace HarpHero
             BgAlpha = 1.0f;
             RespectCloseHotkey = false;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            if (Plugin.CurrentLocManager != null)
+            {
+                Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            }
             CacheLocalization();
         }
 
@@ -65,7 +68,7 @@ namespace HarpHero
                 var trackViewerOrg = new MidiTrackViewer(shownTrack.midiTrackOrg, shownTrack.tempoMap);
                 SetTrackViewerParams(trackViewerOrg, false);
 
-                trackViewers = new MidiTrackViewer[2] { trackViewer, trackViewerOrg };
+                trackViewers = [trackViewer, trackViewerOrg];
                 shownTransposeOffset = shownTrack.TransposeOffset;
 
                 FindMidOctave();
@@ -108,7 +111,7 @@ namespace HarpHero
 
             ImGui.Text(locDetailsHeader);
             ImGui.SameLine();
-            ImGuiComponents.HelpMarker(locDetailsHint);
+            ImGuiComponents.HelpMarker(locDetailsHint ?? "");
 
             var contentRegionMin = ImGui.GetWindowContentRegionMin() + new Vector2(0, 50) + ImGui.GetWindowPos();
             var contentRegionMax = ImGui.GetWindowContentRegionMax() + ImGui.GetWindowPos();
@@ -197,6 +200,11 @@ namespace HarpHero
             var maxNote = SevenBitNumber.MinValue;
             minValidNoteNumber = -1000;
             maxValidNoteNumber = 1000;
+
+            if (shownTrack == null)
+            {
+                return;
+            }
 
             foreach (var note in shownTrack.midiTrack.GetNotes())
             {

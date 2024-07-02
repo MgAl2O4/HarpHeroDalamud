@@ -81,23 +81,28 @@ namespace HarpHero
             return hasBindings;
         }
 
-        private InputBindingKey[] GetNoteOctaveKeyboardBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset)
+        private InputBindingKey[]? GetNoteOctaveKeyboardBindings(PerformanceBindingInfo.Mode modeBindings, int useNoteIdx, int useOctaveOffset)
         {
             if (FindNoteKeyOctaveBindings(modeBindings, useNoteIdx, useOctaveOffset, out VirtualKey noteKey, out VirtualKey octaveKey))
             {
                 if (octaveKey != VirtualKey.NO_KEY)
                 {
-                    return new InputBindingKey[] { InputBindingUtils.GetVirtualKeyData(octaveKey), InputBindingUtils.GetVirtualKeyData(noteKey) };
+                    return [InputBindingUtils.GetVirtualKeyData(octaveKey), InputBindingUtils.GetVirtualKeyData(noteKey)];
                 }
 
-                return new InputBindingKey[] { InputBindingUtils.GetVirtualKeyData(noteKey) };
+                return [InputBindingUtils.GetVirtualKeyData(noteKey)];
             }
 
             return null;
         }
 
-        private InputBindingKey[] GetNoteOctaveGamepadBindings(int useNoteIdx, int useOctaveOffset)
+        private InputBindingKey[]? GetNoteOctaveGamepadBindings(int useNoteIdx, int useOctaveOffset)
         {
+            if (keyBinds == null)
+            {
+                return null;
+            }
+
             if (isWideModeCached)
             {
                 // 3 octave mode vs gamepad:
@@ -215,7 +220,7 @@ namespace HarpHero
                 return missingBingingChord;
             }
 
-            InputBindingKey[] descParts = null;
+            InputBindingKey[]? descParts = null;
             if (isKeyboardMode)
             {
                 if (isWideModeCached)

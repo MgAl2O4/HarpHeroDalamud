@@ -7,12 +7,10 @@ namespace HarpHero
 {
     internal class Service
     {
-        public static Plugin plugin;
-        public static Configuration config;
-        public static TrackAssistant trackAssistant;
-
-        [PluginService]
-        public static DalamudPluginInterface pluginInterface { get; private set; } = null!;
+        public static Plugin plugin = null!;
+        public static IDalamudPluginInterface pluginInterface = null!;
+        public static Configuration config = null!;
+        public static TrackAssistant trackAssistant = null!;
 
         [PluginService]
         public static ICommandManager commandManager { get; private set; } = null!;
@@ -36,6 +34,6 @@ namespace HarpHero
         public static IPluginLog logger { get; private set; } = null!;
 
         [PluginService]
-        public static IGameConfig gameConfig { get; private set; } = null;
+        public static IGameConfig gameConfig { get; private set; } = null!;
     }
 }

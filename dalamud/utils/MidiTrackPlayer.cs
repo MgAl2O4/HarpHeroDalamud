@@ -6,16 +6,16 @@ namespace HarpHero
 {
     public class MidiTrackPlayer : IDisposable
     {
-        private OutputDevice midiDevice;
-        private Playback midiPlayback;
+        private OutputDevice? midiDevice;
+        private Playback? midiPlayback;
 
-        public event Action OnFinished;
+        public event Action? OnFinished;
         public bool IsPlaying => midiPlayback?.IsRunning ?? false;
 
         public bool autoDispose = true;
         private bool isDisposed = false;
 
-        public MidiTrackPlayer(MidiTrackWrapper track, bool useOrgTrack = false)
+        public MidiTrackPlayer(MidiTrackWrapper? track, bool useOrgTrack = false)
         {
             if (track != null && track.tempoMap != null)
             {
@@ -51,7 +51,7 @@ namespace HarpHero
             bool started = Start();
             if (started)
             {
-                midiPlayback.MoveToTime(new MetricTimeSpan(timeUs));
+                midiPlayback?.MoveToTime(new MetricTimeSpan(timeUs));
             }
 
             return started;
@@ -113,7 +113,7 @@ namespace HarpHero
             }
         }
 
-        private void MidiPlayback_Finished(object sender, EventArgs e)
+        private void MidiPlayback_Finished(object? sender, EventArgs e)
         {
             if (isDisposed) { return; }
             OnFinished?.Invoke();
