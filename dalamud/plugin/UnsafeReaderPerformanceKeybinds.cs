@@ -160,8 +160,8 @@ namespace HarpHero
 
                 if (uiInputData != null)
                 {
-                    //Service.logger.Info($"bindings ptr: {(inputManager.ToInt64() + 0x9b0):X}");
-                    var bindingArr = *((KeybindMemory**)((nint)uiInputData + 0x9b0));
+                    //Service.logger.Info($"bindings ptr: {(inputManager.ToInt64() + 0x9b8):X}");
+                    var bindingArr = *((KeybindMemory**)((nint)uiInputData + 0x9b8));
 
                     VirtualKey ReadKeyBinding(int baseIdx, int offset)
                     {
