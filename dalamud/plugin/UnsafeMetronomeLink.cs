@@ -122,14 +122,24 @@ namespace HarpHero
             {
                 newIsPlaying = statePtr->IsPlaying != 0;
 
+                // vfunc 73, no named accessor? :<
                 var uiModule = (Service.gameGui != null) ? (UIModule*)Service.gameGui.GetUIModule() : null;
-                var raptureUIData = (uiModule != null) ? uiModule->GetRaptureUiDataModule() : null;
+                nint dataSource = 0;
+                if (uiModule != null)
+                {
+                    nint getDataSourceAddr = ((nint*)uiModule->VirtualTable)[73];
+                    delegate* unmanaged<UIModule*, void*> getDataSourceFn = (delegate* unmanaged<UIModule*, void*>)getDataSourceAddr;
+                    if (getDataSourceFn != null)
+                    {
+                        dataSource = (nint)getDataSourceFn(uiModule);
+                    }
+                }
 
-                if (raptureUIData != null)
+                if (dataSource != 0)
                 {
                     if (GetMetronomeBPMFn != null)
                     {
-                        int currentBPM = GetMetronomeBPMFn((nint)raptureUIData);
+                        int currentBPM = GetMetronomeBPMFn((nint)dataSource);
                         if (cachedBPM != currentBPM)
                         {
                             cachedBPM = currentBPM;
@@ -139,7 +149,7 @@ namespace HarpHero
 
                     if (GetMetronomeMeasureFn != null)
                     {
-                        int currentMeasure = GetMetronomeMeasureFn((nint)raptureUIData);
+                        int currentMeasure = GetMetronomeMeasureFn((nint)dataSource);
                         if (cachedMeasure != currentMeasure)
                         {
                             cachedMeasure = currentMeasure;
